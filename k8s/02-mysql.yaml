@@ -1,0 +1,109 @@
+# ==========================================================
+# MySQL for movem-cloud
+# A single-replica Deployment + PVC is used here for simplicity.
+# This is fine as long as you NEVER scale replicas above 1 — two
+# MySQL processes writing to the same volume will corrupt data.
+# If you later need real HA, look at a StatefulSet + MySQL
+# replication (or Cloud SQL, which handles this for you).
+# ==========================================================
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  namespace: movem
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  # No storageClassName set on purpose — this uses whatever the
+  # cluster's default StorageClass is. Run `kubectl get storageclass`
+  # if you want to pin a specific one (e.g. premium-rwo for SSD).
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movem-mysql
+  namespace: movem
+  labels:
+    app: movem-mysql
+spec:
+  replicas: 1
+  strategy:
+    # Recreate (not RollingUpdate) — with a ReadWriteOnce volume, two
+    # pods can't mount it at once, so a rolling update would just hang.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: movem-mysql
+  template:
+    metadata:
+      labels:
+        app: movem-mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.4
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: movem-secrets
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              value: "movem"
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+            - name: mysql-initdb
+              mountPath: /docker-entrypoint-initdb.d
+          readinessProbe:
+            exec:
+              # Wrapped in `sh -c` so the shell (not Kubernetes) expands
+              # $MYSQL_ROOT_PASSWORD from the container's own env — this
+              # is the reliable way to do it for exec probes.
+              command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$MYSQL_ROOT_PASSWORD\""]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$MYSQL_ROOT_PASSWORD\""]
+            initialDelaySeconds: 40
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+        - name: mysql-initdb
+          configMap:
+            name: movem-mysql-init
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # This name is load-bearing: application.properties points to
+  # jdbc:mysql://movem-mysql-service:3306/movem — don't rename this
+  # without also changing that property.
+  name: movem-mysql-service
+  namespace: movem
+spec:
+  selector:
+    app: movem-mysql
+  ports:
+    - port: 3306
+      targetPort: 3306

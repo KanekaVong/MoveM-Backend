@@ -1,0 +1,130 @@
+# ==========================================================
+# movem-backend (Spring Boot auth service) for movem-cloud
+#
+# IMPORTANT — read before applying:
+# The probes below hit /actuator/health. Right now SecurityConfig.java
+# only permitAll()'s /api/auth/**, /error and the swagger paths, so
+# /actuator/health returns 401 and these probes will fail. Add
+# "/actuator/health/**" to the permitAll list before deploying, e.g.:
+#
+#   .authorizeHttpRequests(auth -> auth
+#       .requestMatchers(
+#           "/api/auth/**",
+#           "/actuator/health/**",
+#           "/error",
+#           "/v3/api-docs/**",
+#           "/swagger-ui/**",
+#           "/swagger-ui.html"
+#       ).permitAll()
+#       .anyRequest().authenticated()
+#   )
+# ==========================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movem-backend
+  namespace: movem
+  labels:
+    app: movem-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: movem-backend
+  template:
+    metadata:
+      labels:
+        app: movem-backend
+    spec:
+      # Wait for MySQL's port to actually accept connections before
+      # starting Spring — otherwise the app can crash-loop on cold
+      # start while MySQL is still initializing the schema.
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - until nc -z movem-mysql-service 3306; do echo "waiting for mysql..."; sleep 3; done
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      containers:
+        - name: movem-backend
+          # TODO: replace with your real Artifact Registry path once
+          # you know the project/region/repo you're using (see the
+          # commands in chat).
+          image: us-central1-docker.pkg.dev/movem-cloud/movem-repo/movem-backend:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: movem-secrets
+                  key: MYSQL_ROOT_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: movem-secrets
+                  key: JWT_SECRET
+            - name: MAIL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: movem-secrets
+                  key: MAIL_USERNAME
+            - name: GMAIL_APP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: movem-secrets
+                  key: GMAIL_APP_PASSWORD
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30 # up to ~150s to finish starting
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: movem-backend-service
+  namespace: movem
+spec:
+  # LoadBalancer provisions an external GCP Load Balancer with its own
+  # public IP (~US$18-25/mo). Fine for getting started; once you have
+  # a domain, switch this to ClusterIP and put an Ingress in front of
+  # it instead so you get a static IP + TLS termination in one place.
+  type: LoadBalancer
+  selector:
+    app: movem-backend
+  ports:
+    - port: 80
+      targetPort: 8080

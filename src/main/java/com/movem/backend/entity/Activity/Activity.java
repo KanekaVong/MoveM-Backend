@@ -1,0 +1,98 @@
+package com.movem.backend.entity.Activity;
+
+import com.movem.backend.entity.Tasks.Task;
+import com.movem.backend.entity.Tasks.TaskLabel;
+import com.movem.backend.entity.User;
+import com.movem.backend.model.enums.Activity.ActivityStatus;
+import com.movem.backend.model.enums.Activity.ActivityType;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+@Table(name = "Activity")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Activity {
+
+    @Id
+    @Column(length = 10)
+    private String id;
+
+    @Column(name = "activity_name", nullable = false)
+    private String activityName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "activity_type")
+    private ActivityType activityType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Enumerated(EnumType.STRING)
+    private ActivityStatus status;
+
+    @Column(name = "start_activity")
+    private LocalDateTime startActivity;
+
+    private LocalDateTime deadline;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "location_name")
+    private String locationName;
+
+    @Column(name = "location_address")
+    private String locationAddress;
+
+    private BigDecimal lat;
+
+    private BigDecimal lng;
+
+    @Column(name = "google_place_id")
+    private String googlePlaceId;
+
+    // Ignore geometry for now
+    @Column(name = "coordinates")
+    private String coordinates;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_activity")
+    private Activity parentActivity;
+
+    @OneToMany(mappedBy = "parentActivity")
+    private Set<Activity> childActivities = new HashSet<>();
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @ManyToMany
+    @JoinTable(
+            name = "activity_labels",
+            joinColumns = @JoinColumn(name = "activity_id"),
+            inverseJoinColumns = @JoinColumn(name = "label_id")
+    )
+    private Set<TaskLabel> labels = new HashSet<>();
+
+    @OneToOne(mappedBy = "activity", fetch = FetchType.LAZY)
+    private Task task;
+
+    private Boolean isCollaborative = false;
+
+//    @OneToOne(mappedBy = "activity")
+//    private Fitness fitness;
+//
+//    @OneToOne(mappedBy = "activity")
+//    private Trip trip;
+}

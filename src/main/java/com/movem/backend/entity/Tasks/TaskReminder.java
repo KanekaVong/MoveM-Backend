@@ -1,0 +1,36 @@
+package com.movem.backend.entity.Tasks;
+
+import com.movem.backend.model.enums.ReminderType;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "task_reminders")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class TaskReminder {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "task_activity_id")
+    private Task task;
+
+    @Column(name = "remind_at")
+    private LocalDateTime remindAt;
+
+    @Enumerated(EnumType.STRING)
+    private ReminderType type;
+
+    @Column(name = "is_sent")
+    private Boolean isSent = false;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+}
