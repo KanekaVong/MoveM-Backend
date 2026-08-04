@@ -35,14 +35,39 @@ CREATE TABLE `email_verifications` (
   FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 );
 
-CREATE TABLE `friendships` (
-  `user_id` INT NOT NULL,
-  `friend_id` INT NOT NULL,
-  `status` ENUM('pending','accepted') DEFAULT 'pending',
-  `created_at` TIMESTAMP NULL,
-  PRIMARY KEY (`user_id`, `friend_id`),
-  FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
-  FOREIGN KEY (`friend_id`) REFERENCES `user` (`id`)
+CREATE TABLE friend (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_one_id INT NOT NULL,
+    user_two_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_friend_user_one
+        FOREIGN KEY (user_one_id)
+        REFERENCES user(id),
+    CONSTRAINT fk_friend_user_two
+        FOREIGN KEY (user_two_id)
+        REFERENCES user(id),
+    CONSTRAINT chk_friend_users
+        CHECK (user_one_id <> user_two_id),
+    UNIQUE KEY uk_friend_pair(user_one_id, user_two_id)
+);
+
+CREATE TABLE friend_request (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    sender_id INT NOT NULL,
+    receiver_id INT NOT NULL,
+    status ENUM('PENDING','ACCEPTED','REJECTED','CANCELLED')
+        DEFAULT 'PENDING',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    responded_at DATETIME NULL,
+    CONSTRAINT fk_friend_request_sender
+        FOREIGN KEY (sender_id)
+        REFERENCES user(id),
+    CONSTRAINT fk_friend_request_receiver
+        FOREIGN KEY (receiver_id)
+        REFERENCES user(id),
+    CONSTRAINT chk_sender_receiver
+        CHECK (sender_id <> receiver_id),
+    UNIQUE KEY uk_pending_request(sender_id, receiver_id)
 );
 
 CREATE TABLE `user_stats` (
@@ -98,7 +123,7 @@ CREATE TABLE `Activity` (
   `activity_name` VARCHAR(50) NOT NULL,
   `activity_type` ENUM('task','fitness','trip') NOT NULL,
   `user_id` INT NOT NULL,
-  `status` ENUM('complete','pending','in_progress','cancel') DEFAULT 'pending',
+  `status` varchar(30) NOT NULL,
   `start_activity` TIMESTAMP NULL,
   `deadline` TIMESTAMP NULL,
   `description` TEXT,
@@ -220,6 +245,57 @@ CREATE TABLE `group_members` (
   PRIMARY KEY (`group_id`, `user_id`),
   FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
+);
+
+CREATE TABLE group_invites (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    group_id INT NOT NULL,
+    inviter_id INT NOT NULL,
+    invitee_id INT NOT NULL,
+    status ENUM(
+        'PENDING',
+        'ACCEPTED',
+        'REJECTED'
+    ) NOT NULL DEFAULT 'PENDING',
+    invited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    responded_at TIMESTAMP NULL,
+    CONSTRAINT fk_group_invite_group
+        FOREIGN KEY (group_id)
+        REFERENCES groups(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_group_invite_inviter
+        FOREIGN KEY (inviter_id)
+        REFERENCES user(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_group_invite_invitee
+        FOREIGN KEY (invitee_id)
+        REFERENCES user(id)
+        ON DELETE CASCADE,
+    CONSTRAINT uq_group_pending_invite
+        UNIQUE (group_id, invitee_id)
+);
+
+CREATE TABLE join_requests (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    group_id INT NOT NULL,
+    requester_id INT NOT NULL,
+    status ENUM(
+        'PENDING',
+        'APPROVED',
+        'REJECTED'
+    ) NOT NULL DEFAULT 'PENDING',
+    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    responded_at TIMESTAMP NULL,
+    CONSTRAINT fk_join_request_group
+        FOREIGN KEY (group_id)
+        REFERENCES groups(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_join_request_user
+        FOREIGN KEY (requester_id)
+        REFERENCES user(id)
+        ON DELETE CASCADE,
+    CONSTRAINT uq_join_request
+        UNIQUE (group_id, requester_id)
 );
 
 CREATE TABLE `Trip` (
