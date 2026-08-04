@@ -151,6 +151,54 @@ CREATE TABLE `activity_leaderboards` (
   FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 );
 
+CREATE TABLE activity_feed (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    activity_id VARCHAR(10) NOT NULL,
+
+    user_id INT NOT NULL,
+
+    event_type ENUM(
+        'TASK_CREATED',
+        'TASK_UPDATED',
+        'TASK_COMPLETED',
+
+        'CHECKLIST_ADDED',
+        'CHECKLIST_COMPLETED',
+
+        'COMMENT_ADDED',
+
+        'GROUP_CREATED',
+        'MEMBER_INVITED',
+        'MEMBER_JOINED',
+        'MEMBER_LEFT',
+
+        'JOIN_REQUEST_SENT',
+        'JOIN_REQUEST_APPROVED',
+        'JOIN_REQUEST_REJECTED',
+
+        'LEADER_TRANSFERRED',
+
+        'DEADLINE_CHANGED',
+
+        'LABEL_ADDED'
+    ) NOT NULL,
+
+    message VARCHAR(500) NOT NULL,
+
+    reference_id BIGINT NULL,
+
+    created_at DATETIME NOT NULL,
+
+    CONSTRAINT fk_feed_activity
+        FOREIGN KEY(activity_id)
+        REFERENCES activity(id),
+
+    CONSTRAINT fk_feed_user
+        FOREIGN KEY(user_id)
+        REFERENCES user(id)
+);
+
 CREATE TABLE `task_labels` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `user_id` INT NOT NULL,
