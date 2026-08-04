@@ -229,9 +229,9 @@ CREATE TABLE `fitness_logs` (
 
 CREATE TABLE  activity_groups (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `name` VARCHAR(50) NOT NULL,
+  `name` VARCHAR(50),
   `created_by` INT NOT NULL,
-  `activity_id` VARCHAR(10),
+  `activity_id` VARCHAR(10) NOT NULL,
   `created_at` TIMESTAMP NULL,
   FOREIGN KEY (`created_by`) REFERENCES `user` (`id`),
   FOREIGN KEY (`activity_id`) REFERENCES `Activity` (`id`)
