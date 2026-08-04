@@ -299,6 +299,23 @@ CREATE TABLE join_requests (
         UNIQUE (group_id, requester_id)
 );
 
+CREATE TABLE comments (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    activity_id VARCHAR(10) NOT NULL,
+    user_id INT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL,
+    CONSTRAINT fk_comment_activity
+        FOREIGN KEY(activity_id)
+            REFERENCES Activity(id)
+            ON DELETE CASCADE,
+    CONSTRAINT fk_comment_user
+        FOREIGN KEY(user_id)
+            REFERENCES user(id)
+            ON DELETE CASCADE
+);
+
 CREATE TABLE `Trip` (
   `activity_id` VARCHAR(10) PRIMARY KEY,
   `destination` VARCHAR(100),
