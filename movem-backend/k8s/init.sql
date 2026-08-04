@@ -234,7 +234,8 @@ CREATE TABLE  activity_groups (
   `activity_id` VARCHAR(10) NOT NULL UNIQUE,
   `created_at` TIMESTAMP NULL,
   FOREIGN KEY (`created_by`) REFERENCES `user` (`id`),
-  FOREIGN KEY (`activity_id`) REFERENCES `Activity` (`id`)
+  FOREIGN KEY (`activity_id`) REFERENCES `Activity` (`id`),
+  join_token VARCHAR(100) UNIQUE
 );
 
 CREATE TABLE `group_members` (
