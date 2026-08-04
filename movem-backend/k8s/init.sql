@@ -227,7 +227,7 @@ CREATE TABLE `fitness_logs` (
   FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 );
 
-CREATE TABLE `groups` (
+CREATE TABLE  activity_groups (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(50) NOT NULL,
   `created_by` INT NOT NULL,
