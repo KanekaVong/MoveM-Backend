@@ -231,7 +231,7 @@ CREATE TABLE  activity_groups (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(50),
   `created_by` INT NOT NULL,
-  `activity_id` VARCHAR(10) NOT NULL,
+  `activity_id` VARCHAR(10) NOT NULL UNIQUE,
   `created_at` TIMESTAMP NULL,
   FOREIGN KEY (`created_by`) REFERENCES `user` (`id`),
   FOREIGN KEY (`activity_id`) REFERENCES `Activity` (`id`)
@@ -243,7 +243,7 @@ CREATE TABLE `group_members` (
   `role` ENUM('leader','member') DEFAULT 'member',
   `joined_at` TIMESTAMP NULL,
   PRIMARY KEY (`group_id`, `user_id`),
-  FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`),
+  FOREIGN KEY (`group_id`) REFERENCES `activity_groups` (`id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 );
 
@@ -261,7 +261,7 @@ CREATE TABLE group_invites (
     responded_at TIMESTAMP NULL,
     CONSTRAINT fk_group_invite_group
         FOREIGN KEY (group_id)
-        REFERENCES groups(id)
+        REFERENCES activity_groups(id)
         ON DELETE CASCADE,
     CONSTRAINT fk_group_invite_inviter
         FOREIGN KEY (inviter_id)
@@ -288,7 +288,7 @@ CREATE TABLE join_requests (
     responded_at TIMESTAMP NULL,
     CONSTRAINT fk_join_request_group
         FOREIGN KEY (group_id)
-        REFERENCES groups(id)
+        REFERENCES activity_groups(id)
         ON DELETE CASCADE,
     CONSTRAINT fk_join_request_user
         FOREIGN KEY (requester_id)
