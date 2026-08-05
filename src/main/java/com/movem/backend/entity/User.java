@@ -43,7 +43,7 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(name = "password_changed_at")
+    @Column(name = "password_changed_at", columnDefinition = "DATETIME(6)")
     private LocalDateTime passwordChangedAt;
 
     @Column(length = 50)

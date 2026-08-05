@@ -51,13 +51,19 @@ public class AuthController {
                 .orElseThrow(() -> new ResourceNotFoundException("No verification code found. Please register again."));
 
         if (verification.getUsedAt() != null) {
-            return ResponseEntity.status(400).body("This code has already been used.");
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "This code has already been used.");
+            return ResponseEntity.status(400).body(errorResponse);
         }
         if (verification.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.status(400).body("Code expired. Please request a new one.");
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Code expired. Please request a new one.");
+            return ResponseEntity.status(400).body(errorResponse);
         }
         if (!passwordEncoder.matches(request.getCode(), verification.getCodeHash())) {
-            return ResponseEntity.status(401).body("Invalid code.");
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Invalid code.");
+            return ResponseEntity.status(401).body(errorResponse);
         }
 
         verification.setUsedAt(LocalDateTime.now());
@@ -146,13 +152,17 @@ public class AuthController {
 
         // Check the new password rule FIRST — before touching the OTP at all
         if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
-            return ResponseEntity.status(400).body("New password must be different from your current password.");
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "New password must be different from your current password.");
+            return ResponseEntity.status(400).body(errorResponse);
         }
 
         // Only now verify (and consume) the OTP
         boolean isValid = otpService.verifyOtp(user.getUsername(), request.getOtp());
         if (!isValid) {
-            return ResponseEntity.status(401).body("Invalid or expired code.");
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Invalid or expired code.");
+            return ResponseEntity.status(401).body(errorResponse);
         }
 
         userService.updatePassword(request.getEmail(), request.getNewPassword());
