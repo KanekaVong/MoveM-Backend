@@ -7,6 +7,7 @@ public enum ActivityFeedEvent {
     TASK_COMPLETED,
     TASK_DELETED,
     TASK_RESTORED,
+    TASK_RECURRED,
 
     CHECKLIST_ADDED,
     CHECKLIST_UPDATED,

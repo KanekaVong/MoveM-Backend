@@ -1,9 +1,31 @@
 -- ==========================================
--- Mmove database schema — MySQL version
+-- MoveM database schema — MySQL version
 -- (converted from PostgreSQL: inline ENUMs,
 --  AUTO_INCREMENT instead of IDENTITY,
 --  native GEOMETRY type, no extension needed)
 -- ==========================================
+
+-- New Tables to create:
+CREATE TABLE user_devices (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    device_token VARCHAR(500) NOT NULL,
+    platform VARCHAR(20),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    last_seen_at DATETIME(6),
+    created_at DATETIME(6),
+    updated_at DATETIME(6),
+    CONSTRAINT uk_user_device_token
+        UNIQUE (device_token),
+    CONSTRAINT fk_user_device_user
+        FOREIGN KEY (user_id)
+            REFERENCES user(id)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE,
+
+    INDEX idx_user_device_user (user_id),
+    INDEX idx_user_device_token (device_token)
+);
 
 CREATE TABLE `user` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -33,6 +55,15 @@ CREATE TABLE `email_verifications` (
   `used_at` TIMESTAMP NULL,
   `created_at` TIMESTAMP NULL,
   FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
+);
+
+CREATE TABLE `user_stats` (
+                              `user_id` INT PRIMARY KEY,
+                              `lifetime_points` INT DEFAULT 0,
+                              `current_streak_days` INT DEFAULT 0,
+                              `global_rank_tier` ENUM('bronze','silver','gold','platinum') DEFAULT 'bronze',
+                              `updated_at` TIMESTAMP NULL,
+                              FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 );
 
 CREATE TABLE `friendships` (
@@ -78,15 +109,6 @@ CREATE TABLE friend (
     CONSTRAINT chk_friend_users
         CHECK (user_one_id <> user_two_id),
     UNIQUE KEY uk_friend_pair(user_one_id, user_two_id)
-);
-
-CREATE TABLE `user_stats` (
-  `user_id` INT PRIMARY KEY,
-  `lifetime_points` INT DEFAULT 0,
-  `current_streak_days` INT DEFAULT 0,
-  `global_rank_tier` ENUM('bronze','silver','gold','platinum') DEFAULT 'bronze',
-  `updated_at` TIMESTAMP NULL,
-  FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 );
 
 CREATE TABLE `achievements` (
@@ -167,19 +189,14 @@ CREATE TABLE activity_feed (
     activity_id VARCHAR(10) NOT NULL,
     user_id INT NOT NULL,
     event_type ENUM(
-    -- Task
-    'TASK_CREATED','TASK_UPDATED', 'TASK_COMPLETED', 'TASK_DELETED', 'TASK_RESTORED',
+    'TASK_CREATED','TASK_UPDATED', 'TASK_COMPLETED', 'TASK_DELETED', 'TASK_RESTORED', 'TASK_RECURRED',
 
-    -- Checklist
     'CHECKLIST_ADDED', 'CHECKLIST_UPDATED', 'CHECKLIST_COMPLETED', 'CHECKLIST_REMOVED',
 
-    -- Comments
     'COMMENT_CREATED', 'COMMENT_UPDATED', 'COMMENT_DELETED',
 
-    -- Friends
     'FRIEND_REQUEST_SENT', 'FRIEND_REQUEST_ACCEPTED', 'FRIEND_REQUEST_REJECTED', 'FRIEND_REMOVED',
 
-    -- Groups
     'GROUP_CREATED', 'GROUP_UPDATED', 'GROUP_DELETED',
 
     'MEMBER_INVITED', 'MEMBER_JOINED', 'MEMBER_LEFT', 'MEMBER_REMOVED',
@@ -209,6 +226,7 @@ CREATE TABLE activity_feed (
         FOREIGN KEY (user_id)
         REFERENCES user(id)
 );
+
 CREATE TABLE audit_logs (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     activity_id VARCHAR(255) NOT NULL,
@@ -245,6 +263,9 @@ CREATE TABLE `Task` (
   `activity_id` VARCHAR(10) PRIMARY KEY,
   `priority` ENUM('urgent','high','medium','low') DEFAULT 'medium',
   `is_recurring` BOOLEAN DEFAULT false,
+  `recurring_type` enum('DAILY','WEEKLY','MONTHLY','YEARLY') DEFAULT NULL,
+  `recurring_interval` int DEFAULT '1',
+  `recurring_end_date` date DEFAULT NULL,
   FOREIGN KEY (`activity_id`) REFERENCES `Activity` (`id`)
 );
 
@@ -267,24 +288,17 @@ CREATE TABLE `task_reminders` (
   FOREIGN KEY (`task_activity_id`) REFERENCES `Task` (`activity_id`)
 );
 
-CREATE TABLE `fitness_profile` (
-  `user_id` INT PRIMARY KEY,
-  `height` DECIMAL(5,2),
-  `weight` DECIMAL(5,2),
-  `bmi` DECIMAL(4,2),
-  `goal_type` ENUM('weight_loss','muscle_gain','endurance','general_fitness'),
-  `target_weight` DECIMAL(5,2),
-  `target_timeline` DATE,
-  `workout_type` VARCHAR(100),
-  `updated_at` TIMESTAMP NULL,
-  FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
-);
+CREATE TABLE fitness_profile (
+    user_id INT PRIMARY KEY,
+    height DECIMAL(5,2),
+    weight DECIMAL(5,2),
+    bmi DECIMAL(4,2),
+    updated_at TIMESTAMP NULL,
 
-CREATE TABLE `Fitness` (
-  `activity_id` VARCHAR(10) PRIMARY KEY,
-  `step` INT,
-  `distance` DECIMAL(10,2),
-  FOREIGN KEY (`activity_id`) REFERENCES `Activity` (`id`)
+    CONSTRAINT fk_fitness_profile_user
+        FOREIGN KEY (user_id)
+            REFERENCES user(id)
+            ON DELETE CASCADE
 );
 
 CREATE TABLE `fitness_logs` (
@@ -298,6 +312,261 @@ CREATE TABLE `fitness_logs` (
   `log_date` TIMESTAMP NULL,
   FOREIGN KEY (`fitness_activity_id`) REFERENCES `Fitness` (`activity_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
+);
+
+CREATE TABLE fitness_goal (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    goal_type VARCHAR(50) NOT NULL,
+    target_weight DECIMAL(5,2),
+    target_timeline DATE,
+    workout_level VARCHAR(30),
+    estimated_weight_change DECIMAL(5,2),
+    estimated_daily_deficit DECIMAL(8,2),
+    status VARCHAR(30),
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+
+    CONSTRAINT fk_fitness_goal_user
+        FOREIGN KEY (user_id)
+            REFERENCES user(id)
+            ON DELETE CASCADE
+);
+
+CREATE TABLE solo_challenge_catalog (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    workout_type VARCHAR(50) NOT NULL,
+    workout_level VARCHAR(50) NOT NULL,
+    target_value DECIMAL(10,2) NOT NULL,
+    target_unit VARCHAR(30) NOT NULL,
+    description TEXT,
+    created_at DATETIME NULL,
+    updated_at DATETIME NULL,
+    INDEX idx_solo_catalog_type (workout_type),
+    INDEX idx_solo_catalog_level (workout_level),
+    INDEX idx_solo_catalog_unit (target_unit)
+);
+
+CREATE TABLE group_challenge_catalog (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    workout_type VARCHAR(50) NOT NULL,
+    target_value DECIMAL(10,2) NOT NULL,
+    target_unit VARCHAR(30) NOT NULL,
+    description TEXT,
+    created_at DATETIME NULL,
+    updated_at DATETIME NULL,
+    INDEX idx_group_catalog_type (workout_type),
+    INDEX idx_group_catalog_unit (target_unit)
+);
+
+CREATE TABLE group_fitness_challenge (
+    id INT AUTO_INCREMENT NOT NULL,
+    activity_id VARCHAR(10) NOT NULL,
+    club_id INT NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    workout_type VARCHAR(50) NOT NULL,
+    target_value DECIMAL(10,2) NOT NULL,
+    target_unit VARCHAR(30) NOT NULL,
+    description TEXT,
+    challenge_source VARCHAR(30) NOT NULL,
+    created_by INT NOT NULL,
+    start_at DATETIME NOT NULL,
+    end_at DATETIME NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'ACTIVE',
+    created_at DATETIME NULL,
+    updated_at DATETIME NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_group_challenge_activity (activity_id),
+    INDEX idx_group_challenge_group (club_id),
+    INDEX idx_group_challenge_creator (created_by),
+    INDEX idx_group_challenge_source (challenge_source),
+    INDEX idx_group_challenge_status (status),
+    CONSTRAINT fk_group_challenge_activity
+        FOREIGN KEY (activity_id)
+            REFERENCES activity(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+    CONSTRAINT fk_group_challenge_group
+        FOREIGN KEY (club_id)
+            REFERENCES fitness_clubs(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+    CONSTRAINT fk_group_challenge_creator
+        FOREIGN KEY (created_by)
+            REFERENCES user(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
+);
+
+CREATE TABLE fitness_challenge_participant (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    challenge_id INT NOT NULL,
+    user_id INT NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    joined_at DATETIME NULL,
+    completed_at DATETIME NULL,
+    CONSTRAINT uk_challenge_participant
+        UNIQUE (challenge_id, user_id),
+    INDEX idx_participant_challenge (challenge_id),
+    INDEX idx_participant_user (user_id),
+    INDEX idx_participant_status (status),
+    CONSTRAINT fk_participant_challenge
+        FOREIGN KEY (challenge_id)
+            REFERENCES group_fitness_challenge(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+    CONSTRAINT fk_participant_user
+        FOREIGN KEY (user_id)
+            REFERENCES user(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
+);
+
+CREATE TABLE fitness_workout_session (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    activity_id VARCHAR(10) NOT NULL,
+    user_id INT NOT NULL,
+    solo_challenge_id INT NULL,
+    group_challenge_participant_id INT NULL,
+    workout_type VARCHAR(50) NOT NULL,
+    status VARCHAR(30) NOT NULL,
+    started_at DATETIME NULL,
+    paused_at DATETIME(6) NULL,
+    total_paused_seconds INT NOT NULL DEFAULT 0,
+    finished_at DATETIME NULL,
+    duration_seconds INT NOT NULL DEFAULT 0,
+    steps INT NOT NULL DEFAULT 0,
+    distance DECIMAL(10,2) NOT NULL DEFAULT 0,
+    calories_burned DECIMAL(10,2) NOT NULL DEFAULT 0,
+    average_pace DECIMAL(10,2) NULL,
+    gps_route LONGTEXT NULL,
+    created_at DATETIME NULL,
+    updated_at DATETIME NULL,
+    deleted_at DATETIME NULL
+    UNIQUE KEY uk_fitness_session_activity (activity_id),
+    INDEX idx_fitness_session_user (user_id),
+    INDEX idx_fitness_session_solo (solo_challenge_id),
+    INDEX idx_fitness_session_participant (
+        group_challenge_participant_id
+        ),
+    INDEX idx_fitness_session_status (status),
+    CONSTRAINT fk_fitness_session_activity
+        FOREIGN KEY (activity_id)
+            REFERENCES activity(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+    CONSTRAINT fk_fitness_session_user
+        FOREIGN KEY (user_id)
+            REFERENCES user(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+    CONSTRAINT fk_fitness_session_solo
+        FOREIGN KEY (solo_challenge_id)
+            REFERENCES solo_challenge_catalog(id)
+            ON DELETE SET NULL
+            ON UPDATE CASCADE,
+    CONSTRAINT fk_fitness_session_participant
+        FOREIGN KEY (group_challenge_participant_id)
+            REFERENCES fitness_challenge_participant(id)
+            ON DELETE SET NULL
+            ON UPDATE CASCADE
+);
+
+CREATE TABLE fitness_clubs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    description TEXT,
+    created_by INT NOT NULL,
+    privacy VARCHAR(20) NOT NULL,
+    join_token VARCHAR(100) UNIQUE,
+    created_at DATETIME NULL,
+    updated_at DATETIME NULL,
+    INDEX idx_fitness_club_creator (created_by),
+    INDEX idx_fitness_club_privacy (privacy),
+    INDEX idx_fitness_club_token (join_token),
+    CONSTRAINT fk_fitness_club_creator
+        FOREIGN KEY (created_by)
+            REFERENCES user(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
+);
+
+CREATE TABLE fitness_club_invites (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    club_id INT NOT NULL,
+    inviter_id INT NOT NULL,
+    invitee_id INT NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    invited_at DATETIME NULL,
+    responded_at DATETIME NULL,
+
+    INDEX idx_fitness_club_invite_club (club_id),
+    INDEX idx_fitness_club_invite_invitee (invitee_id),
+    INDEX idx_fitness_club_invite_inviter (inviter_id),
+    INDEX idx_fitness_club_invite_status (status),
+
+    CONSTRAINT fk_fitness_club_invite_club
+        FOREIGN KEY (club_id)
+            REFERENCES fitness_clubs(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+    CONSTRAINT fk_fitness_club_invite_inviter
+        FOREIGN KEY (inviter_id)
+            REFERENCES user(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+    CONSTRAINT fk_fitness_club_invite_invitee
+        FOREIGN KEY (invitee_id)
+            REFERENCES user(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
+);
+
+CREATE TABLE fitness_club_members (
+    club_id INT NOT NULL,
+    user_id INT NOT NULL,
+    role VARCHAR(20) NOT NULL,
+    joined_at DATETIME NULL,
+    PRIMARY KEY (club_id, user_id),
+    INDEX idx_fitness_club_member_club (club_id),
+    INDEX idx_fitness_club_member_user (user_id),
+    INDEX idx_fitness_club_member_role (role),
+    CONSTRAINT fk_fitness_club_member_club
+        FOREIGN KEY (club_id)
+            REFERENCES fitness_clubs(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+    CONSTRAINT fk_fitness_club_member_user
+        FOREIGN KEY (user_id)
+            REFERENCES user(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
+);
+
+CREATE TABLE fitness_club_join_requests (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    club_id INT NOT NULL,
+    requester_id INT NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    requested_at DATETIME NOT NULL,
+    responded_at DATETIME NULL,
+    INDEX idx_fitness_club_request_club (club_id),
+    INDEX idx_fitness_club_request_user (requester_id),
+    INDEX idx_fitness_club_request_status (status),
+
+    CONSTRAINT fk_fitness_club_request_club
+        FOREIGN KEY (club_id)
+            REFERENCES fitness_clubs(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+
+    CONSTRAINT fk_fitness_club_request_user
+        FOREIGN KEY (requester_id)
+            REFERENCES user(id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
 );
 
 CREATE TABLE `groups` (
@@ -362,6 +631,7 @@ CREATE TABLE comments (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     activity_id VARCHAR(10) NOT NULL,
     user_id INT NOT NULL,
+    sender_id INT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL,
@@ -374,6 +644,32 @@ CREATE TABLE comments (
             REFERENCES user(id)
             ON DELETE CASCADE
 );
+
+CREATE TABLE Notification (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    message TEXT NOT NULL,
+    notification_type VARCHAR(50) NOT NULL,
+    reference_id VARCHAR(20),
+    reference_type VARCHAR(30),
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at DATETIME NULL,
+    CONSTRAINT fk_notification_user
+        FOREIGN KEY (user_id)
+            REFERENCES User(id)
+            ON DELETE CASCADE,
+
+    CONSTRAINT fk_notification_sender
+        FOREIGN KEY (sender_id)
+            REFERENCES User(id)
+            ON DELETE SET NULL
+);
+CREATE INDEX idx_notification_user ON Notification(user_id);
+CREATE INDEX idx_notification_read ON Notification(user_id, is_read);
+CREATE INDEX idx_notification_created ON Notification(created_at DESC);
+CREATE INDEX idx_notification_reference ON Notification(reference_id);
 
 CREATE TABLE `Trip` (
   `activity_id` VARCHAR(10) PRIMARY KEY,
