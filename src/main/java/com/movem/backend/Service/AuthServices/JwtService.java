@@ -1,4 +1,4 @@
-package com.movem.backend.service.AuthServices;
+package com.movem.backend.Service.AuthServices;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

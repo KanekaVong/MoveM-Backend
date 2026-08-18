@@ -33,7 +33,7 @@ public class AuthController {
 
     @Autowired private UserService userService;
     @Autowired private AuthenticationManager authenticationManager;
-    @Autowired private com.movem.backend.service.AuthServices.JwtService jwtService;
+    @Autowired private JwtService jwtService;
     @Autowired private OtpService otpService;
     @Autowired private EmailService emailService;
     @Autowired private EmailVerificationRepository emailVerificationRepository;
@@ -79,7 +79,7 @@ public class AuthController {
         userService.updateUser(user);
 
         String accessToken = jwtService.generateToken(user.getUsername(), user.getPasswordChangedAt());
-        com.movem.backend.service.AuthServices.JwtService.TrustTokenResult trustResult =
+        com.movem.backend.Service.AuthServices.JwtService.TrustTokenResult trustResult =
                 jwtService.generateTrustToken(
                         user.getUsername(),
                         user.getPasswordChangedAt(),
@@ -159,7 +159,7 @@ public class AuthController {
                         && trustedDevice.get().getUser().getId().equals(user.getId())) {
 
                     String accessToken = jwtService.generateToken(username, user.getPasswordChangedAt());
-                    com.movem.backend.service.AuthServices.JwtService.TrustTokenResult trustResult =
+                    com.movem.backend.Service.AuthServices.JwtService.TrustTokenResult trustResult =
                             jwtService.generateTrustToken(
                                     username,
                                     user.getPasswordChangedAt(),
@@ -210,7 +210,7 @@ public class AuthController {
         }
 
         String accessToken = jwtService.generateToken(user.getUsername(), user.getPasswordChangedAt());
-        com.movem.backend.service.AuthServices.JwtService.TrustTokenResult trustResult =
+        com.movem.backend.Service.AuthServices.JwtService.TrustTokenResult trustResult =
                 jwtService.generateTrustToken(
                         user.getUsername(),
                         user.getPasswordChangedAt(),
@@ -301,7 +301,7 @@ public class AuthController {
 
         User updatedUser = userService.getUserByEmail(request.getEmail());
         String accessToken = jwtService.generateToken(updatedUser.getUsername(), updatedUser.getPasswordChangedAt());
-        com.movem.backend.service.AuthServices.JwtService.TrustTokenResult trustResult =
+        com.movem.backend.Service.AuthServices.JwtService.TrustTokenResult trustResult =
                 jwtService.generateTrustToken(
                         updatedUser.getUsername(),
                         updatedUser.getPasswordChangedAt(),
@@ -349,4 +349,3 @@ public class AuthController {
         );
     }
 }
-
