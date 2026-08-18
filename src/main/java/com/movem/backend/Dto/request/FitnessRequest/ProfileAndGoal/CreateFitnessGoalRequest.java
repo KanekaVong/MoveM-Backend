@@ -1,6 +1,7 @@
 package com.movem.backend.Dto.request.FitnessRequest.ProfileAndGoal;
 
 
+import com.movem.backend.model.enums.Fitness.FitnessGoalMetric;
 import com.movem.backend.model.enums.Fitness.GoalType;
 import com.movem.backend.model.enums.Fitness.WorkoutLevel;
 import jakarta.validation.constraints.*;

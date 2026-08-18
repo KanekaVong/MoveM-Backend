@@ -6,10 +6,11 @@ import com.movem.backend.Dto.response.CommentResponse.CommentResponse;
 import com.movem.backend.Entity.Activity.Activity;
 import com.movem.backend.Entity.Shared.Comment;
 import com.movem.backend.Entity.Auth.User;
+import com.movem.backend.Event.FeatureEvent;
 import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Exception.UnauthorizedActionException;
 import com.movem.backend.Mapper.CommentMapper.CommentMapper;
-import com.movem.backend.Service.NotificationServices.NotificationService;
+import com.movem.backend.Service.SharedServices.Event.FeatureEventTrackingService;
 import com.movem.backend.model.enums.Activity.ActivityFeedEvent;
 import com.movem.backend.model.enums.Audit.AuditCategory;
 import com.movem.backend.model.enums.Audit.AuditSeverity;
@@ -20,6 +21,7 @@ import com.movem.backend.Service.SharedServices.ActivityPermissionService;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.CommentServices.CommentService;
 import com.movem.backend.Service.SharedServices.AuditLogService;
+import com.movem.backend.model.enums.Event.FeatureEventAction;
 import com.movem.backend.model.enums.Notification.NotificationType;
 import com.movem.backend.model.enums.Notification.ReferenceType;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -36,19 +40,12 @@ public class CommentServiceImpl
         implements CommentService {
 
     private final CommentRepository commentRepository;
-
     private final ActivityRepository activityRepository;
-
     private final CurrentUserService currentUserService;
-
     private final ActivityPermissionService activityPermissionService;
-
     private final ActivityFeedService activityFeedService;
-
-    private final NotificationService notificationService;
-
+    private final FeatureEventTrackingService featureEventTrackingService;
     private final AuditLogService auditLogService;
-
     private final CommentMapper commentMapper;
 
     @Override
@@ -90,39 +87,38 @@ public class CommentServiceImpl
         Comment saved =
                 commentRepository.save(comment);
 
-        activityFeedService.createFeed(
-                activity,
-                currentUser,
-                ActivityFeedEvent.COMMENT_CREATED,
-                "Commented.",
-                saved.getId()
-        );
+        featureEventTrackingService.handle(
+                FeatureEvent.builder()
 
-        auditLogService.createLog(
-                activity,
-                currentUser,
-                ActivityFeedEvent.COMMENT_CREATED,
-                AuditCategory.COMMENT,
-                AuditSeverity.INFO,
-                "comment",
-                "Created comment.",
-                null,
-                saved.getContent()
-        );
+                        .activity(activity)
+                        .actor(currentUser)
+                        .feedEvent(ActivityFeedEvent.COMMENT_CREATED)
+                        .auditCategory(AuditCategory.COMMENT)
+                        .auditSeverity(AuditSeverity.INFO)
+                        .auditEntity("comment")
+                        .auditMessage("Created comment.")
+                        .newValue(saved.getContent())
+                        .notificationReceiver(
+                                activity.getUser()
+                                        .getId()
+                                        .equals(currentUser.getId())
+                                        ? null: activity.getUser())
+                        .notificationType(NotificationType.COMMENT_CREATED)
+                        .referenceType(ReferenceType.COMMENT)
+                        .referenceId(String.valueOf(saved.getId())
+                        )
+                        .notificationTitle("New Comment")
 
-        if (!activity.getUser().getId().equals(currentUser.getId())) {
+                        .notificationMessage(
+                                currentUser.getUsername()
+                                        + " commented on your activity."
+                        )
 
-            notificationService.createNotification(
-                    activity.getUser(),
-                    currentUser,
-                    NotificationType.COMMENT_CREATED,
-                    ReferenceType.COMMENT,
-                    String.valueOf(saved.getId()),
-                    "New Comment",
-                    currentUser.getUsername()
-                            + " commented on your activity."
-            );
-        }
+                        .actions(Set.of(
+                                FeatureEventAction.ACTIVITY_FEED,
+                                FeatureEventAction.AUDIT_LOG,
+                                FeatureEventAction.NOTIFICATION))
+                        .build());
 
         return commentMapper.toResponse(saved);
 
@@ -193,24 +189,23 @@ public class CommentServiceImpl
 
         Activity activity = comment.getActivity();
 
-        auditLogService.createLog(
-                activity,
-                currentUser,
-                ActivityFeedEvent.COMMENT_UPDATED,
-                AuditCategory.COMMENT,
-                AuditSeverity.INFO,
-                "content",
-                "Updated comment.",
-                oldContent,
-                saved.getContent()
-        );
-
-        activityFeedService.createFeed(
-                activity,
-                currentUser,
-                ActivityFeedEvent.COMMENT_UPDATED,
-                "Updated a comment.",
-                saved.getId()
+        featureEventTrackingService.handle(
+                FeatureEvent.builder()
+                        .activity(activity)
+                        .actor(currentUser)
+                        .feedEvent(ActivityFeedEvent.COMMENT_UPDATED)
+                        .auditCategory(AuditCategory.COMMENT)
+                        .auditSeverity(AuditSeverity.INFO)
+                        .auditEntity("content")
+                        .auditMessage("Updated Comment.")
+                        .referenceId(activity.getId())
+                        .actions(
+                                Set.of(
+                                        FeatureEventAction.ACTIVITY_FEED,
+                                        FeatureEventAction.AUDIT_LOG
+                                )
+                        )
+                        .build()
         );
 
         return commentMapper.toResponse(saved);
@@ -251,24 +246,23 @@ public class CommentServiceImpl
         String oldContent = comment.getContent();
 
 
-        auditLogService.createLog(
-                activity,
-                currentUser,
-                ActivityFeedEvent.COMMENT_DELETED,
-                AuditCategory.COMMENT,
-                AuditSeverity.WARNING,
-                "comment",
-                "Deleted comment.",
-                oldContent,
-                null
-        );
-
-        activityFeedService.createFeed(
-                activity,
-                currentUser,
-                ActivityFeedEvent.COMMENT_DELETED,
-                "Deleted a comment.",
-                comment.getId()
+        featureEventTrackingService.handle(
+                FeatureEvent.builder()
+                        .activity(activity)
+                        .actor(currentUser)
+                        .feedEvent(ActivityFeedEvent.COMMENT_DELETED)
+                        .auditCategory(AuditCategory.COMMENT)
+                        .auditSeverity(AuditSeverity.INFO)
+                        .auditEntity("content")
+                        .auditMessage("Deleted comment.")
+                        .referenceId(activity.getId())
+                        .actions(
+                                Set.of(
+                                        FeatureEventAction.ACTIVITY_FEED,
+                                        FeatureEventAction.AUDIT_LOG
+                                )
+                        )
+                        .build()
         );
 
         commentRepository.delete(comment);

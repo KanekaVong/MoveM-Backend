@@ -1,6 +1,8 @@
 package com.movem.backend.Service.Implement.DashboardServices;
 
-import com.movem.backend.Dto.response.Dashboard.DashboardResponse;
+import com.movem.backend.Dto.response.DashboardResponse.DashboardResponse;
+import com.movem.backend.Dto.response.DashboardResponse.DashboardTaskResponse;
+import com.movem.backend.Service.StatisticsServices.FitnessStatisticsService;
 import com.movem.backend.Specification.TaskSpecification;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -22,6 +24,7 @@ public class DashboardServiceImpl
         implements DashboardService {
 
     private final TaskStatisticsService taskStatisticsService;
+    private final FitnessStatisticsService fitnessStatisticsService;
     private final CurrentUserService currentUserService;
     private final TaskRepository taskRepository;
 
@@ -106,6 +109,7 @@ public class DashboardServiceImpl
 
         return DashboardResponse.builder()
                 .statistics(taskStatisticsService.getMyTaskStatistics())
+                .fitnessStatistics(fitnessStatisticsService.getMyFitnessStatistics())
                 .dueToday(dueToday)
                 .overdueTasks(overdueTasks)
                 .upcomingTasks(upcomingTasks)

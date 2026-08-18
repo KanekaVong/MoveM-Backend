@@ -50,4 +50,13 @@ public interface FitnessWorkoutSessionRepository
             User user,
             ActivityStatus status
     );
+
+    List<FitnessWorkoutSession>
+    findByUserAndStatusAndActivity_StatusNotAndFinishedAtBetweenOrderByFinishedAtDesc(
+            User user,
+            FitnessWorkoutStatus status,
+            ActivityStatus activityStatus,
+            java.time.LocalDateTime start,
+            java.time.LocalDateTime end
+    );
 }

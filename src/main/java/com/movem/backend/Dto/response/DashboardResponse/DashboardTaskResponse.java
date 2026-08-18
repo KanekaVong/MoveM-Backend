@@ -1,4 +1,4 @@
-package com.movem.backend.Service.Implement.DashboardServices;
+package com.movem.backend.Dto.response.DashboardResponse;
 
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 import com.movem.backend.model.enums.Priority;

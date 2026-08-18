@@ -6,6 +6,7 @@ import com.movem.backend.Dto.request.FitnessRequest.Workout.WorkoutRoutePointsRe
 import com.movem.backend.Dto.response.FitnessResponse.Workout.FitnessWorkoutSessionResponse;
 import com.movem.backend.Dto.response.FitnessResponse.Workout.WorkoutDetailsResponse;
 import com.movem.backend.Dto.response.FitnessResponse.Workout.WorkoutHistoryResponse;
+import com.movem.backend.Dto.response.FitnessResponse.Workout.WorkoutRoutePointResponse;
 
 import java.util.List;
 
@@ -46,8 +47,16 @@ public interface FitnessWorkoutSessionService {
 
     void deleteWorkout(Integer sessionId);
 
+    //GPS ROUTE
+
     void addRoutePoints(
             Integer sessionId,
             WorkoutRoutePointsRequest request
     );
+
+    List<WorkoutRoutePointResponse> getWorkoutRoute(
+            Integer sessionId
+    );
+
+
 }

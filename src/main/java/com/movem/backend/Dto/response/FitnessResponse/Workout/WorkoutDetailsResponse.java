@@ -12,59 +12,30 @@ import java.time.LocalDateTime;
 @Builder
 public class WorkoutDetailsResponse {
 
-    private Integer id;
+    private Integer sessionId;
 
     private WorkoutType workoutType;
 
     private FitnessWorkoutStatus status;
 
-    /*
-     * Basic timing
-     */
     private LocalDateTime startedAt;
     private LocalDateTime finishedAt;
 
     private Integer durationSeconds;
     private Integer totalPausedSeconds;
 
-    /*
-     * Workout metrics
-     */
     private Integer steps;
     private BigDecimal distance;
     private BigDecimal caloriesBurned;
-    private BigDecimal averagePace;
-
-    /*
-     * Calculated performance
-     */
+    private String averagePace;
     private BigDecimal averageSpeed;
     private BigDecimal caloriesPerMinute;
 
-    /*
-     * Challenge information
-     */
-    private Integer soloChallengeId;
-    private Integer groupChallengeId;
-    private Integer groupParticipantId;
+    private WorkoutChallengeDetailsResponse challenge;
 
-    private String challengeName;
-
-    private BigDecimal challengeTargetValue;
-    private String challengeTargetUnit;
-
-    /*
-     * User cumulative statistics
-     */
     private Integer totalCompletedWorkouts;
     private BigDecimal totalDistance;
     private BigDecimal totalCaloriesBurned;
     private Long totalWorkoutSeconds;
 
-    /*
-     * Previous workout comparison
-     */
-    private Integer previousWorkoutId;
-    private BigDecimal distanceChange;
-    private BigDecimal calorieChange;
 }

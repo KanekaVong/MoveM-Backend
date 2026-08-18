@@ -1,6 +1,7 @@
 package com.movem.backend.Entity.Fitness.ProfileAndGoal;
 
 import com.movem.backend.Entity.Auth.User;
+import com.movem.backend.model.enums.Fitness.FitnessGoalMetric;
 import com.movem.backend.model.enums.Fitness.GoalType;
 import com.movem.backend.model.enums.Fitness.WorkoutLevel;
 import jakarta.persistence.*;

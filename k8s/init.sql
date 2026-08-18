@@ -426,47 +426,60 @@ CREATE TABLE fitness_challenge_participant (
 
 CREATE TABLE fitness_workout_session (
     id INT AUTO_INCREMENT PRIMARY KEY,
+
     activity_id VARCHAR(10) NOT NULL,
     user_id INT NOT NULL,
+
     solo_challenge_id INT NULL,
     group_challenge_participant_id INT NULL,
+
     workout_type VARCHAR(50) NOT NULL,
     status VARCHAR(30) NOT NULL,
-    started_at DATETIME NULL,
+
+    started_at DATETIME(6) NULL,
     paused_at DATETIME(6) NULL,
+
     total_paused_seconds INT NOT NULL DEFAULT 0,
-    finished_at DATETIME NULL,
+    finished_at DATETIME(6) NULL,
+
     duration_seconds INT NOT NULL DEFAULT 0,
     steps INT NOT NULL DEFAULT 0,
+
     distance DECIMAL(10,2) NOT NULL DEFAULT 0,
     calories_burned DECIMAL(10,2) NOT NULL DEFAULT 0,
+
     average_pace DECIMAL(10,2) NULL,
-    gps_route LONGTEXT NULL,
-    created_at DATETIME NULL,
-    updated_at DATETIME NULL,
-    deleted_at DATETIME NULL
+    average_speed DECIMAL(10,2) NULL,
+
+    created_at DATETIME(6) NULL,
+    updated_at DATETIME(6) NULL,
+
     UNIQUE KEY uk_fitness_session_activity (activity_id),
+
     INDEX idx_fitness_session_user (user_id),
     INDEX idx_fitness_session_solo (solo_challenge_id),
     INDEX idx_fitness_session_participant (
         group_challenge_participant_id
-        ),
+    ),
     INDEX idx_fitness_session_status (status),
     CONSTRAINT fk_fitness_session_activity
         FOREIGN KEY (activity_id)
             REFERENCES activity(id)
             ON DELETE CASCADE
             ON UPDATE CASCADE,
+
     CONSTRAINT fk_fitness_session_user
         FOREIGN KEY (user_id)
             REFERENCES user(id)
             ON DELETE CASCADE
             ON UPDATE CASCADE,
+
     CONSTRAINT fk_fitness_session_solo
         FOREIGN KEY (solo_challenge_id)
             REFERENCES solo_challenge_catalog(id)
             ON DELETE SET NULL
             ON UPDATE CASCADE,
+
     CONSTRAINT fk_fitness_session_participant
         FOREIGN KEY (group_challenge_participant_id)
             REFERENCES fitness_challenge_participant(id)

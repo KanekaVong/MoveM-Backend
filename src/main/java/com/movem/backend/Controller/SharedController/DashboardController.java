@@ -1,6 +1,6 @@
 package com.movem.backend.Controller.SharedController;
 
-import com.movem.backend.Dto.response.Dashboard.DashboardResponse;
+import com.movem.backend.Dto.response.DashboardResponse.DashboardResponse;
 import com.movem.backend.Service.DashboardServices.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

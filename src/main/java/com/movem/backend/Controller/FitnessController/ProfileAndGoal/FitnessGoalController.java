@@ -72,4 +72,5 @@ public class FitnessGoalController {
 
         return ResponseEntity.noContent().build();
     }
+
 }

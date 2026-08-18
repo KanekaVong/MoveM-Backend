@@ -6,6 +6,7 @@ import com.movem.backend.Dto.request.FitnessRequest.Workout.WorkoutRoutePointsRe
 import com.movem.backend.Dto.response.FitnessResponse.Workout.FitnessWorkoutSessionResponse;
 import com.movem.backend.Dto.response.FitnessResponse.Workout.WorkoutDetailsResponse;
 import com.movem.backend.Dto.response.FitnessResponse.Workout.WorkoutHistoryResponse;
+import com.movem.backend.Dto.response.FitnessResponse.Workout.WorkoutRoutePointResponse;
 import com.movem.backend.Service.FitnessServices.Workout.FitnessWorkoutSessionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -124,6 +125,8 @@ public class FitnessWorkoutSessionController {
         );
     }
 
+    //GPS ROUTE
+
     @PostMapping("/{sessionId}/route-points")
     public ResponseEntity<Void> addRoutePoints(
             @PathVariable Integer sessionId,
@@ -136,6 +139,19 @@ public class FitnessWorkoutSessionController {
         );
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{sessionId}/route")
+    public ResponseEntity<List<WorkoutRoutePointResponse>>
+    getWorkoutRoute(
+            @PathVariable Integer sessionId
+    ) {
+
+        return ResponseEntity.ok(
+                workoutSessionService.getWorkoutRoute(
+                        sessionId
+                )
+        );
     }
 
 }

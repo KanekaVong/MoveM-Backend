@@ -36,5 +36,4 @@ public class FitnessWorkoutSessionResponse {
 
     private BigDecimal caloriesBurned;
 
-    private BigDecimal averagePace;
-}
+    private String averagePace;}

@@ -2,6 +2,9 @@ package com.movem.backend.Service.FitnessServices.ProfileAndGoal;
 
 import com.movem.backend.Dto.request.FitnessRequest.ProfileAndGoal.CreateFitnessGoalRequest;
 import com.movem.backend.Dto.response.FitnessResponse.ProfileAndGoal.FitnessGoalResponse;
+import com.movem.backend.Dto.response.FitnessResponse.ProfileAndGoal.FitnessMetricGoalResponse;
+import com.movem.backend.model.enums.Fitness.FitnessGoalMetric;
+import com.movem.backend.model.enums.Fitness.GoalType;
 
 import java.util.List;
 

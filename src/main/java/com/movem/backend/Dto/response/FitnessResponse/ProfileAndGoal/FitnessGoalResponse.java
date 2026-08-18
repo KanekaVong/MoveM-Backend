@@ -1,5 +1,6 @@
 package com.movem.backend.Dto.response.FitnessResponse.ProfileAndGoal;
 
+import com.movem.backend.model.enums.Fitness.FitnessGoalMetric;
 import com.movem.backend.model.enums.Fitness.GoalType;
 import com.movem.backend.model.enums.Fitness.WorkoutLevel;
 import lombok.Builder;
@@ -18,6 +19,8 @@ public class FitnessGoalResponse {
     private Integer userId;
 
     private GoalType goalType;
+
+    private FitnessGoalMetric metricType;
 
     private BigDecimal targetWeight;
 

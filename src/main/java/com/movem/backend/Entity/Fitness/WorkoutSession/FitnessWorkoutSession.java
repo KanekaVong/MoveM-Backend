@@ -127,6 +127,13 @@ public class FitnessWorkoutSession {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(
+            name = "average_speed",
+            precision = 10,
+            scale = 2
+    )
+    private BigDecimal averageSpeed;
+
     @OneToMany(
             mappedBy = "workoutSession",
             cascade = CascadeType.ALL,

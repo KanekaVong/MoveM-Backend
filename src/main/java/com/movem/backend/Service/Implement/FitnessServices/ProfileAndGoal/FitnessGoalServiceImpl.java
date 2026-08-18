@@ -11,6 +11,7 @@ import com.movem.backend.Repository.FitnessRepository.ProfileAndGoal.FitnessGoal
 import com.movem.backend.Repository.FitnessRepository.ProfileAndGoal.FitnessProfileRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.FitnessServices.ProfileAndGoal.FitnessGoalService;
+import com.movem.backend.Service.StatisticsServices.FitnessStatisticsService;
 import com.movem.backend.model.enums.Fitness.GoalType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,11 +31,9 @@ public class FitnessGoalServiceImpl
         implements FitnessGoalService {
 
     private final FitnessGoalRepository fitnessGoalRepository;
-
     private final FitnessProfileRepository fitnessProfileRepository;
-
     private final CurrentUserService currentUserService;
-
+    private final FitnessStatisticsService fitnessStatisticsService;
     private final FitnessGoalMapper fitnessGoalMapper;
 
 
@@ -146,7 +145,6 @@ public class FitnessGoalServiceImpl
         return fitnessGoalMapper.toResponse(saved);
     }
 
-
     private BigDecimal calculateDailyDeficit(
             GoalType goalType,
             BigDecimal weightDifference,
@@ -178,7 +176,6 @@ public class FitnessGoalServiceImpl
         );
     }
 
-
     @Override
     @Transactional(readOnly = true)
     public FitnessGoalResponse getGoal(
@@ -202,7 +199,6 @@ public class FitnessGoalServiceImpl
         return fitnessGoalMapper.toResponse(goal);
     }
 
-
     @Override
     @Transactional(readOnly = true)
     public List<FitnessGoalResponse> getMyGoals() {
@@ -218,7 +214,6 @@ public class FitnessGoalServiceImpl
                 .map(fitnessGoalMapper::toResponse)
                 .toList();
     }
-
 
     @Override
     public FitnessGoalResponse updateGoal(
@@ -326,7 +321,6 @@ public class FitnessGoalServiceImpl
         return fitnessGoalMapper.toResponse(saved);
     }
 
-
     @Override
     public void deleteGoal(
             Integer goalId
@@ -348,4 +342,6 @@ public class FitnessGoalServiceImpl
 
         fitnessGoalRepository.delete(goal);
     }
+
+
 }
