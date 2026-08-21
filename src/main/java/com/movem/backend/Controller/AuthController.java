@@ -2,6 +2,7 @@ package com.movem.backend.Controller;
 
 
 import com.movem.backend.Dto.request.AuthRequest.*;
+import com.movem.backend.Dto.response.AuthResponses.AuthResponse;
 import com.movem.backend.Dto.response.AuthResponses.CurrentUserResponse;
 import com.movem.backend.Entity.Auth.EmailVerification;
 import com.movem.backend.Entity.Auth.TrustedDevice;
@@ -99,10 +100,12 @@ public class AuthController {
 
         trustedDeviceRepository.save(trustedDevice);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Email verified successfully!");
-        response.put("accessToken", accessToken);
-        response.put("trustToken", trustToken);
+        AuthResponse response = AuthResponse.builder()
+                .accessToken(accessToken)
+                .trustToken(trustToken)
+                .user(buildCurrentUserResponse(user))
+                .build();
+
         return ResponseEntity.ok(response);
     }
 
@@ -182,9 +185,12 @@ public class AuthController {
 
                     trustedDeviceRepository.save(newTrustedDevice );
 
-                    Map<String, String> response = new HashMap<>();
-                    response.put("accessToken", accessToken);
-                    response.put("trustToken", newTrustToken);
+                    AuthResponse response = AuthResponse.builder()
+                            .accessToken(accessToken)
+                            .trustToken(newTrustToken)
+                            .user(buildCurrentUserResponse(user))
+                            .build();
+
                     return ResponseEntity.ok(response);
                 }
             } catch (Exception e) {
@@ -241,9 +247,12 @@ public class AuthController {
 
         trustedDeviceRepository.save(trustedDevice);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("accessToken", accessToken);
-        response.put("trustToken", trustToken);
+        AuthResponse response = AuthResponse.builder()
+                .accessToken(accessToken)
+                .trustToken(trustToken)
+                .user(buildCurrentUserResponse(user))
+                .build();
+
         return ResponseEntity.ok(response);
     }
 
@@ -331,11 +340,30 @@ public class AuthController {
                 .build();
 
         trustedDeviceRepository.save(trustedDevice);
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Password reset successfully.");
-        response.put("accessToken", accessToken);
-        response.put("trustToken", trustToken);
+        AuthResponse response = AuthResponse.builder()
+                .accessToken(accessToken)
+                .trustToken(trustToken)
+                .user(buildCurrentUserResponse(updatedUser))
+                .build();
+
         return ResponseEntity.ok(response);
+    }
+
+    private CurrentUserResponse buildCurrentUserResponse(User user) {
+        return CurrentUserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .firstName(user.getFirstname())
+                .lastName(user.getLastname())
+                .dateOfBirth(user.getDateOfBirth())
+                .jointDate(user.getJointDate())
+                .profilePic(user.getProfilePic())
+                .cityProvince(user.getCityProvince())
+                .isActive(user.getIsActive())
+                .themePreference(user.getThemePreference())
+                .languagePreference(user.getLanguagePreference())
+                .build();
     }
 
     @GetMapping("/me")
