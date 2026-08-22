@@ -14,4 +14,5 @@ public class AuthResponse {
     private String accessToken;
     private String trustToken;
     private CurrentUserResponse user;
+    private String message;
 }

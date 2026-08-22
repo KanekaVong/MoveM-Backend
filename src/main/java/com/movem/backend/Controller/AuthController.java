@@ -200,7 +200,10 @@ public class AuthController {
 
         String otpCode = otpService.generateOtp(username);
         emailService.sendOtpEmail(user.getEmail(), otpCode);
-        return ResponseEntity.ok("OTP sent to your email.");
+        AuthResponse response = AuthResponse.builder()
+                .message("OTP sent to your email.")
+                .build();
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/verify-otp")

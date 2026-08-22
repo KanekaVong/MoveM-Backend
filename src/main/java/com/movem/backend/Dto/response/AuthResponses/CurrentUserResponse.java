@@ -12,30 +12,17 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 public class CurrentUserResponse {
-
     private Integer id;
-
     private String username;
-
     private String email;
-
     private String firstName;
-
     private String lastName;
-
     private LocalDate dateOfBirth;
-
     private LocalDateTime jointDate;
-
     private byte[] profilePic;
-
     private String cityProvince;
-
     private Boolean isActive;
-
     private ThemePreference themePreference;
-
     private LanguagePreference languagePreference;
-
     private Gender gender;
 }
