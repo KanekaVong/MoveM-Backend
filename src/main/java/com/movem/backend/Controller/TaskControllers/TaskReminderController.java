@@ -5,6 +5,7 @@ import com.movem.backend.Dto.request.TaskRequests.Update.UpdateTaskReminderReque
 import com.movem.backend.Dto.response.ReminderResponses.UpcomingReminderResponse;
 import com.movem.backend.Dto.response.TaskResponses.TaskReminderResponse;
 import com.movem.backend.Service.TaskServices.TaskReminderService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
+@Tag(
+        name = "Task - Reminders"
+)
 @RequiredArgsConstructor
 public class TaskReminderController {
 

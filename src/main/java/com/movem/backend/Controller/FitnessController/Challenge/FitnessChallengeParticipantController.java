@@ -2,6 +2,7 @@ package com.movem.backend.Controller.FitnessController.Challenge;
 
 import com.movem.backend.Dto.response.FitnessResponse.Challenge.FitnessChallengeParticipantResponse;
 import com.movem.backend.Service.FitnessServices.Challenge.FitnessChallengeParticipantService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +11,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/fitness/group-challenges")
+@Tag(
+        name = "Fitness - Participant",
+        description = "Participate in Solo or Group Challenges"
+)
 @RequiredArgsConstructor
 public class FitnessChallengeParticipantController {
 

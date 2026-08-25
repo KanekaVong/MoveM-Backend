@@ -4,6 +4,7 @@ import com.movem.backend.Dto.request.TaskRequests.Create.CreateChecklistItemRequ
 import com.movem.backend.Dto.request.TaskRequests.Update.UpdateChecklistItemRequest;
 import com.movem.backend.Dto.response.TaskResponses.TaskChecklistResponse;
 import com.movem.backend.Service.TaskServices.TaskChecklistService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
+@Tag(
+        name = "Task - Checklists"
+)
 @RequiredArgsConstructor
 public class TaskChecklistController {
 

@@ -32,11 +32,15 @@ public enum NotificationType {
 
     FITNESS_REMINDER,
 
+    WORKOUT_KUDOED,
+
     WORKOUT_COMPLETED,
 
     TRIP_INVITE,
 
     TRIP_UPDATED,
+
+    TRIP_EXPENSE_LOGGED,
 
     FRIEND_REQUEST,
 

@@ -5,6 +5,7 @@ import com.movem.backend.Dto.response.FriendResponse.FriendRequestResponse;
 import com.movem.backend.Dto.response.FriendResponse.FriendResponse;
 import com.movem.backend.Dto.response.FriendResponse.SearchUserResponse;
 import com.movem.backend.Service.FriendServices.FriendService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/friends")
+@Tag(
+        name = "Social - Friends",
+        description = "Add, Confirm/Reject Friends"
+)
 @RequiredArgsConstructor
 public class FriendController {
 

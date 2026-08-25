@@ -5,6 +5,7 @@ import com.movem.backend.Dto.request.FitnessRequest.Challenge.SoloChallenge.Upda
 import com.movem.backend.Dto.response.FitnessResponse.Challenge.SoloChallengeResponse;
 import com.movem.backend.Service.FitnessServices.Challenge.SoloChallengeService;
 import com.movem.backend.model.enums.Fitness.WorkoutType;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/fitness/solo-challenges")
+@Tag(
+        name = "Fitness - Challenges",
+        description = "Solo Challenges"
+)
 @RequiredArgsConstructor
 public class SoloChallengeController {
 

@@ -24,4 +24,6 @@ public interface FitnessChallengeParticipantRepository
             GroupFitnessChallenge challenge,
             User user
     );
+
+    long countByChallenge(GroupFitnessChallenge challenge);
 }

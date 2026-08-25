@@ -2,6 +2,7 @@ package com.movem.backend.Controller.FitnessController.Club;
 
 import com.movem.backend.Dto.response.FitnessResponse.Club.FitnessClubJoinRequestResponse;
 import com.movem.backend.Service.FitnessServices.Club.FitnessClubJoinRequestService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +11,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/fitness/clubs")
+@Tag(
+        name = "Fitness - Club",
+        description = "Fitness Club"
+)
 @RequiredArgsConstructor
 public class FitnessClubJoinRequestController {
 

@@ -13,6 +13,8 @@ import com.movem.backend.Repository.FitnessRepository.Club.FitnessClubMemberRepo
 import com.movem.backend.Repository.FitnessRepository.Club.FitnessClubRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.FitnessServices.Club.FitnessClubService;
+import com.movem.backend.Service.Event.Factory.Fitness.FitnessClubEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.model.enums.Fitness.ClubPrivacy;
 import com.movem.backend.model.enums.Fitness.FitnessClubRole;
 import jakarta.transaction.Transactional;
@@ -30,11 +32,10 @@ public class FitnessClubServiceImpl
         implements FitnessClubService {
 
     private final FitnessClubRepository fitnessClubRepository;
-
+    private final FeatureEventTrackingService featureEventTrackingService;
+    private final FitnessClubEventFactory fitnessClubEventFactory;
     private final FitnessClubMemberRepository fitnessClubMemberRepository;
-
     private final FitnessClubMapper fitnessClubMapper;
-
     private final CurrentUserService currentUserService;
 
 
@@ -78,6 +79,13 @@ public class FitnessClubServiceImpl
         FitnessClub saved =
                 fitnessClubRepository.save(club);
 
+        featureEventTrackingService.handle(
+                fitnessClubEventFactory.clubCreated(
+                        saved,
+                        currentUser
+                )
+        );
+
         FitnessClubMemberId memberId =
                 new FitnessClubMemberId();
 
@@ -95,9 +103,9 @@ public class FitnessClubServiceImpl
 
         fitnessClubMemberRepository.save(owner);
 
+
         return fitnessClubMapper.toResponse(saved);
     }
-
 
     @Override
     @Transactional
@@ -116,7 +124,6 @@ public class FitnessClubServiceImpl
 
         return fitnessClubMapper.toResponse(club);
     }
-
 
     @Override
     public FitnessClubResponse getClubByJoinToken(
@@ -162,6 +169,27 @@ public class FitnessClubServiceImpl
                 .toList();
     }
 
+    @Override
+    @Transactional
+    public List<FitnessClubResponse> searchClubs(
+            String keyword
+    ) {
+
+        if (keyword == null || keyword.trim().length() < 2) {
+            return List.of();
+        }
+
+        String search = keyword.trim();
+
+        return fitnessClubRepository
+                .findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+                        search,
+                        search
+                )
+                .stream()
+                .map(fitnessClubMapper::toResponse)
+                .toList();
+    }
 
     @Override
     public FitnessClubResponse updateClub(
@@ -209,6 +237,14 @@ public class FitnessClubServiceImpl
 
         FitnessClub saved =
                 fitnessClubRepository.save(club);
+        String oldName = club.getName();
+        featureEventTrackingService.handle(
+                fitnessClubEventFactory.clubUpdated(
+                        saved,
+                        currentUser,
+                        oldName
+                )
+        );
 
         return fitnessClubMapper.toResponse(saved);
     }
@@ -241,7 +277,16 @@ public class FitnessClubServiceImpl
             );
         }
 
+        String oldName = club.getName();
+
         fitnessClubRepository.delete(club);
+
+        featureEventTrackingService.handle(
+                fitnessClubEventFactory.clubDeleted(
+                        club,
+                        currentUser
+                )
+        );
     }
 
 
@@ -262,4 +307,6 @@ public class FitnessClubServiceImpl
 
         return token;
     }
+
+
 }

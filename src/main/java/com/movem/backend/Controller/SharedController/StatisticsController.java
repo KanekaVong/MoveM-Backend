@@ -4,11 +4,15 @@ import com.movem.backend.Dto.response.StatisticsResponse.FitnessStatisticsRespon
 import com.movem.backend.Dto.response.StatisticsResponse.TaskStatisticsResponse;
 import com.movem.backend.Service.StatisticsServices.FitnessStatisticsService;
 import com.movem.backend.Service.StatisticsServices.TaskStatisticsService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/statistics")
+@Tag(
+        name = "Social - Statistics"
+)
 @RequiredArgsConstructor
 public class StatisticsController {
 

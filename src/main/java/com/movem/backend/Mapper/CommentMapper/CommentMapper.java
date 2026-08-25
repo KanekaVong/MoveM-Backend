@@ -2,8 +2,8 @@ package com.movem.backend.Mapper.CommentMapper;
 
 
 import com.movem.backend.Dto.response.CommentResponse.CommentResponse;
-import com.movem.backend.Entity.Shared.Comment;
-import com.movem.backend.Mapper.AbstractBaseMapper;
+import com.movem.backend.Entity.Social.Comment;
+import com.movem.backend.Mapper.BaseMapper.AbstractBaseMapper;
 import org.springframework.stereotype.Component;
 
 import java.util.Base64;

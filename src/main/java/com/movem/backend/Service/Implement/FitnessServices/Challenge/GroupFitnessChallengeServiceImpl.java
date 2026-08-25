@@ -4,35 +4,42 @@ import com.movem.backend.Dto.request.FitnessRequest.Challenge.GroupChallenge.Cre
 import com.movem.backend.Dto.request.FitnessRequest.Challenge.GroupChallenge.CreateGroupFitnessChallengeRequest;
 import com.movem.backend.Dto.request.FitnessRequest.Challenge.GroupChallenge.UpdateGroupFitnessChallengeRequest;
 import com.movem.backend.Dto.response.FitnessResponse.Challenge.GroupFitnessChallengeResponse;
+import com.movem.backend.Dto.response.FitnessResponse.Social.SocialChallengeResponse;
 import com.movem.backend.Entity.Activity.Activity;
+import com.movem.backend.Entity.Fitness.Challenge.FitnessChallengeParticipant;
 import com.movem.backend.Entity.Fitness.Challenge.GroupChallengeCatalog;
 import com.movem.backend.Entity.Fitness.Challenge.GroupFitnessChallenge;
 import com.movem.backend.Entity.Fitness.Club.FitnessClub;
 import com.movem.backend.Entity.Fitness.Club.FitnessClubMember;
 import com.movem.backend.Entity.Auth.User;
+import com.movem.backend.Entity.Fitness.WorkoutSession.FitnessWorkoutSession;
 import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Exception.UnauthorizedActionException;
 import com.movem.backend.Mapper.FitnessMapper.Challenge.GroupFitnessChallengeMapper;
+import com.movem.backend.Repository.FitnessRepository.Challenge.FitnessChallengeParticipantRepository;
 import com.movem.backend.Repository.FitnessRepository.Challenge.GroupChallengeCatalogRepository;
 import com.movem.backend.Repository.FitnessRepository.Challenge.GroupFitnessChallengeRepository;
 import com.movem.backend.Repository.FitnessRepository.Club.FitnessClubMemberRepository;
 import com.movem.backend.Repository.FitnessRepository.Club.FitnessClubRepository;
+import com.movem.backend.Repository.FitnessRepository.Workout.FitnessWorkoutSessionRepository;
 import com.movem.backend.Repository.SharedRepository.ActivityRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.FitnessServices.Challenge.GroupFitnessChallengeService;
 import com.movem.backend.Service.SharedServices.ActivityService;
+import com.movem.backend.Service.Event.Factory.Fitness.FitnessChallengeEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.Util.FitnessUtil.FitnessChallengeCreateSource;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 import com.movem.backend.model.enums.Activity.ActivityType;
-import com.movem.backend.model.enums.Fitness.ChallengeSource;
-import com.movem.backend.model.enums.Fitness.FitnessClubRole;
-import com.movem.backend.model.enums.Fitness.FitnessChallengeStatus;
+import com.movem.backend.model.enums.Fitness.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -40,29 +47,18 @@ import java.util.List;
 public class GroupFitnessChallengeServiceImpl
         implements GroupFitnessChallengeService {
 
-    private final GroupFitnessChallengeRepository
-            groupFitnessChallengeRepository;
-
-    private final GroupChallengeCatalogRepository
-            groupChallengeCatalogRepository;
-
-    private final FitnessClubRepository
-            fitnessClubRepository;
-
-    private final FitnessClubMemberRepository
-            fitnessClubMemberRepository;
-
-    private final GroupFitnessChallengeMapper
-            groupFitnessChallengeMapper;
-
-    private final CurrentUserService
-            currentUserService;
-
-    private final ActivityService
-            activityService;
-
-    private final ActivityRepository
-            activityRepository;
+    private final GroupFitnessChallengeRepository groupFitnessChallengeRepository;
+    private final GroupChallengeCatalogRepository groupChallengeCatalogRepository;
+    private final FitnessClubRepository fitnessClubRepository;
+    private final FeatureEventTrackingService featureEventTrackingService;
+    private final FitnessChallengeEventFactory fitnessChallengeEventFactory;
+    private final FitnessWorkoutSessionRepository fitnessWorkoutSessionRepository;
+    private final FitnessClubMemberRepository fitnessClubMemberRepository;
+    private final GroupFitnessChallengeMapper groupFitnessChallengeMapper;
+    private final CurrentUserService currentUserService;
+    private final ActivityService activityService;
+    private final FitnessChallengeParticipantRepository participantRepository;
+    private final ActivityRepository activityRepository;
 
     @Override
     public GroupFitnessChallengeResponse createChallenge(
@@ -70,149 +66,61 @@ public class GroupFitnessChallengeServiceImpl
             CreateGroupFitnessChallengeRequest request
     ) {
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        FitnessClub club =
-                getClub(clubId);
-
-        FitnessClubMember creatorMembership =
-                getMembership(
-                        club,
-                        currentUser
-                );
-
-        requireChallengeCreationPermission(
-                creatorMembership
-        );
-
+        User currentUser = currentUserService.getCurrentUser();
+        FitnessClub club = getClub(clubId);
+        FitnessClubMember creatorMembership = getMembership( club, currentUser );
+        requireChallengeCreationPermission(creatorMembership);
         GroupChallengeCatalog catalog = null;
 
+        ChallengeValues values = resolveChallengeValues(request, catalog);
+        validateDates(values.startAt(), values.endAt());
 
+        LocalDateTime now = LocalDateTime.now();
 
-        ChallengeValues values =
-                resolveChallengeValues(
-                        request,
-                        catalog
-                );
+        FitnessChallengeStatus challengeStatus = determineStatus(
+                        values.startAt(), values.endAt(), now);
 
+        FitnessChallengeCreateSource activitySource = new FitnessChallengeCreateSource();
 
-        validateDates(
-                values.startAt(),
-                values.endAt()
-        );
+        activitySource.setActivityName(values.name());
+        activitySource.setDescription(values.description());
+        activitySource.setStartActivity(values.startAt());
+        activitySource.setDeadline(values.endAt());
+        activitySource.setParentActivityId(null);
 
+        Activity activity = activityService.createActivity(
+                        activitySource, currentUser, ActivityType.FITNESS);
 
-        LocalDateTime now =
-                LocalDateTime.now();
-
-        FitnessChallengeStatus challengeStatus =
-                determineStatus(
-                        values.startAt(),
-                        values.endAt(),
-                        now
-                );
-
-        FitnessChallengeCreateSource activitySource =
-                new FitnessChallengeCreateSource();
-
-        activitySource.setActivityName(
-                values.name()
-        );
-
-        activitySource.setDescription(
-                values.description()
-        );
-
-        activitySource.setStartActivity(
-                values.startAt()
-        );
-
-        activitySource.setDeadline(
-                values.endAt()
-        );
-
-        activitySource.setParentActivityId(
-                null
-        );
-
-
-        Activity activity =
-                activityService.createActivity(
-                        activitySource,
-                        currentUser,
-                        ActivityType.FITNESS
-                );
-
-        activity.setStatus(
-                mapToActivityStatus(challengeStatus)
-        );
-
+        activity.setStatus(mapToActivityStatus(challengeStatus));
         activity.setIsCollaborative(true);
         activity.setUpdatedAt(now);
+        activity = activityRepository.save(activity);
 
-        activity =
-                activityRepository.save(activity);
-
-        GroupFitnessChallenge challenge =
-                new GroupFitnessChallenge();
+        GroupFitnessChallenge challenge = new GroupFitnessChallenge();
 
         challenge.setActivity(activity);
         challenge.setFitnessClub(club);
-
-        challenge.setName(
-                values.name()
-        );
-
-        challenge.setWorkoutType(
-                values.workoutType()
-        );
-
-        challenge.setTargetValue(
-                values.targetValue()
-        );
-
-        challenge.setTargetUnit(
-                values.targetUnit()
-        );
-
-        challenge.setDescription(
-                values.description()
-        );
-
+        challenge.setName( values.name() );
+        challenge.setWorkoutType(values.workoutType());
+        challenge.setTargetValue(values.targetValue());
+        challenge.setTargetUnit(values.targetUnit());
+        challenge.setDescription(values.description());
         challenge.setCatalog(null);
-
-        challenge.setChallengeSource(
-                ChallengeSource.CUSTOM
-        );
-
-        challenge.setCreatedBy(
-                currentUser
-        );
-
-        challenge.setStartAt(
-                values.startAt()
-        );
-
-        challenge.setEndAt(
-                values.endAt()
-        );
-
-        challenge.setStatus(
-                challengeStatus
-        );
-
+        challenge.setChallengeSource(ChallengeSource.CUSTOM);
+        challenge.setCreatedBy(currentUser);
+        challenge.setStartAt(values.startAt());
+        challenge.setEndAt(values.endAt());
+        challenge.setStatus(challengeStatus);
         challenge.setCreatedAt(now);
         challenge.setUpdatedAt(now);
 
+        GroupFitnessChallenge saved = groupFitnessChallengeRepository.save(challenge);
 
-        GroupFitnessChallenge saved =
-                groupFitnessChallengeRepository.save(
-                        challenge
-                );
+        featureEventTrackingService.handle(
+                fitnessChallengeEventFactory.created(saved, currentUser)
+        );
 
-        return groupFitnessChallengeMapper
-                .toResponse(saved);
+        return groupFitnessChallengeMapper.toResponse(saved);
     }
 
     @Override
@@ -230,8 +138,7 @@ public class GroupFitnessChallengeServiceImpl
                                 )
                         );
 
-        return groupFitnessChallengeMapper
-                .toResponse(challenge);
+        return groupFitnessChallengeMapper.toResponse(challenge);
     }
 
     @Override
@@ -241,8 +148,7 @@ public class GroupFitnessChallengeServiceImpl
             Integer clubId
     ) {
 
-        FitnessClub club =
-                getClub(clubId);
+        FitnessClub club = getClub(clubId);
 
         return groupFitnessChallengeRepository
                 .findByFitnessClubOrderByCreatedAtDesc(
@@ -260,8 +166,7 @@ public class GroupFitnessChallengeServiceImpl
     public List<GroupFitnessChallengeResponse>
     getMyCreatedChallenges() {
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         return groupFitnessChallengeRepository
                 .findByCreatedByOrderByCreatedAtDesc(
@@ -280,8 +185,7 @@ public class GroupFitnessChallengeServiceImpl
             UpdateGroupFitnessChallengeRequest request
     ) {
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         GroupFitnessChallenge challenge =
                 groupFitnessChallengeRepository
@@ -293,52 +197,23 @@ public class GroupFitnessChallengeServiceImpl
                         );
 
 
-        FitnessClubMember membership =
-                getMembership(
-                        challenge.getFitnessClub(),
-                        currentUser
-                );
+        FitnessClubMember membership = getMembership(
+                        challenge.getFitnessClub(), currentUser);
 
         requireChallengeManagementPermission(
-                membership,
-                challenge
-        );
+                        membership,
+                challenge);
+
+        validateDates( request.getStartAt(), request.getEndAt());
 
 
-        validateDates(
-                request.getStartAt(),
-                request.getEndAt()
-        );
-
-
-        challenge.setName(
-                request.getName()
-        );
-
-        challenge.setWorkoutType(
-                request.getWorkoutType()
-        );
-
-        challenge.setTargetValue(
-                request.getTargetValue()
-        );
-
-        challenge.setTargetUnit(
-                request.getTargetUnit()
-        );
-
-        challenge.setDescription(
-                request.getDescription()
-        );
-
-        challenge.setStartAt(
-                request.getStartAt()
-        );
-
-        challenge.setEndAt(
-                request.getEndAt()
-        );
-
+        challenge.setName(request.getName());
+        challenge.setWorkoutType(request.getWorkoutType());
+        challenge.setTargetValue(request.getTargetValue());
+        challenge.setTargetUnit(request.getTargetUnit());
+        challenge.setDescription(request.getDescription());
+        challenge.setStartAt(request.getStartAt());
+        challenge.setEndAt(request.getEndAt());
 
         FitnessChallengeStatus status =
                 determineStatus(
@@ -348,36 +223,27 @@ public class GroupFitnessChallengeServiceImpl
                 );
 
         challenge.setStatus(status);
-
-        Activity activity =
-                challenge.getActivity();
+        Activity activity = challenge.getActivity();
 
         if (activity != null) {
-
             activity.setActivityName(
                     request.getName()
             );
-
             activity.setDescription(
                     request.getDescription()
             );
-
             activity.setStartActivity(
                     request.getStartAt()
             );
-
             activity.setDeadline(
                     request.getEndAt()
             );
-
             activity.setStatus(
                     mapToActivityStatus(status)
             );
-
             activity.setUpdatedAt(
                     LocalDateTime.now()
             );
-
             activityRepository.save(activity);
         }
 
@@ -391,6 +257,10 @@ public class GroupFitnessChallengeServiceImpl
                 groupFitnessChallengeRepository.save(
                         challenge
                 );
+
+        featureEventTrackingService.handle(
+                fitnessChallengeEventFactory.updated(saved, currentUser)
+        );
 
         return groupFitnessChallengeMapper
                 .toResponse(saved);
@@ -452,6 +322,10 @@ public class GroupFitnessChallengeServiceImpl
 
         groupFitnessChallengeRepository.save(
                 challenge
+        );
+
+        featureEventTrackingService.handle(
+                fitnessChallengeEventFactory.cancelled(challenge, currentUser)
         );
     }
 
@@ -635,6 +509,10 @@ public class GroupFitnessChallengeServiceImpl
                         challenge
                 );
 
+        featureEventTrackingService.handle(
+                fitnessChallengeEventFactory.created(saved, currentUser)
+        );
+
         return groupFitnessChallengeMapper
                 .toResponse(saved);
     }
@@ -670,6 +548,92 @@ public class GroupFitnessChallengeServiceImpl
                 );
     }
 
+    @Override
+    @Transactional
+    public SocialChallengeResponse getSocialChallenge(
+            Integer challengeId
+    ) {
+
+        User currentUser = currentUserService.getCurrentUser();
+
+        GroupFitnessChallenge challenge =
+                groupFitnessChallengeRepository.findById(challengeId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Group fitness challenge not found."
+                                )
+                        );
+
+        boolean isOwner =
+                challenge.getCreatedBy()
+                        .getId()
+                        .equals(currentUser.getId());
+
+        boolean isParticipant =
+                participantRepository
+                        .findByChallengeAndUser(
+                                challenge,
+                                currentUser
+                        )
+                        .isPresent();
+
+        if (!isOwner && !isParticipant) {
+            throw new UnauthorizedActionException(
+                    "You do not have access to this challenge."
+            );
+        }
+
+        long participantCount =
+                participantRepository.countByChallenge(
+                        challenge
+                );
+
+        long completedParticipants =
+                participantRepository
+                        .findByChallenge(challenge)
+                        .stream()
+                        .filter(participant ->
+                                participant.getStatus()
+                                        == FitnessChallengeParticipantStatus.COMPLETED
+                        )
+                        .count();
+
+        FitnessChallengeParticipant myParticipant =
+                participantRepository
+                        .findByChallengeAndUser(
+                                challenge,
+                                currentUser
+                        )
+                        .orElse(null);
+
+        BigDecimal myProgress =
+                myParticipant != null
+                        ? calculateProgress(myParticipant)
+                        : BigDecimal.ZERO;
+
+        boolean myCompleted =
+                myParticipant != null
+                        && myParticipant.getStatus()
+                        == FitnessChallengeParticipantStatus.COMPLETED;
+
+        return SocialChallengeResponse.builder()
+                .challengeId(challenge.getId())
+                .name(challenge.getName())
+                .description(challenge.getDescription())
+                .workoutType(challenge.getWorkoutType().name())
+                .targetValue(challenge.getTargetValue())
+                .targetUnit(challenge.getTargetUnit().name())
+                .status(challenge.getStatus())
+                .startAt(challenge.getStartAt())
+                .endAt(challenge.getEndAt())
+                .creatorId(challenge.getCreatedBy().getId())
+                .creatorUsername(challenge.getCreatedBy().getUsername())
+                .participantCount(participantCount)
+                .completedParticipants(completedParticipants)
+                .myProgress(myProgress)
+                .myCompleted(myCompleted)
+                .build();
+    }
 
     private void requireChallengeCreationPermission(
             FitnessClubMember membership
@@ -764,17 +728,13 @@ public class GroupFitnessChallengeServiceImpl
 
         return switch (status) {
 
-            case UPCOMING ->
-                    ActivityStatus.UPCOMING;
+            case UPCOMING -> ActivityStatus.UPCOMING;
 
-            case IN_PROGRESS ->
-                    ActivityStatus.IN_PROGRESS;
+            case IN_PROGRESS -> ActivityStatus.IN_PROGRESS;
 
-            case COMPLETE ->
-                    ActivityStatus.COMPLETE;
+            case COMPLETE -> ActivityStatus.COMPLETE;
 
-            case CANCELLED ->
-                    ActivityStatus.CANCELLED;
+            case CANCELLED -> ActivityStatus.CANCELLED;
         };
     }
 
@@ -819,4 +779,29 @@ public class GroupFitnessChallengeServiceImpl
             LocalDateTime endAt
     ) {
     }
+
+    private BigDecimal calculateProgress(
+            FitnessChallengeParticipant participant
+    ) {
+
+        List<FitnessWorkoutSession> sessions =
+                fitnessWorkoutSessionRepository
+                        .findByGroupChallengeParticipant(
+                                participant
+                        );
+
+        return sessions.stream()
+                .filter(session ->
+                        session.getStatus()
+                                == FitnessWorkoutStatus.COMPLETED
+                )
+                .map(FitnessWorkoutSession::getDistance)
+                .filter(Objects::nonNull)
+                .reduce(
+                        BigDecimal.ZERO,
+                        BigDecimal::add
+                );
+    }
+
+
 }

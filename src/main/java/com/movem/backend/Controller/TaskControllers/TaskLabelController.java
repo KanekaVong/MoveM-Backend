@@ -4,6 +4,7 @@ import com.movem.backend.Dto.request.TaskRequests.Create.CreateTaskLabelRequest;
 import com.movem.backend.Dto.request.TaskRequests.Update.UpdateTaskLabelRequest;
 import com.movem.backend.Dto.response.TaskResponses.TaskLabelResponse;
 import com.movem.backend.Service.TaskServices.TaskLabelService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/task-labels")
+@Tag(
+        name = "Task - Labels"
+)
 @RequiredArgsConstructor
 public class TaskLabelController {
 

@@ -13,6 +13,8 @@ import com.movem.backend.Repository.FitnessRepository.Challenge.GroupFitnessChal
 import com.movem.backend.Repository.FitnessRepository.Club.FitnessClubMemberRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.FitnessServices.Challenge.FitnessChallengeParticipantService;
+import com.movem.backend.Service.Event.Factory.Fitness.FitnessChallengeEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.model.enums.Fitness.FitnessChallengeParticipantStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,20 +29,13 @@ import java.util.List;
 public class FitnessChallengeParticipantServiceImpl
         implements FitnessChallengeParticipantService {
 
-    private final FitnessChallengeParticipantRepository
-            participantRepository;
-
-    private final GroupFitnessChallengeRepository
-            challengeRepository;
-
-    private final FitnessClubMemberRepository
-            clubMemberRepository;
-
-    private final FitnessChallengeParticipantMapper
-            participantMapper;
-
-    private final CurrentUserService
-            currentUserService;
+    private final FitnessChallengeParticipantRepository participantRepository;
+    private final GroupFitnessChallengeRepository challengeRepository;
+    private final FitnessClubMemberRepository clubMemberRepository;
+    private final FitnessChallengeParticipantMapper participantMapper;
+    private final CurrentUserService currentUserService;
+    private final FeatureEventTrackingService featureEventTrackingService;
+    private final FitnessChallengeEventFactory fitnessChallengeEventFactory;
 
 
     @Override
@@ -63,11 +58,6 @@ public class FitnessChallengeParticipantServiceImpl
             );
         }
 
-
-        /*
-         * User must already belong to the club.
-         */
-
         FitnessClubMember clubMember =
                 clubMemberRepository
                         .findByFitnessClubAndUser(
@@ -89,12 +79,10 @@ public class FitnessChallengeParticipantServiceImpl
 
         if (existingParticipation.isPresent()) {
 
-            FitnessChallengeParticipant existing =
-                    existingParticipation.get();
+            FitnessChallengeParticipant existing = existingParticipation.get();
 
             if (
-                    existing.getStatus()
-                            == FitnessChallengeParticipantStatus.ACTIVE
+                    existing.getStatus() == FitnessChallengeParticipantStatus.ACTIVE
             ) {
 
                 throw new IllegalArgumentException(
@@ -103,8 +91,7 @@ public class FitnessChallengeParticipantServiceImpl
             }
 
             if (
-                    existing.getStatus()
-                            == FitnessChallengeParticipantStatus.LEFT
+                    existing.getStatus() == FitnessChallengeParticipantStatus.LEFT
             ) {
 
                 existing.setStatus(
@@ -152,8 +139,7 @@ public class FitnessChallengeParticipantServiceImpl
         }
 
 
-        FitnessChallengeParticipant participant =
-                new FitnessChallengeParticipant();
+        FitnessChallengeParticipant participant = new FitnessChallengeParticipant();
 
         participant.setChallenge(
                 challenge
@@ -181,11 +167,17 @@ public class FitnessChallengeParticipantServiceImpl
                         participant
                 );
 
+        featureEventTrackingService.handle(
+                fitnessChallengeEventFactory.joined(
+                        challenge,
+                        currentUser
+                )
+        );
+
         return participantMapper.toResponse(
                 saved
         );
     }
-
 
     @Override
     @Transactional(readOnly = true)
@@ -209,9 +201,7 @@ public class FitnessChallengeParticipantServiceImpl
     @Override
     @Transactional(readOnly = true)
     public FitnessChallengeParticipantResponse
-    getMyParticipation(
-            Integer challengeId
-    ) {
+    getMyParticipation(Integer challengeId) {
 
         User currentUser =
                 currentUserService.getCurrentUser();
@@ -326,8 +316,13 @@ public class FitnessChallengeParticipantServiceImpl
                 FitnessChallengeParticipantStatus.LEFT
         );
 
-        participantRepository.save(
-                participant
+        participantRepository.save(participant);
+
+        featureEventTrackingService.handle(
+                fitnessChallengeEventFactory.left(
+                        challenge,
+                        currentUser
+                )
         );
     }
 

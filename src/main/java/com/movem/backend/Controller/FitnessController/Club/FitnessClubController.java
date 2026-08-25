@@ -4,6 +4,7 @@ import com.movem.backend.Dto.request.FitnessRequest.Club.CreateFitnessClubReques
 import com.movem.backend.Dto.request.FitnessRequest.Club.UpdateFitnessClubRequest;
 import com.movem.backend.Dto.response.FitnessResponse.Club.FitnessClubResponse;
 import com.movem.backend.Service.FitnessServices.Club.FitnessClubService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/fitness/clubs")
+@Tag(
+        name = "Fitness - Club",
+        description = "Fitness Club"
+)
 @RequiredArgsConstructor
 public class FitnessClubController {
 
@@ -29,6 +34,16 @@ public class FitnessClubController {
                 .body(
                         fitnessClubService.createClub(request)
                 );
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<FitnessClubResponse>> searchClubs(
+            @RequestParam String keyword
+    ) {
+
+        return ResponseEntity.ok(
+                fitnessClubService.searchClubs(keyword)
+        );
     }
 
     @GetMapping("/{clubId}")

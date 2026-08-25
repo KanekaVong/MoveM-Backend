@@ -7,7 +7,10 @@ import com.movem.backend.Entity.Fitness.Challenge.GroupChallengeCatalog;
 import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Mapper.FitnessMapper.Challenge.GroupChallengeCatalogMapper;
 import com.movem.backend.Repository.FitnessRepository.Challenge.GroupChallengeCatalogRepository;
+import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.FitnessServices.Challenge.GroupChallengeCatalogService;
+import com.movem.backend.Service.Event.Factory.Fitness.FitnessChallengeEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.model.enums.Fitness.WorkoutType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,11 +25,11 @@ import java.util.List;
 public class GroupChallengeCatalogServiceImpl
         implements GroupChallengeCatalogService {
 
-    private final GroupChallengeCatalogRepository
-            groupChallengeCatalogRepository;
-
-    private final GroupChallengeCatalogMapper
-            groupChallengeCatalogMapper;
+    private final CurrentUserService currentUserService;
+    private final FeatureEventTrackingService featureEventTrackingService;
+    private final FitnessChallengeEventFactory fitnessChallengeEventFactory;
+    private final GroupChallengeCatalogRepository groupChallengeCatalogRepository;
+    private final GroupChallengeCatalogMapper groupChallengeCatalogMapper;
 
 
     @Override
@@ -34,46 +37,27 @@ public class GroupChallengeCatalogServiceImpl
             CreateGroupChallengeCatalogRequest request
     ) {
 
-        GroupChallengeCatalog challenge =
-                new GroupChallengeCatalog();
+        GroupChallengeCatalog challenge = new GroupChallengeCatalog();
 
-        challenge.setName(
-                request.getName()
+        challenge.setName(request.getName());
+        challenge.setWorkoutType(request.getWorkoutType());
+        challenge.setTargetValue(request.getTargetValue());
+        challenge.setTargetUnit(request.getTargetUnit());
+        challenge.setDescription(request.getDescription());
+        challenge.setCreatedAt(LocalDateTime.now());
+        challenge.setUpdatedAt(LocalDateTime.now());
+
+        GroupChallengeCatalog saved = groupChallengeCatalogRepository.save(challenge);
+
+        featureEventTrackingService.handle(
+                fitnessChallengeEventFactory.created(
+                        saved,
+                        currentUserService.getCurrentUser()
+                )
         );
 
-        challenge.setWorkoutType(
-                request.getWorkoutType()
-        );
-
-        challenge.setTargetValue(
-                request.getTargetValue()
-        );
-
-        challenge.setTargetUnit(
-                request.getTargetUnit()
-        );
-
-        challenge.setDescription(
-                request.getDescription()
-        );
-
-        challenge.setCreatedAt(
-                LocalDateTime.now()
-        );
-
-        challenge.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-        GroupChallengeCatalog saved =
-                groupChallengeCatalogRepository.save(
-                        challenge
-                );
-
-        return groupChallengeCatalogMapper
-                .toResponse(saved);
+        return groupChallengeCatalogMapper.toResponse(saved);
     }
-
 
     @Override
     @Transactional(readOnly = true)
@@ -90,10 +74,8 @@ public class GroupChallengeCatalogServiceImpl
                                 )
                         );
 
-        return groupChallengeCatalogMapper
-                .toResponse(challenge);
+        return groupChallengeCatalogMapper.toResponse(challenge);
     }
-
 
     @Override
     @Transactional
@@ -106,7 +88,6 @@ public class GroupChallengeCatalogServiceImpl
                 .map(groupChallengeCatalogMapper::toResponse)
                 .toList();
     }
-
 
     @Override
     @Transactional
@@ -124,7 +105,6 @@ public class GroupChallengeCatalogServiceImpl
                 .toList();
     }
 
-
     @Override
     public GroupChallengeCatalogResponse updateCatalogChallenge(
             Integer catalogId,
@@ -139,40 +119,26 @@ public class GroupChallengeCatalogServiceImpl
                                         "Group challenge catalog not found."
                                 )
                         );
+        String oldName = challenge.getName();
 
-        challenge.setName(
-                request.getName()
+        challenge.setName(request.getName());
+        challenge.setWorkoutType(request.getWorkoutType());
+        challenge.setTargetValue(request.getTargetValue());
+        challenge.setTargetUnit(request.getTargetUnit());
+        challenge.setDescription(request.getDescription());
+        challenge.setUpdatedAt(LocalDateTime.now());
+
+        GroupChallengeCatalog saved =groupChallengeCatalogRepository.save(challenge);
+
+        featureEventTrackingService.handle(
+                fitnessChallengeEventFactory.updated(
+                        saved,
+                        currentUserService.getCurrentUser(),
+                        oldName
+                )
         );
 
-        challenge.setWorkoutType(
-                request.getWorkoutType()
-        );
-
-        challenge.setTargetValue(
-                request.getTargetValue()
-        );
-
-        challenge.setTargetUnit(
-                request.getTargetUnit()
-        );
-
-        challenge.setDescription(
-                request.getDescription()
-        );
-
-        challenge.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-        GroupChallengeCatalog saved =
-                groupChallengeCatalogRepository.save(
-                        challenge
-                );
-
-        return groupChallengeCatalogMapper
-                .toResponse(saved);
-    }
-
+        return groupChallengeCatalogMapper.toResponse(saved);}
 
     @Override
     public void deleteCatalogChallenge(
@@ -188,8 +154,15 @@ public class GroupChallengeCatalogServiceImpl
                                 )
                         );
 
-        groupChallengeCatalogRepository.delete(
-                challenge
+        String oldName = challenge.getName();
+
+        groupChallengeCatalogRepository.delete(challenge);
+
+        featureEventTrackingService.handle(
+                fitnessChallengeEventFactory.deleted(
+                        challenge,
+                        currentUserService.getCurrentUser()
+                )
         );
     }
 }

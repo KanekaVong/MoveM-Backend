@@ -10,23 +10,19 @@ import com.movem.backend.Entity.Auth.User;
 import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Mapper.TaskMapper.TaskMapper;
 import com.movem.backend.Repository.SharedRepository.ActivityRepository;
-import com.movem.backend.Service.TaskServices.RecurringTaskService;
-import com.movem.backend.model.enums.Activity.ActivityFeedEvent;
-import com.movem.backend.model.enums.Activity.ActivityStatus;
+import com.movem.backend.Service.Event.Factory.TaskEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
+import com.movem.backend.Service.TaskServices.RecurringTaskService;import com.movem.backend.model.enums.Activity.ActivityStatus;
 import com.movem.backend.model.enums.Activity.ActivityType;
-import com.movem.backend.model.enums.Audit.AuditCategory;
-import com.movem.backend.model.enums.Audit.AuditSeverity;
 import com.movem.backend.Repository.TaskRepositories.TaskRepository;
-import com.movem.backend.Service.SharedServices.ActivityFeedService;
 import com.movem.backend.Service.SharedServices.ActivityPermissionService;
 import com.movem.backend.Service.SharedServices.ActivityService;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
-import com.movem.backend.Service.SharedServices.AuditLogService;
 import com.movem.backend.Service.TaskServices.TaskChecklistService;
 import com.movem.backend.Service.TaskServices.TaskReminderService;
 import com.movem.backend.Service.TaskServices.TaskService;
 import com.movem.backend.model.enums.Priority;
-import com.movem.backend.Service.Builder.TaskSearchBuilder;
+import com.movem.backend.Service.TaskServices.Builder.TaskSearchBuilder;
 import com.movem.backend.Specification.TaskSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -51,10 +47,10 @@ public class TaskServiceImpl implements TaskService {
     private final TaskMapper taskMapper;
     private final ActivityPermissionService activityPermissionService;
     private final TaskSearchBuilder taskSearchBuilder;
-    private final ActivityFeedService activityFeedService;
-    private final AuditLogService auditLogService;
     private final RecurringTaskService recurringTaskService;
     private final ActivityRepository activityRepository;
+    private final FeatureEventTrackingService featureEventTrackingService;
+    private final TaskEventFactory taskEventFactory;
 
     @Override
     public TaskResponse createTask(CreateTaskRequest request) {
@@ -81,23 +77,8 @@ public class TaskServiceImpl implements TaskService {
 
         Task savedTask = taskRepository.saveAndFlush(task);
 
-        activityFeedService.createFeed(
-                activity,
-                currentUser,
-                ActivityFeedEvent.TASK_CREATED,
-                "created the task.",
-                null
-        );
-        auditLogService.createLog(
-                activity,
-                currentUser,
-                ActivityFeedEvent.TASK_CREATED,
-                AuditCategory.TASK,
-                AuditSeverity.INFO,
-                null,
-                "Created task.",
-                null,
-                null
+        featureEventTrackingService.handle(
+                taskEventFactory.taskCreated(activity, currentUser)
         );
 
         activityService.attachLabels(
@@ -172,9 +153,7 @@ public class TaskServiceImpl implements TaskService {
         Task task = taskRepository
                 .findByActivityId(activityId)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Task not found."
-                        )
+                        new ResourceNotFoundException("Task not found.")
                 );
 
         Activity activity = task.getActivity();
@@ -196,6 +175,7 @@ public class TaskServiceImpl implements TaskService {
         task.setIsRecurring(request.getIsRecurring());
 
         activity.getLabels().clear();
+
         activityService.attachLabels(
                 activity,
                 request.getLabelIds()
@@ -209,7 +189,6 @@ public class TaskServiceImpl implements TaskService {
                 && Boolean.TRUE.equals(task.getIsRecurring())) {
 
             recurringTaskService.generateNextOccurrence(updatedTask);
-
         }
 
         boolean deadlineChanged =
@@ -219,112 +198,119 @@ public class TaskServiceImpl implements TaskService {
                 );
 
         boolean taskUpdated =
-                !Objects.equals(oldTitle, activity.getActivityName())
-                        || !Objects.equals(oldDescription, activity.getDescription())
+                !Objects.equals(
+                        oldTitle,
+                        activity.getActivityName()
+                )
+                        || !Objects.equals(
+                        oldDescription,
+                        activity.getDescription()
+                )
                         || oldPriority != task.getPriority()
-                        || !Objects.equals(oldRecurring, task.getIsRecurring());
+                        || !Objects.equals(
+                        oldRecurring,
+                        task.getIsRecurring()
+                );
 
-        if (!Objects.equals(oldRecurring, task.getIsRecurring())) {
+        if (!Objects.equals(
+                oldRecurring,
+                task.getIsRecurring()
+        )) {
 
-            auditLogService.createLog(
-                    activity,
-                    currentUser,
-                    ActivityFeedEvent.TASK_UPDATED,
-                    AuditCategory.TASK,
-                    AuditSeverity.INFO,
-                    "recurring",
-                    "Updated recurring setting.",
-                    String.valueOf(oldRecurring),
-                    String.valueOf(task.getIsRecurring())
+            featureEventTrackingService.handle(
+                    taskEventFactory.taskUpdated(
+                            activity,
+                            currentUser,
+                            "recurring",
+                            "Updated recurring setting.",
+                            String.valueOf(oldRecurring),
+                            String.valueOf(
+                                    task.getIsRecurring()
+                            ),
+                            false
+                    )
             );
-
         }
 
         if (oldPriority != task.getPriority()) {
 
-            auditLogService.createLog(
-                    activity,
-                    currentUser,
-                    ActivityFeedEvent.TASK_UPDATED,
-                    AuditCategory.TASK,
-                    AuditSeverity.INFO,
-                    "priority",
-                    "Updated task priority.",
-                    oldPriority.name(),
-                    task.getPriority().name()
+            featureEventTrackingService.handle(
+                    taskEventFactory.taskUpdated(
+                            activity,
+                            currentUser,
+                            "priority",
+                            "Updated task priority.",
+                            oldPriority.name(),
+                            task.getPriority().name(),
+                            false
+                    )
             );
-
         }
 
-        if (!Objects.equals(oldDescription, activity.getDescription())) {
+        if (!Objects.equals(
+                oldDescription,
+                activity.getDescription()
+        )) {
 
-            auditLogService.createLog(
-                    activity,
-                    currentUser,
-                    ActivityFeedEvent.TASK_UPDATED,
-                    AuditCategory.TASK,
-                    AuditSeverity.INFO,
-                    "description",
-                    "Updated task description.",
-                    oldDescription,
-                    activity.getDescription()
+            featureEventTrackingService.handle(
+                    taskEventFactory.taskUpdated(
+                            activity,
+                            currentUser,
+                            "description",
+                            "Updated task description.",
+                            oldDescription,
+                            activity.getDescription(),
+                            false
+                    )
             );
-
         }
 
-        if (!Objects.equals(oldTitle, activity.getActivityName())) {
+        if (!Objects.equals(
+                oldTitle,
+                activity.getActivityName()
+        )) {
 
-            auditLogService.createLog(
-                    activity,
-                    currentUser,
-                    ActivityFeedEvent.TASK_UPDATED,
-                    AuditCategory.TASK,
-                    AuditSeverity.INFO,
-                    "title",
-                    "Updated task title.",
-                    oldTitle,
-                    activity.getActivityName()
+            featureEventTrackingService.handle(
+                    taskEventFactory.taskUpdated(
+                            activity,
+                            currentUser,
+                            "title",
+                            "Updated task title.",
+                            oldTitle,
+                            activity.getActivityName(),
+                            false
+                    )
             );
-
         }
 
         if (taskUpdated) {
 
-            activityFeedService.createFeed(
-                    activity,
-                    currentUser,
-                    ActivityFeedEvent.TASK_UPDATED,
-                    "updated the task.",
-                    null
+            featureEventTrackingService.handle(
+                    taskEventFactory.taskUpdated(
+                            activity,
+                            currentUser,
+                            null,
+                            "Updated task.",
+                            null,
+                            null,
+                            true
+                    )
             );
-
         }
 
         if (deadlineChanged) {
 
-            activityFeedService.createFeed(
-                    activity,
-                    currentUser,
-                    ActivityFeedEvent.DEADLINE_CHANGED,
-                    "changed the deadline.",
-                    null
-            );
-
-            auditLogService.createLog(
-                    activity,
-                    currentUser,
-                    ActivityFeedEvent.DEADLINE_CHANGED,
-                    AuditCategory.TASK,
-                    AuditSeverity.WARNING,
-                    "deadline",
-                    "Changed deadline.",
-                    oldDeadline == null ? null : oldDeadline.toString(),
-                    activity.getDeadline() == null ? null : activity.getDeadline().toString()
+            featureEventTrackingService.handle(
+                    taskEventFactory.deadlineChanged(
+                            activity,
+                            currentUser,
+                            oldDeadline,
+                            activity.getDeadline()
+                    )
             );
         }
 
         return taskMapper.toResponse(updatedTask);
-
     }
 
     @Override
@@ -353,24 +339,8 @@ public class TaskServiceImpl implements TaskService {
         activity.setDeletedAt(LocalDateTime.now());
         activity.setUpdatedAt(LocalDateTime.now());
 
-        activityFeedService.createFeed(
-                activity,
-                currentUser,
-                ActivityFeedEvent.TASK_DELETED,
-                "deleted the task.",
-                null
-        );
-
-        auditLogService.createLog(
-                activity,
-                currentUser,
-                ActivityFeedEvent.TASK_DELETED,
-                AuditCategory.TASK,
-                AuditSeverity.WARNING,
-                "status",
-                "Moved task to recycle bin.",
-                "ACTIVE",
-                "DELETED"
+        featureEventTrackingService.handle(
+                taskEventFactory.taskDeleted(activity, currentUser)
         );
 
         activity.setUpdatedAt(LocalDateTime.now());
@@ -405,25 +375,10 @@ public class TaskServiceImpl implements TaskService {
         activity.setDeletedAt(null);
         activity.setUpdatedAt(LocalDateTime.now());
 
-        activityFeedService.createFeed(
-                activity,
-                currentUser,
-                ActivityFeedEvent.TASK_RESTORED,
-                "restored the task.",
-                null
+        featureEventTrackingService.handle(
+                taskEventFactory.taskRestored(activity, currentUser)
         );
 
-        auditLogService.createLog(
-                activity,
-                currentUser,
-                ActivityFeedEvent.TASK_RESTORED,
-                AuditCategory.TASK,
-                AuditSeverity.INFO,
-                "status",
-                "Restored task.",
-                "DELETED",
-                "PENDING"
-        );
         activity.setUpdatedAt(LocalDateTime.now());
 
         return taskMapper.toResponse(task);
@@ -490,7 +445,6 @@ public class TaskServiceImpl implements TaskService {
 
         Activity activity = task.getActivity();
 
-        // Allow activity owner or group member
         activityPermissionService.validateCanEditActivity(
                 activity,
                 currentUser
@@ -505,26 +459,9 @@ public class TaskServiceImpl implements TaskService {
 
         activity.setStatus(ActivityStatus.COMPLETE);
 
-        activityFeedService.createFeed(
-                activity,
-                currentUser,
-                ActivityFeedEvent.TASK_COMPLETED,
-                "completed the task.",
-                null
+        featureEventTrackingService.handle(
+                taskEventFactory.taskCompleted(activity, currentUser)
         );
-
-        auditLogService.createLog(
-                activity,
-                currentUser,
-                ActivityFeedEvent.TASK_COMPLETED,
-                AuditCategory.TASK,
-                AuditSeverity.INFO,
-                "status",
-                "Completed task.",
-                ActivityStatus.PENDING.name(),
-                ActivityStatus.COMPLETE.name()
-        );
-
         activity.setUpdatedAt(LocalDateTime.now());
 
         activityRepository.save(activity);

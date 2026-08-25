@@ -1,5 +1,6 @@
 package com.movem.backend.Repository.FitnessRepository.Workout;
 
+import com.movem.backend.Entity.Activity.Activity;
 import com.movem.backend.Entity.Fitness.Challenge.FitnessChallengeParticipant;
 import com.movem.backend.Entity.Fitness.Challenge.SoloChallenge;
 import com.movem.backend.Entity.Fitness.WorkoutSession.FitnessWorkoutSession;
@@ -17,6 +18,8 @@ public interface FitnessWorkoutSessionRepository
     List<FitnessWorkoutSession> findByUser(
             User user
     );
+
+    Optional<FitnessWorkoutSession> findByActivity(Activity activity);
 
     List<FitnessWorkoutSession> findBySoloChallenge(
             SoloChallenge soloChallenge
@@ -37,6 +40,8 @@ public interface FitnessWorkoutSessionRepository
             FitnessWorkoutStatus status,
             ActivityStatus activityStatus
     );
+
+
 
     List<FitnessWorkoutSession>
     findByUserAndActivity_StatusNot(
@@ -59,4 +64,16 @@ public interface FitnessWorkoutSessionRepository
             java.time.LocalDateTime start,
             java.time.LocalDateTime end
     );
+
+    List<FitnessWorkoutSession> findByUserAndStatus(
+            User user,
+            FitnessWorkoutStatus status
+    );
+
+    List<FitnessWorkoutSession>
+    findByUserInAndStatusAndIsSharedTrueOrderByFinishedAtDesc(
+            List<User> users,
+            FitnessWorkoutStatus status
+    );
+
 }

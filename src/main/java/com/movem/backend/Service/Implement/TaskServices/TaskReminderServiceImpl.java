@@ -9,13 +9,17 @@ import com.movem.backend.Entity.Tasks.TaskReminder;
 import com.movem.backend.Entity.Auth.User;
 import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Mapper.TaskMapper.TaskReminderMapper;
+import com.movem.backend.Service.NotificationServices.NotificationService;
 import com.movem.backend.model.enums.Activity.ActivityType;
+import com.movem.backend.model.enums.Notification.NotificationType;
+import com.movem.backend.model.enums.Notification.ReferenceType;
 import com.movem.backend.model.enums.ReminderType;
 import com.movem.backend.Repository.TaskRepositories.TaskReminderRepository;
 import com.movem.backend.Repository.TaskRepositories.TaskRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.TaskServices.TaskReminderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +34,7 @@ public class TaskReminderServiceImpl implements TaskReminderService {
 
     private final TaskRepository taskRepository;
     private final TaskReminderMapper taskReminderMapper;
+    private final NotificationService notificationService;
     private final TaskReminderRepository taskReminderRepository;
     private final CurrentUserService currentUserService;
 
@@ -86,9 +91,6 @@ public class TaskReminderServiceImpl implements TaskReminderService {
 
         User currentUser = currentUserService.getCurrentUser();
 
-        System.out.println("=================================");
-        System.out.println("Current User: " + currentUser.getId());
-
         List<TaskReminder> reminders =
                 taskReminderRepository.findAllByTaskActivityUser(currentUser);
 
@@ -114,9 +116,6 @@ public class TaskReminderServiceImpl implements TaskReminderService {
                         .withSecond(59)
                         .withNano(999999999);
 
-        System.out.println("Now = " + now);
-        System.out.println("Next Week = " + nextWeek);
-
 
         List<TaskReminder> upcoming =
                 taskReminderRepository
@@ -125,7 +124,6 @@ public class TaskReminderServiceImpl implements TaskReminderService {
                                 now,
                                 nextWeek
                         );
-        System.out.println("Upcoming reminders = " + upcoming.size());
 
         for (TaskReminder reminder : upcoming) {
             System.out.println(
@@ -229,4 +227,45 @@ public class TaskReminderServiceImpl implements TaskReminderService {
         }
     }
 
+    @Override
+    @Transactional
+    public void processDueReminders() {
+
+        LocalDateTime now = LocalDateTime.now();
+
+        List<TaskReminder> dueReminders =
+                taskReminderRepository
+                        .findByRemindAtLessThanEqualAndIsSentFalse(
+                                now
+                        );
+
+        for (TaskReminder reminder : dueReminders) {
+
+            Task task = reminder.getTask();
+
+            User user = task.getActivity().getUser();
+
+            notificationService.createNotification(
+                    user,
+                    user,
+                    NotificationType.TASK_REMINDER,
+                    ReferenceType.TASK,
+                    task.getActivity().getId(),
+                    "Task Reminder",
+                    "Your task \"" +
+                            task.getActivity().getActivityName() +
+                            "\" is due."
+            );
+
+            reminder.setIsSent(true);
+        }
+
+        taskReminderRepository.saveAll(dueReminders);
+    }
+
+    @Scheduled(fixedRate = 60000)
+    @Transactional
+    public void processDueReminderJob() {
+        processDueReminders();
+    }
 }

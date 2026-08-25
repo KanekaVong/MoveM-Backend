@@ -3,21 +3,16 @@ package com.movem.backend.Service.Implement.TaskServices;
 import com.movem.backend.Entity.Activity.Activity;
 import com.movem.backend.Entity.Tasks.Task;
 import com.movem.backend.Entity.Tasks.TaskChecklist;
-import com.movem.backend.Entity.Tasks.TaskLabel;
 import com.movem.backend.Entity.Tasks.TaskReminder;
 import com.movem.backend.Repository.SharedRepository.ActivityRepository;
 import com.movem.backend.Repository.TaskRepositories.TaskChecklistRepository;
-import com.movem.backend.Repository.TaskRepositories.TaskLabelRepository;
 import com.movem.backend.Repository.TaskRepositories.TaskReminderRepository;
 import com.movem.backend.Repository.TaskRepositories.TaskRepository;
-import com.movem.backend.Service.SharedServices.ActivityFeedService;
-import com.movem.backend.Service.SharedServices.AuditLogService;
+import com.movem.backend.Service.Event.Factory.TaskEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.Service.TaskServices.RecurringTaskService;
 import com.movem.backend.Util.ActivityIdGenerator;
-import com.movem.backend.model.enums.Activity.ActivityFeedEvent;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
-import com.movem.backend.model.enums.Audit.AuditCategory;
-import com.movem.backend.model.enums.Audit.AuditSeverity;
 import com.movem.backend.model.enums.RecurringType;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -29,44 +24,29 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import static com.movem.backend.model.enums.ReminderType.*;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class RecurringTaskServiceImpl implements RecurringTaskService {
 
     private final ActivityRepository activityRepository;
-
     private final TaskRepository taskRepository;
-
-    private final TaskLabelRepository taskLabelRepository;
-
     private final TaskChecklistRepository checklistRepository;
-
     private final TaskReminderRepository reminderRepository;
-
-    private final ActivityFeedService activityFeedService;
-
     private final ActivityIdGenerator activityIdGenerator;
-
-    private final AuditLogService auditLogService;
+    private final FeatureEventTrackingService featureEventTrackingService;
+    private final TaskEventFactory taskEventFactory;
 
     @Override
     public void generateNextOccurrence(
             Task completedTask
     ) {
 
-        System.out.println("===== generateNextOccurrence CALLED =====");
-
-        System.out.println("Recurring = " + completedTask.getIsRecurring());
-
         if (!Boolean.TRUE.equals(completedTask.getIsRecurring())) {
             System.out.println("EXIT 1 -> Not recurring");
             return;
         }
 
-        System.out.println("Recurring Type = " + completedTask.getRecurringType());
 
         if (completedTask.getRecurringType() == null) {
             System.out.println("EXIT 2 -> Recurring type is null");
@@ -74,9 +54,6 @@ public class RecurringTaskServiceImpl implements RecurringTaskService {
         }
 
         Activity oldActivity = completedTask.getActivity();
-
-        System.out.println("Start = " + oldActivity.getStartActivity());
-        System.out.println("Deadline = " + oldActivity.getDeadline());
 
         if (oldActivity.getStartActivity() == null
                 || oldActivity.getDeadline() == null) {
@@ -98,9 +75,6 @@ public class RecurringTaskServiceImpl implements RecurringTaskService {
                         completedTask.getRecurringInterval()
                 );
 
-        System.out.println("New Start = " + newStart);
-        System.out.println("New Deadline = " + newDeadline);
-
         if (completedTask.getRecurringEndDate() != null
                 && newStart.toLocalDate()
                 .isAfter(completedTask.getRecurringEndDate())) {
@@ -110,7 +84,6 @@ public class RecurringTaskServiceImpl implements RecurringTaskService {
 
         }
 
-        System.out.println(">>> Cloning Activity");
 
         Activity newActivity =
                 cloneActivity(
@@ -119,64 +92,36 @@ public class RecurringTaskServiceImpl implements RecurringTaskService {
                         newDeadline
                 );
 
-        System.out.println("New Activity ID = " + newActivity.getId());
-
-        System.out.println(">>> Cloning Task");
-
         Task newTask =
                 cloneTask(
                         completedTask,
                         newActivity
                 );
 
-        System.out.println("New Task Activity ID = " + newTask.getActivity().getId());
-
-        System.out.println(">>> Cloning Labels");
-
         cloneLabels(
                 oldActivity,
                 newActivity
         );
-
-        System.out.println(">>> Cloning Checklist");
 
         cloneChecklist(
                 completedTask,
                 newTask
         );
 
-        System.out.println(">>> Cloning Reminders");
 
         cloneReminders(
                 completedTask,
                 newTask
         );
 
-        System.out.println(">>> Creating Feed");
 
-        activityFeedService.createFeed(
-                newActivity,
-                newActivity.getUser(),
-                ActivityFeedEvent.TASK_RECURRED,
-                "generated the next recurring task.",
-                null
+        featureEventTrackingService.handle(
+                taskEventFactory.taskRecurred(
+                        newActivity,
+                        newActivity.getUser()
+                )
         );
 
-        System.out.println(">>> Creating Audit");
-
-        auditLogService.createLog(
-                newActivity,
-                newActivity.getUser(),
-                ActivityFeedEvent.TASK_RECURRED,
-                AuditCategory.TASK,
-                AuditSeverity.INFO,
-                null,
-                "Generated next recurring task.",
-                null,
-                null
-        );
-
-        System.out.println("===== RECURRING TASK CREATED SUCCESSFULLY =====");
     }
 
     private LocalDateTime calculateNextDate(

@@ -2,7 +2,7 @@ package com.movem.backend.Mapper.TaskMapper;
 
 import com.movem.backend.Dto.response.TaskResponses.TaskLabelResponse;
 import com.movem.backend.Entity.Tasks.TaskLabel;
-import com.movem.backend.Mapper.AbstractBaseMapper;
+import com.movem.backend.Mapper.BaseMapper.AbstractBaseMapper;
 import org.springframework.stereotype.Component;
 
 @Component

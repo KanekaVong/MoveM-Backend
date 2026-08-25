@@ -3,6 +3,7 @@ package com.movem.backend.Entity.Activity;
 import com.movem.backend.Entity.Tasks.Task;
 import com.movem.backend.Entity.Tasks.TaskLabel;
 import com.movem.backend.Entity.Auth.User;
+import com.movem.backend.Entity.Trip.Trip;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 import com.movem.backend.model.enums.Activity.ActivityType;
 import jakarta.persistence.*;
@@ -73,7 +74,6 @@ public class Activity {
     @Column(name = "google_place_id")
     private String googlePlaceId;
 
-    // Ignore geometry for now
     @Column(name = "coordinates")
     private String coordinates;
 
@@ -111,9 +111,13 @@ public class Activity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-//    @OneToOne(mappedBy = "activity")
-//    private Fitness fitness;
-//
-//    @OneToOne(mappedBy = "activity")
-//    private Trip trip;
+    @OneToOne(
+            mappedBy = "activity",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private Trip trip;
+
+
 }

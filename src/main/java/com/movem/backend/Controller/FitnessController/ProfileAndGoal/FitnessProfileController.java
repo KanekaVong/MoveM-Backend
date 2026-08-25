@@ -4,6 +4,7 @@ import com.movem.backend.Dto.request.FitnessRequest.ProfileAndGoal.CreateFitness
 import com.movem.backend.Dto.request.FitnessRequest.ProfileAndGoal.UpdateFitnessProfileRequest;
 import com.movem.backend.Dto.response.FitnessResponse.ProfileAndGoal.FitnessProfileResponse;
 import com.movem.backend.Service.FitnessServices.ProfileAndGoal.FitnessProfileService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,10 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/fitness/profile")
+@Tag(
+        name = "Fitness - Profile",
+        description = "Fitness Profile"
+)
 @RequiredArgsConstructor
 public class FitnessProfileController {
 

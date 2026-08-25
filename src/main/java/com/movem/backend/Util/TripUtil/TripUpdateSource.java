@@ -1,11 +1,13 @@
 package com.movem.backend.Util.TripUtil;
 
+import com.movem.backend.Util.Base.BaseActivityUpdateSource;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public interface TripUpdateSource {
+public interface TripUpdateSource
+        extends BaseActivityUpdateSource {
     String getActivityName();
 
     String getDescription();

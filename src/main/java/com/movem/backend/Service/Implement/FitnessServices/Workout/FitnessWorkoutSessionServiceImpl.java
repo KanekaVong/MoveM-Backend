@@ -1,35 +1,46 @@
 package com.movem.backend.Service.Implement.FitnessServices.Workout;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.movem.backend.Dto.request.FitnessRequest.Workout.ShareWorkoutRequest;
 import com.movem.backend.Dto.request.FitnessRequest.Workout.StartWorkoutRequest;
 import com.movem.backend.Dto.request.FitnessRequest.Workout.WorkoutProgressRequest;
 import com.movem.backend.Dto.request.FitnessRequest.Workout.WorkoutRoutePointsRequest;
+import com.movem.backend.Dto.response.FitnessResponse.Social.SocialWorkoutResponse;
 import com.movem.backend.Dto.response.FitnessResponse.Workout.*;
 import com.movem.backend.Entity.Activity.Activity;
 import com.movem.backend.Entity.Fitness.Challenge.FitnessChallengeParticipant;
 import com.movem.backend.Entity.Fitness.Challenge.GroupFitnessChallenge;
 import com.movem.backend.Entity.Fitness.Challenge.SoloChallenge;
+import com.movem.backend.Entity.Fitness.WorkoutSession.FitnessWorkoutAnalysis;
 import com.movem.backend.Entity.Fitness.WorkoutSession.FitnessWorkoutRoutePoint;
 import com.movem.backend.Entity.Fitness.WorkoutSession.FitnessWorkoutSession;
 import com.movem.backend.Entity.Auth.User;
+import com.movem.backend.Entity.Friend.Friend;
 import com.movem.backend.Exception.ResourceNotFoundException;
+import com.movem.backend.Exception.UnauthorizedActionException;
 import com.movem.backend.Mapper.FitnessMapper.Workout.FitnessWorkoutSessionMapper;
+import com.movem.backend.Repository.SocialRepository.CommentRepository;
 import com.movem.backend.Repository.FitnessRepository.Challenge.FitnessChallengeParticipantRepository;
 import com.movem.backend.Repository.FitnessRepository.Challenge.SoloChallengeCatalogRepository;
+import com.movem.backend.Repository.SocialRepository.KudosRepository;
+import com.movem.backend.Repository.FitnessRepository.Workout.FitnessWorkoutAnalysisRepository;
 import com.movem.backend.Repository.FitnessRepository.Workout.FitnessWorkoutRoutePointRepository;
 import com.movem.backend.Repository.FitnessRepository.Workout.FitnessWorkoutSessionRepository;
+import com.movem.backend.Repository.FriendRepository.FriendRepository;
 import com.movem.backend.Repository.SharedRepository.ActivityRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.FitnessServices.Workout.CalorieCalculationService;
 import com.movem.backend.Service.FitnessServices.Workout.FitnessWorkoutSessionService;
 import com.movem.backend.Service.FitnessServices.Workout.WorkoutRouteCalculationService;
 import com.movem.backend.Service.SharedServices.ActivityService;
+import com.movem.backend.Service.Event.Factory.Fitness.WorkoutEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.Util.FitnessUtil.FitnessChallengeCreateSource;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 import com.movem.backend.model.enums.Activity.ActivityType;
-import com.movem.backend.model.enums.Fitness.FitnessChallengeParticipantStatus;
-import com.movem.backend.model.enums.Fitness.FitnessChallengeStatus;
-import com.movem.backend.model.enums.Fitness.FitnessWorkoutStatus;
-import com.movem.backend.model.enums.Fitness.WorkoutType;
+import com.movem.backend.model.enums.Fitness.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,6 +48,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -51,10 +63,17 @@ public class FitnessWorkoutSessionServiceImpl
     private final CalorieCalculationService calorieCalculationService;
     private final CurrentUserService currentUserService;
     private final ActivityService activityService;
+    private final ObjectMapper objectMapper;
+    private final KudosRepository kudosRepository;
+    private final CommentRepository commentRepository;
+    private final FriendRepository friendRepository;
+    private final FeatureEventTrackingService featureEventTrackingService;
+    private final WorkoutEventFactory workoutEventFactory;
     private final ActivityRepository activityRepository;
     private final FitnessWorkoutSessionMapper workoutSessionMapper;
     private final FitnessWorkoutRoutePointRepository workoutRoutePointRepository;
     private final WorkoutRouteCalculationService workoutRouteCalculationService;
+    private final FitnessWorkoutAnalysisRepository analysisRepository;
 
     @Override
     @Transactional
@@ -231,6 +250,10 @@ public class FitnessWorkoutSessionServiceImpl
 
         session.setWorkoutType(
                 workoutType
+        );
+
+        session.setTrackingMode(
+                resolveTrackingMode(workoutType)
         );
 
         session.setStatus(
@@ -524,8 +547,7 @@ public class FitnessWorkoutSessionServiceImpl
                 activeDurationSeconds
         );
 
-        boolean gpsWorkout =
-                session.getSoloChallenge() != null;
+        boolean gpsWorkout = session.getTrackingMode() == TrackingMode.GPS;
 
         if (gpsWorkout) {
 
@@ -535,23 +557,13 @@ public class FitnessWorkoutSessionServiceImpl
                                     session
                             );
 
-            List<FitnessWorkoutRoutePoint> validPoints =
-                    routePoints.stream()
-                            .filter(this::hasValidCoordinates)
-                            .filter(this::hasAcceptableAccuracy)
-                            .toList();
-
             if (!routePoints.isEmpty()) {
 
                 BigDecimal finalDistance =
                         workoutRouteCalculationService
-                                .calculateDistance(
-                                        routePoints
-                                );
+                                .calculateDistance(routePoints);
 
-                session.setDistance(
-                        finalDistance
-                );
+                session.setDistance(finalDistance);
 
                 BigDecimal finalSpeed =
                         workoutRouteCalculationService
@@ -560,9 +572,7 @@ public class FitnessWorkoutSessionServiceImpl
                                         activeDurationSeconds
                                 );
 
-                session.setAverageSpeed(
-                        finalSpeed
-                );
+                session.setAverageSpeed(finalSpeed);
 
                 BigDecimal finalPace =
                         workoutRouteCalculationService
@@ -571,9 +581,7 @@ public class FitnessWorkoutSessionServiceImpl
                                         activeDurationSeconds
                                 );
 
-                session.setAveragePace(
-                        finalPace
-                );
+                session.setAveragePace(finalPace);
             }
         }
 
@@ -644,6 +652,13 @@ public class FitnessWorkoutSessionServiceImpl
                 workoutSessionRepository.save(
                         session
                 );
+
+        featureEventTrackingService.handle(
+                workoutEventFactory.completed(
+                        saved,
+                        currentUser
+                )
+        );
 
         return workoutSessionMapper.toResponse(
                 saved
@@ -1293,8 +1308,55 @@ public class FitnessWorkoutSessionServiceImpl
         );
     }
 
+    @Override
+    @Transactional
+    public SocialWorkoutResponse getSocialWorkout(Integer sessionId) {
 
-    // Helper Method
+        FitnessWorkoutSession session =
+                workoutSessionRepository.findById(sessionId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Workout session not found."
+                                ));
+
+        if (session.getStatus() != FitnessWorkoutStatus.COMPLETED) {
+            throw new IllegalArgumentException(
+                    "Only completed workouts can be viewed socially."
+            );
+        }
+
+        User currentUser = currentUserService.getCurrentUser();
+
+        User owner = session.getUser();
+
+        boolean isOwner =
+                owner.getId().equals(currentUser.getId());
+
+        boolean isFriend =
+                areFriends(owner, currentUser);
+
+        if (!isOwner && !isFriend) {
+            throw new UnauthorizedActionException(
+                    "You are not allowed to view this workout."
+            );
+        }
+
+        return SocialWorkoutResponse.builder()
+                .sessionId(session.getId())
+                .userId(owner.getId())
+                .username(owner.getUsername())
+                .workoutType(session.getWorkoutType().name())
+                .status(session.getStatus().name())
+                .startedAt(session.getStartedAt())
+                .finishedAt(session.getFinishedAt())
+                .durationSeconds(session.getDurationSeconds())
+                .distance(session.getDistance())
+                .averagePace(session.getAveragePace())
+                .averageSpeed(session.getAverageSpeed())
+                .caloriesBurned(session.getCaloriesBurned())
+                .steps(session.getSteps())
+                .build();
+    }
 
     private String formatPace(BigDecimal secondsPerKm) {
 
@@ -1496,5 +1558,246 @@ public class FitnessWorkoutSessionServiceImpl
         return BigDecimal.valueOf(
                 earthRadiusKm * c
         );
+    }
+
+    private boolean areFriends(User a, User b) {
+        User first = a.getId() < b.getId() ? a : b;
+        User second = a.getId() < b.getId() ? b : a;
+
+        return friendRepository.existsByUserOneAndUserTwo(
+                first,
+                second
+        );
+    }
+
+    private TrackingMode resolveTrackingMode(
+            WorkoutType workoutType
+    ) {
+        return switch (workoutType) {
+            case PUSH_UP -> TrackingMode.POSE;
+            case RUNNING, WALKING -> TrackingMode.GPS;
+            case BADMINTON, TENNIS -> TrackingMode.STEPS;
+            default -> TrackingMode.MANUAL;
+        };
+    }
+
+    @Override
+    @Transactional
+    public FitnessWorkoutSummaryResponse getWorkoutSummary(
+            Integer sessionId
+    ) {
+
+        User currentUser =
+                currentUserService.getCurrentUser();
+
+        FitnessWorkoutSession session =
+                workoutSessionRepository
+                        .findByIdAndUser(
+                                sessionId,
+                                currentUser
+                        )
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Workout session not found."
+                                ));
+
+        FitnessWorkoutAnalysis analysis =
+                analysisRepository
+                        .findByWorkoutSession(session)
+                        .orElse(null);
+
+        List<String> feedback = List.of();
+
+        if (analysis != null
+                && analysis.getFeedback() != null
+                && !analysis.getFeedback().isBlank()) {
+
+            try {
+                feedback = objectMapper.readValue(
+                        analysis.getFeedback(),
+                        new TypeReference<List<String>>() {}
+                );
+            } catch (JsonProcessingException e) {
+                throw new IllegalStateException(
+                        "Unable to read workout feedback."
+                );
+            }
+        }
+
+        return FitnessWorkoutSummaryResponse.builder()
+                .sessionId(session.getId())
+                .userId(session.getUser().getId())
+                .workoutType(session.getWorkoutType().name())
+                .trackingMode(session.getTrackingMode().name())
+                .status(session.getStatus().name())
+                .startedAt(session.getStartedAt())
+                .finishedAt(session.getFinishedAt())
+                .durationSeconds(session.getDurationSeconds())
+                .distance(session.getDistance())
+                .steps(session.getSteps())
+                .caloriesBurned(session.getCaloriesBurned())
+                .reps(analysis == null ? 0 : analysis.getReps())
+                .validReps(analysis == null ? 0 : analysis.getValidReps())
+                .invalidReps(analysis == null ? 0 : analysis.getInvalidReps())
+                .formScore(analysis == null ? null : analysis.getFormScore())
+                .feedback(feedback)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void updateWorkoutSharing(
+            Integer sessionId,
+            ShareWorkoutRequest request
+    ) {
+
+        User currentUser =
+                currentUserService.getCurrentUser();
+
+        FitnessWorkoutSession session =
+                workoutSessionRepository
+                        .findByIdAndUser(
+                                sessionId,
+                                currentUser
+                        )
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Workout session not found."
+                                )
+                        );
+
+        if (session.getStatus() != FitnessWorkoutStatus.COMPLETED) {
+            throw new IllegalArgumentException(
+                    "Only completed workouts can be shared."
+            );
+        }
+
+        boolean shared =
+                Boolean.TRUE.equals(request.getShared());
+
+        session.setIsShared(shared);
+
+        if (shared) {
+            session.setShareDescription(
+                    request.getDescription()
+            );
+        } else {
+            session.setShareDescription(null);
+        }
+
+        session.setUpdatedAt(LocalDateTime.now());
+
+        workoutSessionRepository.save(session);
+    }
+
+    @Override
+    @Transactional
+    public List<SharedWorkoutPostResponse> getSocialWorkoutFeed() {
+
+        User currentUser =
+                currentUserService.getCurrentUser();
+
+        List<Friend> friendships =
+                friendRepository.findByUserOneOrUserTwo(
+                        currentUser,
+                        currentUser
+                );
+
+        List<User> feedUsers =
+                new ArrayList<>();
+
+        feedUsers.add(currentUser);
+
+        for (Friend friendship : friendships) {
+
+            User friend;
+
+            if (friendship.getUserOne().getId()
+                    .equals(currentUser.getId())) {
+
+                friend = friendship.getUserTwo();
+
+            } else {
+
+                friend = friendship.getUserOne();
+            }
+
+            if (friend != null
+                    && feedUsers.stream()
+                    .noneMatch(user ->
+                            user.getId().equals(friend.getId()))) {
+
+                feedUsers.add(friend);
+            }
+        }
+
+        List<FitnessWorkoutSession> sessions =
+                workoutSessionRepository
+                        .findByUserInAndStatusAndIsSharedTrueOrderByFinishedAtDesc(
+                                feedUsers,
+                                FitnessWorkoutStatus.COMPLETED
+                        );
+
+        return sessions.stream()
+                .map(session -> {
+
+                    boolean myPost =
+                            session.getUser()
+                                    .getId()
+                                    .equals(currentUser.getId());
+
+                    long kudosCount =
+                            kudosRepository
+                                    .countByWorkoutSession(session);
+
+                    boolean myKudos =
+                            kudosRepository
+                                    .existsByWorkoutSessionAndUser(
+                                            session,
+                                            currentUser
+                                    );
+
+                    long commentCount =
+                            commentRepository
+                                    .countByActivity(
+                                            session.getActivity()
+                                    );
+
+                    return SharedWorkoutPostResponse.builder()
+                            .sessionId(session.getId())
+                            .userId(session.getUser().getId())
+                            .username(session.getUser().getUsername())
+                            .profilePicture(null)
+                            .workoutType(
+                                    session.getWorkoutType().name()
+                            )
+                            .trackingMode(
+                                    session.getTrackingMode().name()
+                            )
+                            .shareDescription(
+                                    session.getShareDescription()
+                            )
+                            .distance(
+                                    session.getDistance()
+                            )
+                            .steps(
+                                    session.getSteps()
+                            )
+                            .durationSeconds(
+                                    session.getDurationSeconds()
+                            )
+                            .caloriesBurned(
+                                    session.getCaloriesBurned()
+                            )
+                            .finishedAt(
+                                    session.getFinishedAt()
+                            )
+                            .kudosCount(kudosCount)
+                            .myKudos(myKudos)
+                            .commentCount(commentCount)
+                            .myPost(myPost)
+                            .build();
+                })
+                .toList();
     }
 }

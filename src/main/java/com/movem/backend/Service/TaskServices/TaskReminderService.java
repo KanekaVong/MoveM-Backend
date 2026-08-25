@@ -37,4 +37,6 @@ public interface TaskReminderService {
             Integer reminderId
     );
 
+    void processDueReminders();
+
 }

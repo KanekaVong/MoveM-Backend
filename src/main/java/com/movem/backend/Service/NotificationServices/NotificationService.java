@@ -1,6 +1,7 @@
 package com.movem.backend.Service.NotificationServices;
 
 import com.movem.backend.Dto.response.NotificationResponses.NotificationResponse;
+import com.movem.backend.Entity.Activity.Activity;
 import com.movem.backend.Entity.Auth.User;
 import com.movem.backend.model.enums.Notification.NotificationType;
 import com.movem.backend.model.enums.Notification.ReferenceType;
@@ -29,5 +30,19 @@ public interface NotificationService {
             String referenceId,
             String title,
             String message
+    );
+
+    void notifyActivityGroup(
+            Activity activity,
+            User sender,
+            NotificationType notificationType,
+            ReferenceType referenceType,
+            String referenceId,
+            String title,
+            String message
+    );
+
+    List<NotificationResponse> getNotificationsByActivity(
+            String activityId
     );
 }

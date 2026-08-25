@@ -3,6 +3,7 @@ package com.movem.backend.Controller.FitnessController.ProfileAndGoal;
 import com.movem.backend.Dto.request.FitnessRequest.ProfileAndGoal.CreateFitnessGoalRequest;
 import com.movem.backend.Dto.response.FitnessResponse.ProfileAndGoal.FitnessGoalResponse;
 import com.movem.backend.Service.FitnessServices.ProfileAndGoal.FitnessGoalService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/fitness/goals")
+@Tag(
+        name = "Fitness - Goal",
+        description = "Fitness Goal"
+)
 @RequiredArgsConstructor
 public class FitnessGoalController {
 

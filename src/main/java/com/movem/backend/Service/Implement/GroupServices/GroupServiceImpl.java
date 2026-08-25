@@ -14,10 +14,8 @@ import com.movem.backend.Exception.DuplicateResourceException;
 import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Exception.UnauthorizedActionException;
 import com.movem.backend.Mapper.CollaborationMapper.GroupMapper;
-import com.movem.backend.Service.NotificationServices.NotificationService;
-import com.movem.backend.model.enums.Activity.ActivityFeedEvent;
-import com.movem.backend.model.enums.Audit.AuditCategory;
-import com.movem.backend.model.enums.Audit.AuditSeverity;
+import com.movem.backend.Service.Event.Factory.GroupEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.model.enums.Collaboration.GroupRole;
 import com.movem.backend.model.enums.Collaboration.InviteStatus;
 import com.movem.backend.model.enums.Collaboration.JoinRequestStatus;
@@ -28,11 +26,7 @@ import com.movem.backend.Repository.SharedRepository.GroupMemberRepository;
 import com.movem.backend.Repository.CollaborationRepository.GroupRepository;
 import com.movem.backend.Repository.SharedRepository.JoinRequestRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
-import com.movem.backend.Service.SharedServices.ActivityFeedService;
-import com.movem.backend.Service.SharedServices.AuditLogService;
 import com.movem.backend.Service.CollaborationService.GroupService;
-import com.movem.backend.model.enums.Notification.NotificationType;
-import com.movem.backend.model.enums.Notification.ReferenceType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -48,25 +42,14 @@ import java.util.UUID;
 public class GroupServiceImpl implements GroupService {
 
     private final GroupRepository groupRepository;
-
     private final GroupMemberRepository groupMemberRepository;
-
     private final GroupInviteRepository groupInviteRepository;
-
     private final JoinRequestRepository joinRequestRepository;
-
     private final ActivityRepository activityRepository;
-
     private final UserRepository userRepository;
-
     private final CurrentUserService currentUserService;
-
-    private final ActivityFeedService activityFeedService;
-
-    private final NotificationService notificationService;
-
-    private final AuditLogService auditLogService;
-
+    private final FeatureEventTrackingService featureEventTrackingService;
+    private final GroupEventFactory groupEventFactory;
     private final GroupMapper groupMapper;
 
     @Override
@@ -109,12 +92,11 @@ public class GroupServiceImpl implements GroupService {
 
                     groupMemberRepository.save(member);
 
-                    activityFeedService.createFeed(
-                            activity,
-                            activity.getUser(),
-                            ActivityFeedEvent.GROUP_CREATED,
-                            "created the group.",
-                            null
+                    featureEventTrackingService.handle(
+                            groupEventFactory.groupCreated(
+                                    activity,
+                                    activity.getUser()
+                            )
                     );
 
                     return savedActivityGroup;
@@ -135,20 +117,28 @@ public class GroupServiceImpl implements GroupService {
         Activity activity =
                 getActivity(activityId);
 
+        if (!activity.getUser().getId().equals(
+                currentUser.getId()
+        )) {
+
+            throw new UnauthorizedActionException(
+                    "Only the Trip owner can invite members."
+            );
+        }
+
         ActivityGroup activityGroup =
                 getOrCreateGroup(activity);
-
-        validateLeader(activityGroup, currentUser);
 
         User invitee =
                 findUser(request.getIdentifier());
 
-        if (invitee.getId().equals(currentUser.getId())) {
+        if (invitee.getId().equals(
+                currentUser.getId()
+        )) {
 
             throw new IllegalArgumentException(
                     "You cannot invite yourself."
             );
-
         }
 
         if (groupMemberRepository.existsByActivityGroupAndUser(
@@ -159,7 +149,6 @@ public class GroupServiceImpl implements GroupService {
             throw new DuplicateResourceException(
                     "User is already a member."
             );
-
         }
 
         if (groupInviteRepository
@@ -173,189 +162,202 @@ public class GroupServiceImpl implements GroupService {
             throw new DuplicateResourceException(
                     "A pending invitation already exists."
             );
-
         }
 
         GroupInvite invite =
                 new GroupInvite();
 
-        invite.setActivityGroup(activityGroup);
+        invite.setActivityGroup(
+                activityGroup
+        );
 
-        invite.setInviter(currentUser);
+        invite.setInviter(
+                currentUser
+        );
 
-        invite.setInvitee(invitee);
+        invite.setInvitee(
+                invitee
+        );
 
-        invite.setStatus(InviteStatus.PENDING);
+        invite.setStatus(
+                InviteStatus.PENDING
+        );
 
-        invite.setInvitedAt(LocalDateTime.now());
+        invite.setInvitedAt(
+                LocalDateTime.now()
+        );
 
         GroupInvite saved =
                 groupInviteRepository.save(invite);
 
-        notificationService.createNotification(
-                invitee,
-                currentUser,
-                NotificationType.GROUP_INVITE,
-                ReferenceType.GROUP,
-                String.valueOf(activityGroup.getId()),
-                "Group Invitation",
-                currentUser.getUsername()
-                        + " invited you to join "
-                        + activity.getActivityName()
-                        + "."
-        );
-
-        activityFeedService.createFeed(
-                activityGroup.getActivity(),
-                currentUser,
-                ActivityFeedEvent.MEMBER_INVITED,
-                "invited " + invitee.getUsername() + ".",
-                saved.getId()
-        );
-
-        auditLogService.createLog(
-                activity,
-                currentUser,
-                ActivityFeedEvent.MEMBER_INVITED,
-                AuditCategory.GROUP,
-                AuditSeverity.INFO,
-                "member",
-                "Invited member.",
-                null,
-                invitee.getUsername()
+        featureEventTrackingService.handle(
+                groupEventFactory.memberInvited(
+                        activityGroup.getActivity(),
+                        currentUser,
+                        invitee,
+                        saved.getId()
+                )
         );
 
         return groupMapper
                 .toInviteResponse(saved);
-
     }
 
     @Override
     public GroupInviteResponse acceptInvite(Long inviteId) {
 
-        User currentUser = currentUserService.getCurrentUser();
+        User currentUser =
+                currentUserService.getCurrentUser();
 
-        GroupInvite invite = groupInviteRepository
-                .findById(inviteId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Invitation not found."
-                        ));
+        GroupInvite invite =
+                groupInviteRepository
+                        .findById(inviteId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Invitation not found."
+                                ));
 
-        // Only the invited user can accept
-        if (!invite.getInvitee().getId().equals(currentUser.getId())) {
+        if (!invite.getInvitee().getId().equals(
+                currentUser.getId()
+        )) {
 
             throw new UnauthorizedActionException(
                     "You cannot accept this invitation."
             );
-
         }
 
-        // Already handled?
         if (invite.getStatus() != InviteStatus.PENDING) {
 
             throw new IllegalArgumentException(
                     "This invitation has already been processed."
             );
-
         }
 
-        // Already a member?
+        ActivityGroup group =
+                invite.getActivityGroup();
+
+
+        User owner =
+                group.getCreatedBy();
+
+        if (!groupMemberRepository.existsByActivityGroupAndUser(
+                group,
+                owner
+        )) {
+
+            GroupMember ownerMember =
+                    new GroupMember();
+
+            GroupMemberId ownerId =
+                    new GroupMemberId();
+
+            ownerId.setGroupId(
+                    group.getId()
+            );
+
+            ownerId.setUserId(
+                    owner.getId()
+            );
+
+            ownerMember.setId(ownerId);
+
+            ownerMember.setActivityGroup(
+                    group
+            );
+
+            ownerMember.setUser(
+                    owner
+            );
+
+            ownerMember.setRole(
+                    GroupRole.LEADER
+            );
+
+            ownerMember.setJoinedAt(
+                    LocalDateTime.now()
+            );
+
+            groupMemberRepository.save(
+                    ownerMember
+            );
+        }
+
         if (groupMemberRepository.existsByActivityGroupAndUser(
-                invite.getActivityGroup(),
+                group,
                 currentUser
         )) {
 
             throw new DuplicateResourceException(
                     "You are already a member of this group."
             );
-
         }
 
-        GroupMember member = new GroupMember();
+        GroupMember member =
+                new GroupMember();
 
-        GroupMemberId id = new GroupMemberId();
+        GroupMemberId memberId =
+                new GroupMemberId();
 
-        id.setGroupId(invite.getActivityGroup().getId());
-
-        id.setUserId(currentUser.getId());
-
-        member.setId(id);
-
-        member.setActivityGroup(invite.getActivityGroup());
-
-        member.setUser(currentUser);
-
-        member.setRole(GroupRole.MEMBER);
-
-        member.setJoinedAt(LocalDateTime.now());
-
-        groupMemberRepository.save(member);
-
-        notificationService.createNotification(
-                invite.getInviter(),
-                currentUser,
-                NotificationType.GROUP_INVITE_ACCEPTED,
-                ReferenceType.GROUP,
-                String.valueOf(invite.getActivityGroup().getId()),
-                "Invitation Accepted",
-                currentUser.getUsername()
-                        + " accepted your invitation to join "
-                        + invite.getActivityGroup()
-                        .getActivity()
-                        .getActivityName()
-                        + "."
+        memberId.setGroupId(
+                group.getId()
         );
 
-        activityFeedService.createFeed(
-                invite.getActivityGroup().getActivity(),
-                currentUser,
-                ActivityFeedEvent.MEMBER_JOINED,
-                "joined the group.",
-                null
+        memberId.setUserId(
+                currentUser.getId()
         );
 
-        auditLogService.createLog(
-                invite.getActivityGroup().getActivity(),
-                currentUser,
-                ActivityFeedEvent.MEMBER_JOINED,
-                AuditCategory.GROUP,
-                AuditSeverity.INFO,
-                "member",
-                "Joined group.",
-                null,
-                currentUser.getUsername()
+        member.setId(memberId);
+
+        member.setActivityGroup(
+                group
         );
 
-        invite.setStatus(InviteStatus.ACCEPTED);
+        member.setUser(
+                currentUser
+        );
 
-        invite.setRespondedAt(LocalDateTime.now());
+        member.setRole(
+                GroupRole.MEMBER
+        );
+
+        member.setJoinedAt(
+                LocalDateTime.now()
+        );
+
+        groupMemberRepository.save(
+                member
+        );
+
+        invite.setStatus(
+                InviteStatus.ACCEPTED
+        );
+
+        invite.setRespondedAt(
+                LocalDateTime.now()
+        );
 
         GroupInvite saved =
                 groupInviteRepository.save(invite);
 
-        activityFeedService.createFeed(
-                invite.getActivityGroup().getActivity(),
-                currentUser,
-                ActivityFeedEvent.INVITE_ACCEPTED,
-                "accepted the invitation.",
-                invite.getId()
+        featureEventTrackingService.handle(
+                groupEventFactory.memberJoined(
+                        group.getActivity(),
+                        currentUser
+                )
         );
 
-        auditLogService.createLog(
-                invite.getActivityGroup().getActivity(),
-                currentUser,
-                ActivityFeedEvent.INVITE_ACCEPTED,
-                AuditCategory.GROUP,
-                AuditSeverity.INFO,
-                "status",
-                "Accepted invitation.",
-                "PENDING",
-                "ACCEPTED"
+        featureEventTrackingService.handle(
+                groupEventFactory.inviteAccepted(
+                        invite.getActivityGroup().getActivity(),
+                        currentUser,
+                        invite.getId(),
+                        invite.getInviter()
+                )
         );
 
-        return groupMapper.toInviteResponse(saved);
-
+        return groupMapper.toInviteResponse(
+                saved
+        );
     }
 
     @Override
@@ -374,62 +376,26 @@ public class GroupServiceImpl implements GroupService {
 
             throw new UnauthorizedActionException(
                     "You cannot reject this invitation."
-            );
-
-        }
+            );}
 
         if (invite.getStatus() != InviteStatus.PENDING) {
 
             throw new IllegalArgumentException(
                     "This invitation has already been processed."
-            );
-
-        }
-
+            );}
         invite.setStatus(InviteStatus.REJECTED);
-
         invite.setRespondedAt(LocalDateTime.now());
-
-        GroupInvite saved =
-                groupInviteRepository.save(invite);
-
-        notificationService.createNotification(
-                invite.getInviter(),
-                currentUser,
-                NotificationType.GROUP_INVITE_REJECTED,
-                ReferenceType.GROUP,
-                String.valueOf(invite.getActivityGroup().getId()),
-                "Invitation Rejected",
-                currentUser.getUsername()
-                        + " rejected your invitation to join "
-                        + invite.getActivityGroup()
-                        .getActivity()
-                        .getActivityName()
-                        + "."
-        );
-
-        activityFeedService.createFeed(
-                invite.getActivityGroup().getActivity(),
-                currentUser,
-                ActivityFeedEvent.INVITE_REJECTED,
-                "rejected the invitation.",
-                invite.getId()
-        );
-
-        auditLogService.createLog(
-                invite.getActivityGroup().getActivity(),
-                currentUser,
-                ActivityFeedEvent.INVITE_REJECTED,
-                AuditCategory.GROUP,
-                AuditSeverity.INFO,
-                "status",
-                "Rejected invitation.",
-                "PENDING",
-                "REJECTED"
+        GroupInvite saved = groupInviteRepository.save(invite);
+        featureEventTrackingService.handle(
+                groupEventFactory.inviteRejected(
+                        invite.getActivityGroup().getActivity(),
+                        currentUser,
+                        invite.getId(),
+                        invite.getInviter()
+                )
         );
 
         return groupMapper.toInviteResponse(saved);
-
     }
 
     @Override
@@ -445,8 +411,6 @@ public class GroupServiceImpl implements GroupService {
                         new ResourceNotFoundException(
                                 "Invalid join link."
                         ));
-
-        // Already a member?
         if (groupMemberRepository.existsByActivityGroupAndUser(
                 group,
                 currentUser
@@ -458,7 +422,6 @@ public class GroupServiceImpl implements GroupService {
 
         }
 
-        // Already requested?
         if (joinRequestRepository
                 .findByActivityGroupAndRequester(
                         group,
@@ -489,38 +452,13 @@ public class GroupServiceImpl implements GroupService {
         JoinRequest saved =
                 joinRequestRepository.save(joinRequest);
 
-        notificationService.createNotification(
-                group.getCreatedBy(),
-                currentUser,
-                NotificationType.GROUP_JOIN_REQUEST,
-                ReferenceType.GROUP,
-                String.valueOf(group.getId()),
-                "Group Join Request",
-                currentUser.getUsername()
-                        + " requested to join "
-                        + group.getActivity()
-                        .getActivityName()
-                        + "."
-        );
-
-        activityFeedService.createFeed(
-                joinRequest.getActivityGroup().getActivity(),
-                currentUser,
-                ActivityFeedEvent.JOIN_REQUEST_SENT,
-                "requested to join the activity.",
-                saved.getId()
-        );
-
-        auditLogService.createLog(
-                joinRequest.getActivityGroup().getActivity(),
-                currentUser,
-                ActivityFeedEvent.JOIN_REQUEST_SENT,
-                AuditCategory.GROUP,
-                AuditSeverity.INFO,
-                "status",
-                "Requested to join.",
-                null,
-                "PENDING"
+        featureEventTrackingService.handle(
+                groupEventFactory.joinRequestSent(
+                        group.getActivity(),
+                        currentUser,
+                        group,
+                        saved.getId()
+                )
         );
 
         return groupMapper.toJoinRequestResponse(saved);
@@ -598,37 +536,12 @@ public class GroupServiceImpl implements GroupService {
         JoinRequest saved =
                 joinRequestRepository.save(joinRequest);
 
-        notificationService.createNotification(
-                joinRequest.getRequester(),
-                currentUser,
-                NotificationType.GROUP_JOIN_REQUEST_APPROVED,
-                ReferenceType.GROUP,
-                String.valueOf(group.getId()),
-                "Join Request Approved",
-                "Your request to join "
-                        + group.getActivity()
-                        .getActivityName()
-                        + " was approved."
-        );
-
-        activityFeedService.createFeed(
-                joinRequest.getActivityGroup().getActivity(),
-                joinRequest.getRequester(),
-                ActivityFeedEvent.JOIN_REQUEST_APPROVED,
-                "joined the activity.",
-                joinRequest.getId()
-        );
-
-        auditLogService.createLog(
-                joinRequest.getActivityGroup().getActivity(),
-                currentUser,
-                ActivityFeedEvent.JOIN_REQUEST_APPROVED,
-                AuditCategory.GROUP,
-                AuditSeverity.INFO,
-                "status",
-                "Approved join request.",
-                "PENDING",
-                "APPROVED"
+        featureEventTrackingService.handle(
+                groupEventFactory.joinRequestApproved(
+                        group.getActivity(),
+                        currentUser,
+                        joinRequest
+                )
         );
 
         return groupMapper.toJoinRequestResponse(saved);
@@ -673,37 +586,12 @@ public class GroupServiceImpl implements GroupService {
         JoinRequest saved =
                 joinRequestRepository.save(joinRequest);
 
-        notificationService.createNotification(
-                joinRequest.getRequester(),
-                currentUser,
-                NotificationType.GROUP_JOIN_REQUEST_REJECTED,
-                ReferenceType.GROUP,
-                String.valueOf(group.getId()),
-                "Join Request Rejected",
-                "Your request to join "
-                        + group.getActivity()
-                        .getActivityName()
-                        + " was rejected."
-        );
-
-        activityFeedService.createFeed(
-                joinRequest.getActivityGroup().getActivity(),
-                currentUser,
-                ActivityFeedEvent.JOIN_REQUEST_REJECTED,
-                "rejected a join request.",
-                joinRequest.getId()
-        );
-
-        auditLogService.createLog(
-                joinRequest.getActivityGroup().getActivity(),
-                currentUser,
-                ActivityFeedEvent.JOIN_REQUEST_REJECTED,
-                AuditCategory.GROUP,
-                AuditSeverity.INFO,
-                "member",
-                "Rejected join request.",
-                null,
-                joinRequest.getRequester().getUsername()
+        featureEventTrackingService.handle(
+                groupEventFactory.joinRequestRejected(
+                        group.getActivity(),
+                        currentUser,
+                        joinRequest
+                )
         );
 
         return groupMapper.toJoinRequestResponse(saved);
@@ -741,7 +629,6 @@ public class GroupServiceImpl implements GroupService {
                                         "You are not a member of this group."
                                 ));
 
-        // Leader cannot leave while still the leader
         if (member.getRole() == GroupRole.LEADER) {
             throw new IllegalArgumentException(
                     "You're not supposed to leave your own group."
@@ -750,37 +637,12 @@ public class GroupServiceImpl implements GroupService {
 
         groupMemberRepository.delete(member);
 
-        notificationService.createNotification(
-                group.getCreatedBy(),
-                currentUser,
-                NotificationType.GROUP_MEMBER_LEFT,
-                ReferenceType.GROUP,
-                String.valueOf(group.getId()),
-                "Member Left Group",
-                currentUser.getUsername()
-                        + " left "
-                        + activity.getActivityName()
-                        + "."
-        );
-
-        activityFeedService.createFeed(
-                activity,
-                currentUser,
-                ActivityFeedEvent.MEMBER_LEFT,
-                "left the activity.",
-                null
-        );
-
-        auditLogService.createLog(
-                activity,
-                currentUser,
-                ActivityFeedEvent.MEMBER_LEFT,
-                AuditCategory.GROUP,
-                AuditSeverity.WARNING,
-                "member",
-                "Left group.",
-                currentUser.getUsername(),
-                null
+        featureEventTrackingService.handle(
+                groupEventFactory.memberLeft(
+                        activity,
+                        currentUser,
+                        group
+                )
         );
 
     }
@@ -802,7 +664,6 @@ public class GroupServiceImpl implements GroupService {
                                         "Activity not found."
                                 ));
 
-        // Only activity owner can remove members
         if (!activity.getUser().getId().equals(currentUser.getId())) {
             throw new UnauthorizedActionException(
                     "Only the activity owner can remove members."
@@ -834,7 +695,6 @@ public class GroupServiceImpl implements GroupService {
                                         "Member not found."
                                 ));
 
-        // Prevent removing yourself
         if (member.getId().equals(currentUser.getId())) {
             throw new IllegalArgumentException(
                     "Use Leave Group instead."
@@ -843,36 +703,12 @@ public class GroupServiceImpl implements GroupService {
 
         groupMemberRepository.delete(groupMember);
 
-        notificationService.createNotification(
-                member,
-                currentUser,
-                NotificationType.GROUP_MEMBER_REMOVED,
-                ReferenceType.GROUP,
-                String.valueOf(activityGroup.getId()),
-                "Removed From Group",
-                "You were removed from "
-                        + activity.getActivityName()
-                        + "."
-        );
-
-        activityFeedService.createFeed(
-                activity,
-                currentUser,
-                ActivityFeedEvent.MEMBER_REMOVED,
-                "removed " + member.getUsername() + ".",
-                null
-        );
-
-        auditLogService.createLog(
-                activity,
-                currentUser,
-                ActivityFeedEvent.MEMBER_REMOVED,
-                AuditCategory.GROUP,
-                AuditSeverity.WARNING,
-                "member",
-                "Removed member.",
-                member.getUsername(),
-                null
+        featureEventTrackingService.handle(
+                groupEventFactory.memberRemoved(
+                        activity,
+                        currentUser,
+                        member
+                )
         );
 
     }
@@ -1101,17 +937,14 @@ public class GroupServiceImpl implements GroupService {
 
         keyword = keyword.trim().toLowerCase();
 
-        // Minimum 3 characters
         if (keyword.length() < 3) {
             return List.of();
         }
 
-        // Don't allow searching by only email domain
         if (keyword.startsWith("@")) {
             return List.of();
         }
 
-        // Don't allow numbers-only searches
         if (keyword.matches("\\d+")) {
             return List.of();
         }
@@ -1126,7 +959,6 @@ public class GroupServiceImpl implements GroupService {
                 )
                 .stream()
 
-                // Don't show yourself
                 .filter(user ->
                         !user.getId().equals(currentUser.getId())
                 )

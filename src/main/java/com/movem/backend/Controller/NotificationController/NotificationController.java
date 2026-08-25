@@ -2,6 +2,7 @@ package com.movem.backend.Controller.NotificationController;
 
 import com.movem.backend.Dto.response.NotificationResponses.NotificationResponse;
 import com.movem.backend.Service.NotificationServices.NotificationService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,13 +11,16 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/notifications")
+@Tag(
+        name = "Social - Notification",
+        description = "Notifications"
+)
 @RequiredArgsConstructor
 public class NotificationController {
 
     private final NotificationService notificationService;
 
 
-    // Get all notifications
     @GetMapping
     public ResponseEntity<List<NotificationResponse>> getNotifications() {
 
@@ -25,8 +29,19 @@ public class NotificationController {
         );
     }
 
+    @GetMapping("/activity/{activityId}")
+    public ResponseEntity<List<NotificationResponse>> getNotificationsByActivity(
+            @PathVariable String activityId
+    ) {
 
-    // Get unread notifications
+        return ResponseEntity.ok(
+                notificationService.getNotificationsByActivity(
+                        activityId
+                )
+        );
+    }
+
+
     @GetMapping("/unread")
     public ResponseEntity<List<NotificationResponse>> getUnreadNotifications() {
 
@@ -36,7 +51,6 @@ public class NotificationController {
     }
 
 
-    // Get unread notification count
     @GetMapping("/unread/count")
     public ResponseEntity<Long> getUnreadCount() {
 
@@ -46,7 +60,6 @@ public class NotificationController {
     }
 
 
-    // Mark one notification as read
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<Void> markAsRead(
             @PathVariable Long notificationId
@@ -58,7 +71,6 @@ public class NotificationController {
     }
 
 
-    // Mark all notifications as read
     @PatchMapping("/read-all")
     public ResponseEntity<Void> markAllAsRead() {
 
@@ -68,7 +80,6 @@ public class NotificationController {
     }
 
 
-    // Delete one notification
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<Void> deleteNotification(
             @PathVariable Long notificationId

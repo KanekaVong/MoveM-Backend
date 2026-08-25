@@ -13,6 +13,8 @@ import com.movem.backend.Repository.FitnessRepository.Club.FitnessClubMemberRepo
 import com.movem.backend.Repository.FitnessRepository.Club.FitnessClubRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.FitnessServices.Club.FitnessClubJoinRequestService;
+import com.movem.backend.Service.Event.Factory.Fitness.FitnessClubEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.model.enums.Collaboration.JoinRequestStatus;
 import com.movem.backend.model.enums.Fitness.FitnessClubRole;
 import jakarta.transaction.Transactional;
@@ -28,17 +30,12 @@ import java.util.List;
 public class FitnessClubJoinRequestServiceImpl
         implements FitnessClubJoinRequestService {
 
+    private final FeatureEventTrackingService featureEventTrackingService;
+    private final FitnessClubEventFactory fitnessClubEventFactory;
     private final FitnessClubRepository fitnessClubRepository;
-
-    private final FitnessClubJoinRequestRepository
-            fitnessClubJoinRequestRepository;
-
-    private final FitnessClubMemberRepository
-            fitnessClubMemberRepository;
-
-    private final FitnessClubJoinRequestMapper
-            fitnessClubJoinRequestMapper;
-
+    private final FitnessClubJoinRequestRepository fitnessClubJoinRequestRepository;
+    private final FitnessClubMemberRepository fitnessClubMemberRepository;
+    private final FitnessClubJoinRequestMapper fitnessClubJoinRequestMapper;
     private final CurrentUserService currentUserService;
 
     @Override
@@ -75,11 +72,6 @@ public class FitnessClubJoinRequestServiceImpl
             );
         }
 
-
-        /*
-         * Prevent a second pending request.
-         */
-
         boolean alreadyPending =
                 fitnessClubJoinRequestRepository
                         .findByFitnessClubAndRequesterAndStatus(
@@ -109,6 +101,13 @@ public class FitnessClubJoinRequestServiceImpl
                 fitnessClubJoinRequestRepository.save(
                         request
                 );
+
+        featureEventTrackingService.handle(
+                fitnessClubEventFactory.joinRequestSent(
+                        club,
+                        saved
+                )
+        );
 
         return fitnessClubJoinRequestMapper.toResponse(
                 saved
@@ -200,11 +199,6 @@ public class FitnessClubJoinRequestServiceImpl
                         )
         ) {
 
-            /*
-             * If the user somehow became a member already,
-             * don't create a duplicate membership.
-             */
-
             request.setStatus(
                     JoinRequestStatus.APPROVED
             );
@@ -215,8 +209,15 @@ public class FitnessClubJoinRequestServiceImpl
 
             FitnessClubJoinRequest saved =
                     fitnessClubJoinRequestRepository.save(
-                            request
-                    );
+                            request);
+
+            featureEventTrackingService.handle(
+                    fitnessClubEventFactory.joinRequestApproved(
+                            club,
+                            saved,
+                            currentUser
+                    )
+            );
 
             return fitnessClubJoinRequestMapper
                     .toResponse(saved);
@@ -267,12 +268,6 @@ public class FitnessClubJoinRequestServiceImpl
                 saved
         );
     }
-
-
-    // =========================================================
-    // REJECT REQUEST
-    // OWNER / ADMIN ONLY
-    // =========================================================
 
     @Override
     public FitnessClubJoinRequestResponse rejectRequest(
@@ -327,15 +322,18 @@ public class FitnessClubJoinRequestServiceImpl
                         request
                 );
 
+        featureEventTrackingService.handle(
+                fitnessClubEventFactory.joinRequestRejected(
+                        club,
+                        saved,
+                        currentUser
+                )
+        );
+
         return fitnessClubJoinRequestMapper.toResponse(
                 saved
         );
     }
-
-
-    // =========================================================
-    // CANCEL MY REQUEST
-    // =========================================================
 
     @Override
     public void cancelRequest(
@@ -391,11 +389,6 @@ public class FitnessClubJoinRequestServiceImpl
         );
     }
 
-
-    // =========================================================
-    // GET MY REQUESTS
-    // =========================================================
-
     @Override
     @Transactional
     public List<FitnessClubJoinRequestResponse>
@@ -412,11 +405,6 @@ public class FitnessClubJoinRequestServiceImpl
                 )
                 .toList();
     }
-
-
-    // =========================================================
-    // HELPERS
-    // =========================================================
 
     private FitnessClub getClub(
             Integer clubId

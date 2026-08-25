@@ -36,6 +36,10 @@ ORDER BY tr.remindAt
             LocalDateTime end
     );
 
+    List<TaskReminder> findByRemindAtLessThanEqualAndIsSentFalse(
+            LocalDateTime now
+    );
+
     List<TaskReminder> findByTask(Task task);
 
     List<TaskReminder> findByTaskOrderByRemindAtAsc(Task task);

@@ -4,7 +4,9 @@ import com.movem.backend.Dto.request.FitnessRequest.Challenge.GroupChallenge.Cre
 import com.movem.backend.Dto.request.FitnessRequest.Challenge.GroupChallenge.CreateGroupFitnessChallengeRequest;
 import com.movem.backend.Dto.request.FitnessRequest.Challenge.GroupChallenge.UpdateGroupFitnessChallengeRequest;
 import com.movem.backend.Dto.response.FitnessResponse.Challenge.GroupFitnessChallengeResponse;
+import com.movem.backend.Dto.response.FitnessResponse.Social.SocialChallengeResponse;
 import com.movem.backend.Service.FitnessServices.Challenge.GroupFitnessChallengeService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +17,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/fitness")
+@Tag(
+        name = "Fitness - Group Challenges",
+        description = "Group Challenges Customization"
+)
 @RequiredArgsConstructor
 public class GroupFitnessChallengeController {
 
@@ -131,5 +137,16 @@ public class GroupFitnessChallengeController {
                                         request
                                 )
                 );
+    }
+
+    @GetMapping("/{challengeId}/social")
+    public ResponseEntity<SocialChallengeResponse> getSocialChallenge(
+            @PathVariable Integer challengeId
+    ) {
+        return ResponseEntity.ok(
+                groupFitnessChallengeService.getSocialChallenge(
+                        challengeId
+                )
+        );
     }
 }
