@@ -39,14 +39,9 @@ public class CommentMapper
         );
 
         if (comment.getUser().getProfilePic() != null) {
-
             response.setProfilePic(
-                    Base64.getEncoder()
-                            .encodeToString(
-                                    comment.getUser().getProfilePic()
-                            )
+                    comment.getUser().getProfilePic()
             );
-
         }
 
         response.setContent(

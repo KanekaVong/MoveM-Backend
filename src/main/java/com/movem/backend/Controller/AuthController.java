@@ -3,7 +3,7 @@ package com.movem.backend.Controller;
 
 import com.movem.backend.Dto.request.AuthRequest.*;
 import com.movem.backend.Dto.response.AuthResponses.AuthResponse;
-import com.movem.backend.Dto.response.AuthResponses.CurrentUserResponse;
+import com.movem.backend.Dto.response.AuthResponses.UserResponse;
 import com.movem.backend.Entity.Auth.EmailVerification;
 import com.movem.backend.Entity.Auth.TrustedDevice;
 import com.movem.backend.Entity.Auth.User;
@@ -34,7 +34,7 @@ public class AuthController {
 
     @Autowired private UserService userService;
     @Autowired private AuthenticationManager authenticationManager;
-    @Autowired private com.movem.backend.service.AuthServices.JwtService jwtService;
+    @Autowired private com.movem.backend.Service.AuthServices.JwtService jwtService;
     @Autowired private OtpService otpService;
     @Autowired private EmailService emailService;
     @Autowired private EmailVerificationRepository emailVerificationRepository;
@@ -80,7 +80,7 @@ public class AuthController {
         userService.updateUser(user);
 
         String accessToken = jwtService.generateToken(user.getUsername(), user.getPasswordChangedAt());
-        com.movem.backend.service.AuthServices.JwtService.TrustTokenResult trustResult =
+        com.movem.backend.Service.AuthServices.JwtService.TrustTokenResult trustResult =
                 jwtService.generateTrustToken(
                         user.getUsername(),
                         user.getPasswordChangedAt(),
@@ -103,7 +103,7 @@ public class AuthController {
         AuthResponse response = AuthResponse.builder()
                 .accessToken(accessToken)
                 .trustToken(trustToken)
-                .user(buildCurrentUserResponse(user))
+                .user(currentUserMapper.toResponse(user))
                 .build();
 
         return ResponseEntity.ok(response);
@@ -162,7 +162,7 @@ public class AuthController {
                         && trustedDevice.get().getUser().getId().equals(user.getId())) {
 
                     String accessToken = jwtService.generateToken(username, user.getPasswordChangedAt());
-                    com.movem.backend.service.AuthServices.JwtService.TrustTokenResult trustResult =
+                    com.movem.backend.Service.AuthServices.JwtService.TrustTokenResult trustResult =
                             jwtService.generateTrustToken(
                                     username,
                                     user.getPasswordChangedAt(),
@@ -188,7 +188,7 @@ public class AuthController {
                     AuthResponse response = AuthResponse.builder()
                             .accessToken(accessToken)
                             .trustToken(newTrustToken)
-                            .user(buildCurrentUserResponse(user))
+                            .user(currentUserMapper.toResponse(user))
                             .build();
 
                     return ResponseEntity.ok(response);
@@ -219,7 +219,7 @@ public class AuthController {
         }
 
         String accessToken = jwtService.generateToken(user.getUsername(), user.getPasswordChangedAt());
-        com.movem.backend.service.AuthServices.JwtService.TrustTokenResult trustResult =
+        com.movem.backend.Service.AuthServices.JwtService.TrustTokenResult trustResult =
                 jwtService.generateTrustToken(
                         user.getUsername(),
                         user.getPasswordChangedAt(),
@@ -253,7 +253,7 @@ public class AuthController {
         AuthResponse response = AuthResponse.builder()
                 .accessToken(accessToken)
                 .trustToken(trustToken)
-                .user(buildCurrentUserResponse(user))
+                .user(currentUserMapper.toResponse(user))
                 .build();
 
         return ResponseEntity.ok(response);
@@ -313,7 +313,7 @@ public class AuthController {
 
         User updatedUser = userService.getUserByEmail(request.getEmail());
         String accessToken = jwtService.generateToken(updatedUser.getUsername(), updatedUser.getPasswordChangedAt());
-        com.movem.backend.service.AuthServices.JwtService.TrustTokenResult trustResult =
+        com.movem.backend.Service.AuthServices.JwtService.TrustTokenResult trustResult =
                 jwtService.generateTrustToken(
                         updatedUser.getUsername(),
                         updatedUser.getPasswordChangedAt(),
@@ -346,38 +346,11 @@ public class AuthController {
         AuthResponse response = AuthResponse.builder()
                 .accessToken(accessToken)
                 .trustToken(trustToken)
-                .user(buildCurrentUserResponse(updatedUser))
+                .user(currentUserMapper.toResponse(updatedUser))
                 .build();
 
         return ResponseEntity.ok(response);
     }
 
-    private CurrentUserResponse buildCurrentUserResponse(User user) {
-        return CurrentUserResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .firstName(user.getFirstname())
-                .lastName(user.getLastname())
-                .dateOfBirth(user.getDateOfBirth())
-                .jointDate(user.getJointDate())
-                .profilePic(user.getProfilePic())
-                .cityProvince(user.getCityProvince())
-                .isActive(user.getIsActive())
-                .themePreference(user.getThemePreference())
-                .languagePreference(user.getLanguagePreference())
-                .build();
-    }
-
-    @GetMapping("/me")
-    public ResponseEntity<CurrentUserResponse> me() {
-
-        User user =
-                currentUserService.getCurrentUser();
-
-        return ResponseEntity.ok(
-                currentUserMapper.toResponse(user)
-        );
-    }
 }
 

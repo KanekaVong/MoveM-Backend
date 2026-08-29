@@ -29,10 +29,8 @@ public class NotificationMapper {
                 )
 
                 .senderProfilePicture(
-                        notification.getSender() != null &&
-                                notification.getSender().getProfilePic() != null
-                                ? Base64.getEncoder()
-                                .encodeToString(notification.getSender().getProfilePic())
+                        notification.getSender() != null
+                                ? notification.getSender().getProfilePic()
                                 : null
                 )
 

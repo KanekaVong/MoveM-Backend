@@ -1,28 +1,31 @@
 package com.movem.backend.Mapper;
 
-import com.movem.backend.Dto.response.AuthResponses.CurrentUserResponse;
+import com.movem.backend.Dto.response.AuthResponses.UserResponse;
 import com.movem.backend.Entity.Auth.User;
 import org.springframework.stereotype.Component;
+
 
 @Component
 public class CurrentUserMapper {
 
-    public CurrentUserResponse toResponse(User user) {
+    public UserResponse toResponse(User user) {
 
-        return CurrentUserResponse.builder()
+        return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .firstName(user.getFirstname())
-                .lastName(user.getLastname())
+                .firstname(user.getFirstname())
+                .lastname(user.getLastname())
+                .bio(user.getBio())
+                .phone(user.getPhone())
+                .cityProvince(user.getCityProvince())
                 .dateOfBirth(user.getDateOfBirth())
                 .jointDate(user.getJointDate())
-                .profilePic(user.getProfilePic())
-                .gender(user.getGender())
-                .cityProvince(user.getCityProvince())
-                .isActive(user.getIsActive())
                 .themePreference(user.getThemePreference())
                 .languagePreference(user.getLanguagePreference())
+                .profilePic(user.getProfilePic())
+                .gender(user.getGender())
+                .isActive(user.getIsActive())
                 .build();
     }
 }

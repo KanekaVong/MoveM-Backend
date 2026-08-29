@@ -44,13 +44,9 @@ public class ActivityFeedMapper
         );
 
         if (feed.getUser().getProfilePic() != null) {
-
             response.setProfilePic(
-                    Base64.getEncoder().encodeToString(
-                            feed.getUser().getProfilePic()
-                    )
+                    feed.getUser().getProfilePic()
             );
-
         }
 
         response.setEventType(

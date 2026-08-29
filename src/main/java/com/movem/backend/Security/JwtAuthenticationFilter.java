@@ -29,7 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     @Autowired
-    private com.movem.backend.service.AuthServices.JwtService jwtService;
+    private com.movem.backend.Service.AuthServices.JwtService jwtService;
 
     @Autowired
     private UserDetailsService userDetailsService;

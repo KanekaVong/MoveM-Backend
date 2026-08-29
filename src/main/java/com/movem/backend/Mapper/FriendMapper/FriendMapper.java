@@ -26,9 +26,7 @@ public class FriendMapper {
 
         if (request.getSender().getProfilePic() != null) {
             response.setSenderProfilePic(
-                    Base64.getEncoder().encodeToString(
-                            request.getSender().getProfilePic()
-                    )
+                    request.getSender().getProfilePic()
             );
         }
 
@@ -51,11 +49,7 @@ public class FriendMapper {
         response.setLastname(user.getLastname());
 
         if (user.getProfilePic() != null) {
-            response.setProfilePic(
-                    Base64.getEncoder().encodeToString(
-                            user.getProfilePic()
-                    )
-            );
+            response.setProfilePic(user.getProfilePic());
         }
 
         return response;
@@ -87,10 +81,7 @@ public class FriendMapper {
         response.setLastname(user.getLastname());
 
         if (user.getProfilePic() != null) {
-            response.setProfilePic(
-                    Base64.getEncoder()
-                            .encodeToString(user.getProfilePic())
-            );
+            response.setProfilePic(user.getProfilePic());
         }
 
         response.setFriendStatus(friendStatus);

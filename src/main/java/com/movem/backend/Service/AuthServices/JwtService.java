@@ -1,4 +1,4 @@
-package com.movem.backend.service.AuthServices;
+package com.movem.backend.Service.AuthServices;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -24,7 +24,7 @@ public class JwtService {
     @Value("${app.jwt.expiration}")
     private long jwtExpiration;
 
-    private static final long TRUST_TOKEN_EXPIRATION = 3 * 24 * 60 * 60 * 1000L; // 3 days
+    private static final long TRUST_TOKEN_EXPIRATION = 15 * 24 * 60 * 60 * 1000L; // 15 days
     public record TrustTokenResult(String token, String jti) {}
 
     // ===== ACCESS TOKEN =====
