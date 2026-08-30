@@ -13,20 +13,15 @@ import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Exception.UnauthorizedActionException;
 import com.movem.backend.Mapper.FriendMapper.FriendMapper;
 import com.movem.backend.Mapper.FriendMapper.FriendRequestMapper;
-import com.movem.backend.Service.NotificationServices.NotificationService;
-import com.movem.backend.model.enums.Activity.ActivityFeedEvent;
-import com.movem.backend.model.enums.Audit.AuditCategory;
-import com.movem.backend.model.enums.Audit.AuditSeverity;
+import com.movem.backend.Service.Event.Factory.FriendEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.model.enums.Friend.FriendRequestStatus;
 import com.movem.backend.model.enums.Friend.FriendStatus;
 import com.movem.backend.Repository.AuthRepository.UserRepository;
 import com.movem.backend.Repository.FriendRepository.FriendRepository;
 import com.movem.backend.Repository.FriendRepository.FriendRequestRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
-import com.movem.backend.Service.SharedServices.AuditLogService;
 import com.movem.backend.Service.FriendServices.FriendService;
-import com.movem.backend.model.enums.Notification.NotificationType;
-import com.movem.backend.model.enums.Notification.ReferenceType;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,8 +38,8 @@ public class FriendServiceImpl implements FriendService {
     private final FriendRequestRepository friendRequestRepository;
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
-    private final NotificationService notificationService;
-    private final AuditLogService auditLogService;
+    private final FeatureEventTrackingService featureEventTrackingService;
+    private final FriendEventFactory friendEventFactory;
     private final FriendMapper friendMapper;
     private final FriendRequestMapper friendRequestMapper;
 
@@ -82,7 +77,6 @@ public class FriendServiceImpl implements FriendService {
             );
         }
 
-        // Receiver -> Sender
         if (friendRequestRepository.findBySenderAndReceiverAndStatus(
                 receiver,
                 sender,
@@ -101,30 +95,13 @@ public class FriendServiceImpl implements FriendService {
         friendRequest.setReceiver(receiver);
         friendRequest.setStatus(FriendRequestStatus.PENDING);
 
-        FriendRequest saved =
-                friendRequestRepository.save(friendRequest);
+        FriendRequest saved = friendRequestRepository.save(friendRequest);
 
-        notificationService.createNotification(
-                receiver,
-                sender,
-                NotificationType.FRIEND_REQUEST,
-                ReferenceType.USER,
-                sender.getId().toString(),
-                "New Friend Request",
-                sender.getUsername() +
-                        " sent you a friend request."
-        );
-
-        auditLogService.createLog(
-                null,
-                sender,
-                ActivityFeedEvent.FRIEND_REQUEST_SENT,
-                AuditCategory.FRIEND,
-                AuditSeverity.INFO,
-                "friend_request",
-                "Sent friend request.",
-                null,
-                receiver.getUsername()
+        featureEventTrackingService.handle(
+                friendEventFactory.friendRequestSent(
+                        sender,
+                        receiver
+                )
         );
 
         return friendMapper.toFriendRequestResponse(saved);
@@ -142,54 +119,34 @@ public class FriendServiceImpl implements FriendService {
                                 "Friend request not found."
                         ));
 
-        // Only receiver can accept
         if (!request.getReceiver().getId().equals(currentUser.getId())) {
             throw new UnauthorizedActionException(
                     "You are not allowed to accept this request."
             );
         }
 
-        // Already handled?
         if (request.getStatus() != FriendRequestStatus.PENDING) {
             throw new IllegalArgumentException(
                     "This friend request has already been processed."
             );
         }
 
-        // Create friendship
         createFriend(
                 request.getSender(),
                 request.getReceiver()
         );
 
-        // Update request
         request.setStatus(FriendRequestStatus.ACCEPTED);
         request.setRespondedAt(LocalDateTime.now());
 
         FriendRequest saved =
                 friendRequestRepository.save(request);
 
-        notificationService.createNotification(
-                request.getSender(),
-                currentUser,
-                NotificationType.FRIEND_ACCEPTED,
-                ReferenceType.USER,
-                currentUser.getId().toString(),
-                "Friend Request Accepted",
-                currentUser.getUsername() +
-                        " accepted your friend request."
-        );
-
-        auditLogService.createLog(
-                null,
-                currentUser,
-                ActivityFeedEvent.FRIEND_REQUEST_ACCEPTED,
-                AuditCategory.FRIEND,
-                AuditSeverity.INFO,
-                "status",
-                "Accepted friend request.",
-                null,
-                request.getSender().getUsername()
+        featureEventTrackingService.handle(
+                friendEventFactory.friendRequestAccepted(
+                        saved,
+                        currentUser
+                )
         );
 
         return friendMapper.toFriendRequestResponse(saved);
@@ -206,14 +163,12 @@ public class FriendServiceImpl implements FriendService {
                                 "Friend request not found."
                         ));
 
-        // Only receiver can reject
         if (!request.getReceiver().getId().equals(currentUser.getId())) {
             throw new UnauthorizedActionException(
                     "You are not allowed to reject this request."
             );
         }
 
-        // Already handled?
         if (request.getStatus() != FriendRequestStatus.PENDING) {
             throw new IllegalArgumentException(
                     "This friend request has already been processed."
@@ -225,16 +180,11 @@ public class FriendServiceImpl implements FriendService {
 
         FriendRequest saved = friendRequestRepository.save(request);
 
-        auditLogService.createLog(
-                null,
-                currentUser,
-                ActivityFeedEvent.FRIEND_REQUEST_REJECTED,
-                AuditCategory.FRIEND,
-                AuditSeverity.INFO,
-                "status",
-                "Rejected friend request.",
-                null,
-                request.getSender().getUsername()
+        featureEventTrackingService.handle(
+                friendEventFactory.friendRequestRejected(
+                        saved,
+                        currentUser
+                )
         );
 
         return friendMapper.toFriendRequestResponse(saved);
@@ -257,10 +207,6 @@ public class FriendServiceImpl implements FriendService {
                                         "Friend request not found."
                                 )
                         );
-
-        /*
-         * Only the sender can cancel the request.
-         */
         if (
                 !friendRequest.getSender()
                         .getId()
@@ -281,9 +227,6 @@ public class FriendServiceImpl implements FriendService {
             );
         }
 
-        /*
-         * Change request status.
-         */
         friendRequest.setStatus(
                 FriendRequestStatus.CANCELLED
         );
@@ -332,8 +275,6 @@ public class FriendServiceImpl implements FriendService {
                 .toList();
     }
 
-
-
     @Override
     public void removeFriend(Integer friendId) {
 
@@ -363,16 +304,11 @@ public class FriendServiceImpl implements FriendService {
                 friend
         );
 
-        auditLogService.createLog(
-                null,
-                currentUser,
-                ActivityFeedEvent.FRIEND_REMOVED,
-                AuditCategory.FRIEND,
-                AuditSeverity.WARNING,
-                "friend",
-                "Removed friend.",
-                friend.getUsername(),
-                null
+        featureEventTrackingService.handle(
+                friendEventFactory.friendRemoved(
+                        currentUser,
+                        friend
+                )
         );
 
     }
@@ -423,6 +359,62 @@ public class FriendServiceImpl implements FriendService {
                 .toList();
     }
 
+    @Override
+    public List<SearchUserResponse> getSuggestedFriends() {
+
+        User currentUser =
+                currentUserService.getCurrentUser();
+
+        List<User> allUsers =
+                userRepository.findAll();
+
+        return allUsers.stream()
+
+                .filter(user ->
+                        !user.getId().equals(
+                                currentUser.getId()
+                        )
+                )
+
+                .filter(user ->
+                        !areFriends(
+                                currentUser,
+                                user
+                        )
+                )
+
+                .filter(user ->
+                        friendRequestRepository
+                                .findBySenderAndReceiverAndStatus(
+                                        currentUser,
+                                        user,
+                                        FriendRequestStatus.PENDING
+                                )
+                                .isEmpty()
+                )
+
+                .filter(user ->
+                        friendRequestRepository
+                                .findBySenderAndReceiverAndStatus(
+                                        user,
+                                        currentUser,
+                                        FriendRequestStatus.PENDING
+                                )
+                                .isEmpty()
+                )
+
+                .map(user ->
+                        friendMapper.toSearchUserResponse(
+                                user,
+                                FriendStatus.NONE
+                        )
+                )
+
+                .limit(10)
+
+                .toList();
+    }
+
     private Friend createFriend(User a, User b){
 
         User first = first(a, b);
@@ -449,7 +441,6 @@ public class FriendServiceImpl implements FriendService {
             User otherUser
     ) {
 
-        // Check if already friends
         User first = currentUser.getId() < otherUser.getId()
                 ? currentUser
                 : otherUser;
@@ -462,7 +453,6 @@ public class FriendServiceImpl implements FriendService {
             return FriendStatus.FRIEND;
         }
 
-        // Did I send them a request?
         if (friendRequestRepository
                 .findBySenderAndReceiverAndStatus(
                         currentUser,
@@ -473,7 +463,6 @@ public class FriendServiceImpl implements FriendService {
             return FriendStatus.PENDING_REQUEST;
         }
 
-        // Did they send me a request?
         if (friendRequestRepository
                 .findBySenderAndReceiverAndStatus(
                         otherUser,

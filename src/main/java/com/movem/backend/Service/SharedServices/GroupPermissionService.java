@@ -14,9 +14,6 @@ public class GroupPermissionService {
 
     private final GroupMemberRepository groupMemberRepository;
 
-    /**
-     * Checks whether the user belongs to the group.
-     */
     public void validateGroupMember(
             ActivityGroup group,
             User currentUser
@@ -36,10 +33,6 @@ public class GroupPermissionService {
             );
         }
     }
-
-    /**
-     * Checks whether the user is the group leader.
-     */
     public void validateGroupLeader(
             ActivityGroup group,
             User currentUser

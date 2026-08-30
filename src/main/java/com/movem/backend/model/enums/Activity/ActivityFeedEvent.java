@@ -1,5 +1,7 @@
 package com.movem.backend.model.enums.Activity;
 
+import com.movem.backend.model.enums.Audit.AuditCategory;
+
 public enum ActivityFeedEvent {
 
     TASK_CREATED,
@@ -33,6 +35,7 @@ public enum ActivityFeedEvent {
     MEMBER_INVITED,
     MEMBER_JOINED,
     MEMBER_LEFT,
+    MEMBER_UPDATED,
     MEMBER_REMOVED,
 
     JOIN_REQUEST_SENT,
@@ -44,8 +47,29 @@ public enum ActivityFeedEvent {
     LABEL_ADDED,
     LABEL_REMOVED,
 
+    CHALLENGE_CREATED,
+    CHALLENGE_UPDATED,
+    CHALLENGE_STARTED,
+    CHALLENGE_COMPLETED,
+    CHALLENGE_JOINED,
+    CHALLENGE_LEFT,
+    CHALLENGE_CANCELLED,
+    CHALLENGE_REMOVED,
+
+    WORKOUT_COMPLETED,
+    WORKOUT_KUDOED,
+    WORKOUT_KUDO_REMOVED,
+
     ACTIVITY_SOFT_DELETED,
     ACTIVITY_RESTORED,
     ACTIVITY_HARD_DELETED,
+
+    TRIP_CREATED,
+    TRIP_UPDATED,
+    TRIP_DELETED,
+    TRIP_RESTORED,
+    STOP_ADDED,
+    STOP_COMPLETED,
+    EXPENSE_LOGGED,
 
 }

@@ -2,6 +2,8 @@ package com.movem.backend.Service.Implement.FitnessServices.Challenge;
 
 import com.movem.backend.Entity.Activity.Activity;
 import com.movem.backend.Entity.Fitness.Challenge.GroupFitnessChallenge;
+import com.movem.backend.Service.Event.Factory.Fitness.FitnessChallengeEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 import com.movem.backend.model.enums.Fitness.FitnessChallengeStatus;
 import com.movem.backend.Repository.FitnessRepository.Challenge.GroupFitnessChallengeRepository;
@@ -21,15 +23,14 @@ import java.util.List;
     public class FitnessChallengeStatusServiceImpl
             implements FitnessChallengeStatusService {
 
-        private final GroupFitnessChallengeRepository
-                groupFitnessChallengeRepository;
-
-        private final ActivityRepository
-                activityRepository;
+        private final FeatureEventTrackingService featureEventTrackingService;
+        private final FitnessChallengeEventFactory fitnessChallengeEventFactory;
+        private final GroupFitnessChallengeRepository groupFitnessChallengeRepository;
+        private final ActivityRepository activityRepository;
 
 
         @Override
-        @Scheduled(fixedRate = 60000)
+        @Scheduled(fixedRate = 20000)
         public void updateChallengeStatuses() {
 
             LocalDateTime now =
@@ -73,6 +74,13 @@ import java.util.List;
                 );
 
                 challenge.setUpdatedAt(now);
+
+
+                featureEventTrackingService.handle(
+                        fitnessChallengeEventFactory.challengeStarted(
+                                challenge
+                        )
+                );
             }
 
 
@@ -117,6 +125,12 @@ import java.util.List;
                 );
 
                 challenge.setUpdatedAt(now);
+
+                featureEventTrackingService.handle(
+                        fitnessChallengeEventFactory.challengeCompleted(
+                                challenge
+                        )
+                );
             }
 
 

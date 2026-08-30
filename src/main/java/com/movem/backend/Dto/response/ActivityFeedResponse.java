@@ -28,7 +28,7 @@ public class ActivityFeedResponse {
 
     private String message;
 
-    private Long referenceId;
+    private String referenceId;
 
     private LocalDateTime createdAt;
 

@@ -5,18 +5,15 @@ import com.movem.backend.Entity.Tasks.TaskLabel;
 import com.movem.backend.Entity.Auth.User;
 import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Exception.UnauthorizedActionException;
-import com.movem.backend.model.enums.Activity.ActivityFeedEvent;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 import com.movem.backend.model.enums.Activity.ActivityType;
-import com.movem.backend.model.enums.Audit.AuditCategory;
-import com.movem.backend.model.enums.Audit.AuditSeverity;
 import com.movem.backend.Repository.SharedRepository.ActivityRepository;
 import com.movem.backend.Repository.SharedRepository.AuditLogRepository;
 import com.movem.backend.Repository.TaskRepositories.TaskLabelRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.SharedServices.ActivityDeletionService;
 import com.movem.backend.Service.SharedServices.ActivityService;
-import com.movem.backend.Service.SharedServices.AuditLogService;
 import com.movem.backend.Util.*;
 import com.movem.backend.Util.Base.BaseActivityCreateSource;
 import com.movem.backend.Util.Base.BaseActivityUpdateSource;
@@ -41,7 +38,7 @@ public class ActivityServiceImpl implements ActivityService {
     private final TaskLabelRepository taskLabelRepository;
     private final AuditLogRepository auditLogRepository;
     private final CurrentUserService currentUserService;
-    private final AuditLogService auditLogService;
+    private final FeatureEventTrackingService featureEventTrackingService;
     private final ActivityDeletionService activityDeletionService;
 
     @Override
@@ -148,17 +145,10 @@ public class ActivityServiceImpl implements ActivityService {
 
         activityDeletionService.permanentlyDelete(activity);
 
-        auditLogService.createDeletedActivityLog(
+        featureEventTrackingService.handleDeletedActivity(
                 activity.getId(),
                 activity.getActivityName(),
-                currentUser,
-                ActivityFeedEvent.ACTIVITY_HARD_DELETED,
-                AuditCategory.TASK,
-                AuditSeverity.WARNING,
-                "activity",
-                "Activity permanently deleted.",
-                activity.getActivityName(),
-                null
+                currentUser
         );
     }
 

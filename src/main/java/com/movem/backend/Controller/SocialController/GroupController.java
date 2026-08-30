@@ -4,6 +4,7 @@ import com.movem.backend.Dto.request.GroupAndCollabRequest.InviteMemberRequest;
 import com.movem.backend.Dto.request.GroupAndCollabRequest.RequestToJoinRequest;
 import com.movem.backend.Dto.response.GroupAndCollabResponse.*;
 import com.movem.backend.Service.CollaborationService.GroupService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,14 +14,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/groups")
+@Tag(
+        name = "Shared - Groups",
+        description = "Used for Tasks with Collaborators"
+)
 @RequiredArgsConstructor
 public class GroupController {
 
     private final GroupService groupService;
-
-    // ===========================
-    // INVITATIONS
-    // ===========================
 
     @PostMapping("/{activityId}/invite")
     public GroupInviteResponse inviteMember(
@@ -65,10 +66,6 @@ public class GroupController {
 
     }
 
-    // ===========================
-    // JOIN REQUESTS
-    // ===========================
-
     @PostMapping("/join")
     public ResponseEntity<JoinRequestResponse> requestToJoin(
             @Valid
@@ -102,20 +99,12 @@ public class GroupController {
 
     }
 
-    // ===========================
-    // MY INVITES
-    // ===========================
-
     @GetMapping("/my-invitations")
     public List<GroupInviteResponse> getMyInvitations() {
 
         return groupService.getMyInvitations();
 
     }
-
-    // ===========================
-    // PENDING JOIN REQUESTS
-    // ===========================
 
     @GetMapping("/{activityId}/join-requests")
     public List<JoinRequestResponse> getPendingJoinRequests(
@@ -128,10 +117,15 @@ public class GroupController {
 
     }
 
-    // ===========================
-    // SHARE LINK
-    // ===========================
+    @PostMapping("/{activityId}/join-link")
+    public ResponseEntity<JoinLinkResponse> generateJoinLink(
+            @PathVariable String activityId
+    ) {
 
+        return ResponseEntity.ok(
+                groupService.generateJoinLink(activityId)
+        );
+    }
 
     @GetMapping("/{activityId}/join-link")
     public ResponseEntity<JoinLinkResponse> getJoinLink(

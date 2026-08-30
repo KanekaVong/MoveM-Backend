@@ -100,8 +100,15 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException e) {
-        return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(
+            IllegalArgumentException e
+    ) {
+        e.printStackTrace();
+
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                e.getMessage()
+        );
     }
 
     // 6. Generic Fallback (Must be last)

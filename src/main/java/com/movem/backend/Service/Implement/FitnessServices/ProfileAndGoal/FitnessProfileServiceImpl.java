@@ -2,12 +2,14 @@ package com.movem.backend.Service.Implement.FitnessServices.ProfileAndGoal;
 
 import com.movem.backend.Dto.request.FitnessRequest.ProfileAndGoal.CreateFitnessProfileRequest;
 import com.movem.backend.Dto.request.FitnessRequest.ProfileAndGoal.UpdateFitnessProfileRequest;
+import com.movem.backend.Dto.response.FitnessResponse.ProfileAndGoal.FitnessGoalResponse;
 import com.movem.backend.Dto.response.FitnessResponse.ProfileAndGoal.FitnessProfileResponse;
 import com.movem.backend.Entity.Fitness.ProfileAndGoal.FitnessProfile;
 import com.movem.backend.Entity.Auth.User;
 import com.movem.backend.Exception.DuplicateResourceException;
 import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Mapper.FitnessMapper.ProfileAndGoal.FitnessProfileMapper;
+import com.movem.backend.Repository.FitnessRepository.ProfileAndGoal.FitnessGoalRepository;
 import com.movem.backend.Repository.FitnessRepository.ProfileAndGoal.FitnessProfileRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.FitnessServices.ProfileAndGoal.FitnessProfileService;
@@ -29,6 +31,8 @@ public class FitnessProfileServiceImpl
     private final FitnessProfileRepository fitnessProfileRepository;
 
     private final CurrentUserService currentUserService;
+
+    private final FitnessGoalRepository fitnessGoalRepository;
 
     private final FitnessProfileMapper fitnessProfileMapper;
 
@@ -68,7 +72,10 @@ public class FitnessProfileServiceImpl
         FitnessProfile saved =
                 fitnessProfileRepository.save(profile);
 
-        return fitnessProfileMapper.toResponse(saved);
+        return fitnessProfileMapper.toResponse(
+                saved,
+                getFitnessGoal(currentUser)
+        );
     }
 
     @Override
@@ -88,7 +95,10 @@ public class FitnessProfileServiceImpl
                                 )
                         );
 
-        return fitnessProfileMapper.toResponse(profile);
+        return fitnessProfileMapper.toResponse(
+                profile,
+                getFitnessGoal(currentUser)
+        );
     }
 
 
@@ -138,7 +148,10 @@ public class FitnessProfileServiceImpl
         FitnessProfile saved =
                 fitnessProfileRepository.save(profile);
 
-        return fitnessProfileMapper.toResponse(saved);
+        return fitnessProfileMapper.toResponse(
+                saved,
+                getFitnessGoal(currentUser)
+        );
     }
 
 
@@ -199,5 +212,36 @@ public class FitnessProfileServiceImpl
                         2,
                         RoundingMode.HALF_UP
                 );
+    }
+
+    private FitnessGoalResponse getFitnessGoal(
+            User currentUser
+    ) {
+
+        return fitnessGoalRepository
+                .findFirstByUserAndStatusOrderByCreatedAtDesc(
+                        currentUser,
+                        "ACTIVE"
+                )
+                .map(goal ->
+                        FitnessGoalResponse.builder()
+                                .id(goal.getId())
+                                .userId(goal.getUser().getId())
+                                .goalType(goal.getGoalType())
+                                .targetWeight(goal.getTargetWeight())
+                                .targetTimeline(goal.getTargetTimeline())
+                                .workoutLevel(goal.getWorkoutLevel())
+                                .estimatedWeightChange(
+                                        goal.getEstimatedWeightChange()
+                                )
+                                .estimatedDailyDeficit(
+                                        goal.getEstimatedDailyDeficit()
+                                )
+                                .status(goal.getStatus())
+                                .createdAt(goal.getCreatedAt())
+                                .updatedAt(goal.getUpdatedAt())
+                                .build()
+                )
+                .orElse(null);
     }
 }

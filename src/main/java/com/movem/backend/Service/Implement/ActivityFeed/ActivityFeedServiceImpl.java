@@ -43,7 +43,7 @@ public class ActivityFeedServiceImpl
             User user,
             ActivityFeedEvent eventType,
             String message,
-            Long referenceId
+            String referenceId
     ) {
 
         ActivityFeed feed =

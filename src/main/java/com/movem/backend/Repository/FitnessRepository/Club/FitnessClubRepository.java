@@ -26,4 +26,9 @@ public interface FitnessClubRepository
     boolean existsByJoinToken(
             String joinToken
     );
+
+    List<FitnessClub> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+            String name,
+            String description
+    );
 }

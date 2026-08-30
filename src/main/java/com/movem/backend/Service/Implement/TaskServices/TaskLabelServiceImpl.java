@@ -5,12 +5,10 @@ import com.movem.backend.Dto.request.TaskRequests.Update.UpdateTaskLabelRequest;
 import com.movem.backend.Dto.response.TaskResponses.TaskLabelResponse;
 import com.movem.backend.Entity.Tasks.TaskLabel;
 import com.movem.backend.Entity.Auth.User;
-import com.movem.backend.model.enums.Activity.ActivityFeedEvent;
-import com.movem.backend.model.enums.Audit.AuditCategory;
-import com.movem.backend.model.enums.Audit.AuditSeverity;
+import com.movem.backend.Service.Event.Factory.TaskEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.Repository.TaskRepositories.TaskLabelRepository;
 import com.movem.backend.Repository.AuthRepository.UserRepository;
-import com.movem.backend.Service.SharedServices.AuditLogService;
 import com.movem.backend.Service.TaskServices.TaskLabelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -25,7 +23,8 @@ import java.util.List;
 public class TaskLabelServiceImpl implements TaskLabelService {
 
     private final TaskLabelRepository taskLabelRepository;
-    private final AuditLogService auditLogService;
+    private final FeatureEventTrackingService featureEventTrackingService;
+    private final TaskEventFactory taskEventFactory;
     private final UserRepository userRepository;
 
     @Override
@@ -45,16 +44,11 @@ public class TaskLabelServiceImpl implements TaskLabelService {
 
         TaskLabel savedLabel = taskLabelRepository.save(label);
 
-        auditLogService.createLog(
-                null,
-                user,
-                ActivityFeedEvent.LABEL_ADDED,
-                AuditCategory.TASK,
-                AuditSeverity.INFO,
-                "label",
-                "Created label.",
-                null,
-                savedLabel.getName()
+        featureEventTrackingService.handle(
+                taskEventFactory.labelAdded(
+                        user,
+                        savedLabel.getName()
+                )
         );
 
         return mapToResponse(savedLabel);
@@ -94,16 +88,12 @@ public class TaskLabelServiceImpl implements TaskLabelService {
 
         TaskLabel updatedLabel = taskLabelRepository.save(label);
 
-        auditLogService.createLog(
-                null,
-                user,
-                ActivityFeedEvent.LABEL_ADDED,
-                AuditCategory.TASK,
-                AuditSeverity.INFO,
-                "label",
-                "Updated label.",
-                oldName,
-                updatedLabel.getName()
+        featureEventTrackingService.handle(
+                taskEventFactory.labelUpdated(
+                        user,
+                        oldName,
+                        updatedLabel.getName()
+                )
         );
 
         return mapToResponse(updatedLabel);
@@ -122,16 +112,11 @@ public class TaskLabelServiceImpl implements TaskLabelService {
 
         String oldName = label.getName();
 
-        auditLogService.createLog(
-                null,
-                user,
-                ActivityFeedEvent.LABEL_REMOVED,
-                AuditCategory.TASK,
-                AuditSeverity.WARNING,
-                "label",
-                "Deleted label.",
-                oldName,
-                null
+        featureEventTrackingService.handle(
+                taskEventFactory.labelRemoved(
+                        user,
+                        oldName
+                )
         );
     }
 

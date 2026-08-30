@@ -2,10 +2,12 @@ package com.movem.backend.Entity.Fitness.WorkoutSession;
 
 
 import com.movem.backend.Entity.Activity.Activity;
+import com.movem.backend.Entity.Attachment.Attachment;
 import com.movem.backend.Entity.Fitness.Challenge.FitnessChallengeParticipant;
 import com.movem.backend.Entity.Fitness.Challenge.SoloChallenge;
 import com.movem.backend.Entity.Auth.User;
 import com.movem.backend.model.enums.Fitness.FitnessWorkoutStatus;
+import com.movem.backend.model.enums.Fitness.TrackingMode;
 import com.movem.backend.model.enums.Fitness.WorkoutType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -58,6 +60,10 @@ public class FitnessWorkoutSession {
     private WorkoutType workoutType;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "tracking_mode", nullable = false, length = 20)
+    private TrackingMode trackingMode;
+
+    @Enumerated(EnumType.STRING)
     @Column(
             nullable = false,
             length = 30
@@ -69,6 +75,15 @@ public class FitnessWorkoutSession {
 
     @Column(name = "paused_at")
     private LocalDateTime pausedAt;
+
+    @Column(name = "is_shared", nullable = false)
+    private Boolean isShared = false;
+
+    @Column(
+            name = "share_description",
+            columnDefinition = "TEXT"
+    )
+    private String shareDescription;
 
     @Column(
             name = "total_paused_seconds",
@@ -139,7 +154,7 @@ public class FitnessWorkoutSession {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    @OrderBy("pointSequence ASC")
-    private List<FitnessWorkoutRoutePoint> routePoints =
+    private List<Attachment> attachments =
             new ArrayList<>();
+
 }

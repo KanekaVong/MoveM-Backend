@@ -4,6 +4,7 @@ import com.movem.backend.Dto.request.FitnessRequest.Club.AddFitnessClubMemberReq
 import com.movem.backend.Dto.request.FitnessRequest.Club.UpdateFitnessClubMemberRoleRequest;
 import com.movem.backend.Dto.response.FitnessResponse.Club.FitnessClubMemberResponse;
 import com.movem.backend.Service.FitnessServices.Club.FitnessClubMemberService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/fitness/clubs")
+@Tag(
+        name = "Fitness - Club",
+        description = "Fitness Club"
+)
 @RequiredArgsConstructor
 public class FitnessClubMemberController {
 

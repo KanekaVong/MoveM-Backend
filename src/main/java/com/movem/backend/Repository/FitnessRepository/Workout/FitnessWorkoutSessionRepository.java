@@ -1,5 +1,6 @@
 package com.movem.backend.Repository.FitnessRepository.Workout;
 
+import com.movem.backend.Entity.Activity.Activity;
 import com.movem.backend.Entity.Fitness.Challenge.FitnessChallengeParticipant;
 import com.movem.backend.Entity.Fitness.Challenge.SoloChallenge;
 import com.movem.backend.Entity.Fitness.WorkoutSession.FitnessWorkoutSession;
@@ -7,16 +8,20 @@ import com.movem.backend.Entity.Auth.User;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 import com.movem.backend.model.enums.Fitness.FitnessWorkoutStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface FitnessWorkoutSessionRepository
-        extends JpaRepository<FitnessWorkoutSession, Integer> {
+        extends JpaRepository<FitnessWorkoutSession, Integer>,
+        JpaSpecificationExecutor<FitnessWorkoutSession> {
 
     List<FitnessWorkoutSession> findByUser(
             User user
     );
+
+    Optional<FitnessWorkoutSession> findByActivity(Activity activity);
 
     List<FitnessWorkoutSession> findBySoloChallenge(
             SoloChallenge soloChallenge
@@ -37,6 +42,8 @@ public interface FitnessWorkoutSessionRepository
             FitnessWorkoutStatus status,
             ActivityStatus activityStatus
     );
+
+
 
     List<FitnessWorkoutSession>
     findByUserAndActivity_StatusNot(
@@ -59,4 +66,16 @@ public interface FitnessWorkoutSessionRepository
             java.time.LocalDateTime start,
             java.time.LocalDateTime end
     );
+
+    List<FitnessWorkoutSession> findByUserAndStatus(
+            User user,
+            FitnessWorkoutStatus status
+    );
+
+    List<FitnessWorkoutSession>
+    findByUserInAndStatusAndIsSharedTrueOrderByFinishedAtDesc(
+            List<User> users,
+            FitnessWorkoutStatus status
+    );
+
 }

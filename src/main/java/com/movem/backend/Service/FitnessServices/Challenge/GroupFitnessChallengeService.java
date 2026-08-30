@@ -4,6 +4,7 @@ import com.movem.backend.Dto.request.FitnessRequest.Challenge.GroupChallenge.Cre
 import com.movem.backend.Dto.request.FitnessRequest.Challenge.GroupChallenge.CreateGroupFitnessChallengeRequest;
 import com.movem.backend.Dto.request.FitnessRequest.Challenge.GroupChallenge.UpdateGroupFitnessChallengeRequest;
 import com.movem.backend.Dto.response.FitnessResponse.Challenge.GroupFitnessChallengeResponse;
+import com.movem.backend.Dto.response.FitnessResponse.Social.SocialChallengeResponse;
 
 import java.util.List;
 
@@ -23,6 +24,10 @@ public interface GroupFitnessChallengeService {
     );
 
     List<GroupFitnessChallengeResponse> getMyCreatedChallenges();
+
+    SocialChallengeResponse getSocialChallenge(
+            Integer challengeId
+    );
 
     GroupFitnessChallengeResponse updateChallenge(
             Integer challengeId,

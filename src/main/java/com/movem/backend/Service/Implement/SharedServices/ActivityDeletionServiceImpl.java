@@ -1,7 +1,7 @@
 package com.movem.backend.Service.Implement.SharedServices;
 
 import com.movem.backend.Entity.Activity.Activity;
-import com.movem.backend.Repository.CommentRepository.CommentRepository;
+import com.movem.backend.Repository.SocialRepository.CommentRepository;
 import com.movem.backend.Repository.CollaborationRepository.GroupRepository;
 import com.movem.backend.Repository.SharedRepository.ActivityFeedRepository;
 import com.movem.backend.Repository.SharedRepository.ActivityRepository;
@@ -26,28 +26,22 @@ public class ActivityDeletionServiceImpl
     @Override
     public void permanentlyDelete(Activity activity) {
 
-        // Remove many-to-many labels
         activity.getLabels().clear();
         activityRepository.save(activity);
 
-        // Remove parent references
         for (Activity child : activity.getChildActivities()) {
             child.setParentActivity(null);
         }
         activityRepository.saveAll(activity.getChildActivities());
 
-        // Delete child records
         commentRepository.deleteByActivity(activity);
         activityFeedRepository.deleteByActivity(activity);
         groupRepository.deleteByActivity(activity);
-
-        // IMPORTANT: detach audit logs BEFORE deleting activity
 
         int rows = auditLogRepository.detachActivity(activity.getId());
 
         System.out.println("Detached audit logs = " + rows);
 
-        // Finally delete activity
         activityRepository.delete(activity);
     }
 }

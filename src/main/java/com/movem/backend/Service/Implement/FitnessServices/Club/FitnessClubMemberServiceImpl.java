@@ -13,6 +13,8 @@ import com.movem.backend.Repository.FitnessRepository.Club.FitnessClubMemberRepo
 import com.movem.backend.Repository.FitnessRepository.Club.FitnessClubRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.FitnessServices.Club.FitnessClubMemberService;
+import com.movem.backend.Service.Event.Factory.Fitness.FitnessClubEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.model.enums.Fitness.FitnessClubRole;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -27,6 +29,8 @@ import java.util.List;
 @Transactional
 public class FitnessClubMemberServiceImpl implements FitnessClubMemberService {
 
+    private final FeatureEventTrackingService featureEventTrackingService;
+    private final FitnessClubEventFactory fitnessClubEventFactory;
     private final FitnessClubMemberRepository fitnessClubMemberRepository;
     private final FitnessClubRepository fitnessClubRepository;
     private final FitnessClubMemberMapper fitnessClubMemberMapper;
@@ -92,6 +96,14 @@ public class FitnessClubMemberServiceImpl implements FitnessClubMemberService {
                 fitnessClubMemberRepository.save(
                         member
                 );
+
+        featureEventTrackingService.handle(
+                fitnessClubEventFactory.memberAdded(
+                        club,
+                        currentUser,
+                        saved
+                )
+        );
 
         return fitnessClubMemberMapper.toResponse(
                 saved
@@ -272,15 +284,24 @@ public class FitnessClubMemberServiceImpl implements FitnessClubMemberService {
         }
 
 
-        member.setRole(
-                request.getRole()
-        );
+        String oldRole = member.getRole().name();
+        member.setRole(request.getRole());
+
 
 
         FitnessClubMember saved =
                 fitnessClubMemberRepository.save(
                         member
                 );
+
+        featureEventTrackingService.handle(
+                fitnessClubEventFactory.memberRoleUpdated(
+                        club,
+                        currentUser,
+                        saved,
+                        oldRole
+                )
+        );
 
         return fitnessClubMemberMapper.toResponse(
                 saved
@@ -341,6 +362,14 @@ public class FitnessClubMemberServiceImpl implements FitnessClubMemberService {
 
         fitnessClubMemberRepository.delete(
                 member
+        );
+
+        featureEventTrackingService.handle(
+                fitnessClubEventFactory.memberRemoved(
+                        club,
+                        currentUser,
+                        member
+                )
         );
     }
 

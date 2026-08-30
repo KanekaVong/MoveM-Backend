@@ -1,6 +1,7 @@
 package com.movem.backend.Controller.ActivityController;
 
 import com.movem.backend.Service.SharedServices.ActivityService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -10,6 +11,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/activities")
+@Tag(
+        name = "Activity - Base"
+)
 @RequiredArgsConstructor
 public class ActivityController {
 

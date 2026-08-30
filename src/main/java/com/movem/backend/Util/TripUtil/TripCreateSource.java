@@ -18,4 +18,7 @@ public interface TripCreateSource extends BaseActivityCreateSource {
 
     String getCoordinates();
 
+    String getParentActivityId();
+
+
 }

@@ -3,6 +3,7 @@ package com.movem.backend.Controller.SharedController;
 
 import com.movem.backend.Dto.response.AuditLogResponse;
 import com.movem.backend.Service.SharedServices.AuditLogService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,6 +11,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/audit-logs")
+@Tag(
+        name = "Social - Audit-Logs",
+        description = "Past Actions made by all users"
+)
 @RequiredArgsConstructor
 public class AuditLogController {
 

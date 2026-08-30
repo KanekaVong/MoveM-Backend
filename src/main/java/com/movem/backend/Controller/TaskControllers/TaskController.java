@@ -6,6 +6,7 @@ import com.movem.backend.Dto.response.TaskResponses.TaskResponse;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 import com.movem.backend.model.enums.Priority;
 import com.movem.backend.Service.TaskServices.TaskService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
+@Tag(
+        name = "Task"
+)
 @RequiredArgsConstructor
 public class TaskController {
 

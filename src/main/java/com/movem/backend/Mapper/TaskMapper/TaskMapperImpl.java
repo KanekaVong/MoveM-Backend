@@ -72,6 +72,7 @@ public class TaskMapperImpl implements TaskMapper {
                 .status(activity.getStatus())
                 .priority(task.getPriority())
                 .recurring(task.getIsRecurring())
+                .recurringType(task.getRecurringType())
                 .startActivity(activity.getStartActivity())
                 .deadline(activity.getDeadline())
 

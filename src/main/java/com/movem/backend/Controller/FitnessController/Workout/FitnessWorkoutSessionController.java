@@ -1,27 +1,32 @@
 package com.movem.backend.Controller.FitnessController.Workout;
 
-import com.movem.backend.Dto.request.FitnessRequest.Workout.StartWorkoutRequest;
-import com.movem.backend.Dto.request.FitnessRequest.Workout.WorkoutProgressRequest;
-import com.movem.backend.Dto.request.FitnessRequest.Workout.WorkoutRoutePointsRequest;
-import com.movem.backend.Dto.response.FitnessResponse.Workout.FitnessWorkoutSessionResponse;
-import com.movem.backend.Dto.response.FitnessResponse.Workout.WorkoutDetailsResponse;
-import com.movem.backend.Dto.response.FitnessResponse.Workout.WorkoutHistoryResponse;
-import com.movem.backend.Dto.response.FitnessResponse.Workout.WorkoutRoutePointResponse;
+import com.movem.backend.Dto.request.FitnessRequest.Workout.*;
+import com.movem.backend.Dto.response.Attachment.AttachmentResponse;
+import com.movem.backend.Dto.response.FitnessResponse.Social.SocialWorkoutResponse;
+import com.movem.backend.Dto.response.FitnessResponse.Workout.*;
+import com.movem.backend.Service.AttachmentService.FitnessWorkoutAttachmentService;
 import com.movem.backend.Service.FitnessServices.Workout.FitnessWorkoutSessionService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/fitness/workouts")
+@Tag(
+        name = "Fitness - Workouts",
+        description = "Workout tracking"
+)
 @RequiredArgsConstructor
 public class FitnessWorkoutSessionController {
 
     private final FitnessWorkoutSessionService workoutSessionService;
+    private final FitnessWorkoutAttachmentService workoutAttachmentService;
 
     @PostMapping("/start")
     public ResponseEntity<FitnessWorkoutSessionResponse> startWorkout(
@@ -80,6 +85,17 @@ public class FitnessWorkoutSessionController {
                 workoutSessionService.finishWorkout(sessionId);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<List<WorkoutHistoryResponse>> searchWorkouts(
+            @RequestBody FitnessWorkoutSearchRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                workoutSessionService
+                        .searchWorkouts(request)
+        );
     }
 
     @DeleteMapping("/{sessionId}")
@@ -141,14 +157,76 @@ public class FitnessWorkoutSessionController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/{sessionId}/route")
-    public ResponseEntity<List<WorkoutRoutePointResponse>>
-    getWorkoutRoute(
+    @GetMapping("/{sessionId}/social")
+    public ResponseEntity<SocialWorkoutResponse> getSocialWorkout(
+            @PathVariable Integer sessionId
+    ) {
+        return ResponseEntity.ok(
+                workoutSessionService.getSocialWorkout(
+                        sessionId
+                )
+        );
+    }
+
+    @GetMapping("/{sessionId}/summary")
+    public ResponseEntity<FitnessWorkoutSummaryResponse> getWorkoutSummary(
+            @PathVariable Integer sessionId
+    ) {
+        return ResponseEntity.ok(
+                workoutSessionService.getWorkoutSummary(
+                        sessionId
+                )
+        );
+    }
+
+    @PatchMapping("/{sessionId}/share")
+    public ResponseEntity<Void> updateWorkoutSharing(
+            @PathVariable Integer sessionId,
+            @Valid @RequestBody ShareWorkoutRequest request
+    ) {
+
+        workoutSessionService.updateWorkoutSharing(
+                sessionId,
+                request
+        );
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/social-feed")
+    public ResponseEntity<List<SharedWorkoutPostResponse>>
+    getSocialWorkoutFeed() {
+
+        return ResponseEntity.ok(
+                workoutSessionService.getSocialWorkoutFeed()
+        );
+    }
+
+    @PostMapping(
+            value = "/{sessionId}/attachments",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<AttachmentResponse> uploadAttachment(
+            @PathVariable Integer sessionId,
+            @RequestParam("file") MultipartFile file
+    ) {
+
+        return ResponseEntity.ok(
+                workoutAttachmentService.upload(
+                        sessionId,
+                        file
+                )
+        );
+    }
+
+    @GetMapping("/{sessionId}/attachments")
+    public ResponseEntity<List<AttachmentResponse>>
+    getWorkoutAttachments(
             @PathVariable Integer sessionId
     ) {
 
         return ResponseEntity.ok(
-                workoutSessionService.getWorkoutRoute(
+                workoutAttachmentService.getAttachments(
                         sessionId
                 )
         );

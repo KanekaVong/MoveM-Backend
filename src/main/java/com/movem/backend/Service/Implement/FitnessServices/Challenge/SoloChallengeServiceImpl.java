@@ -3,11 +3,15 @@ package com.movem.backend.Service.Implement.FitnessServices.Challenge;
 import com.movem.backend.Dto.request.FitnessRequest.Challenge.SoloChallenge.CreateSoloChallengeRequest;
 import com.movem.backend.Dto.request.FitnessRequest.Challenge.SoloChallenge.UpdateSoloChallengeRequest;
 import com.movem.backend.Dto.response.FitnessResponse.Challenge.SoloChallengeResponse;
+import com.movem.backend.Entity.Auth.User;
 import com.movem.backend.Entity.Fitness.Challenge.SoloChallenge;
 import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Mapper.FitnessMapper.Challenge.SoloChallengeMapper;
 import com.movem.backend.Repository.FitnessRepository.Challenge.SoloChallengeCatalogRepository;
+import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.FitnessServices.Challenge.SoloChallengeService;
+import com.movem.backend.Service.Event.Factory.Fitness.FitnessChallengeEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.model.enums.Fitness.WorkoutType;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -22,11 +26,11 @@ import java.util.List;
 public class SoloChallengeServiceImpl
         implements SoloChallengeService {
 
-    private final SoloChallengeCatalogRepository
-            soloChallengeRepository;
-
-    private final SoloChallengeMapper
-            soloChallengeMapper;
+    private final CurrentUserService currentUserService;
+    private final FeatureEventTrackingService featureEventTrackingService;
+    private final FitnessChallengeEventFactory fitnessChallengeEventFactory;
+    private final SoloChallengeCatalogRepository soloChallengeRepository;
+    private final SoloChallengeMapper soloChallengeMapper;
 
     @Override
     public List<SoloChallengeResponse> getAllChallenges() {
@@ -108,13 +112,16 @@ public class SoloChallengeServiceImpl
                 LocalDateTime.now()
         );
 
-        SoloChallenge saved =
-                soloChallengeRepository.save(
-                        challenge
-                );
+        SoloChallenge saved = soloChallengeRepository.save(challenge);
 
-        return soloChallengeMapper
-                .toResponse(saved);
+        featureEventTrackingService.handle(
+                fitnessChallengeEventFactory.soloChallengeCreated(
+                        saved,
+                        currentUserService.getCurrentUser()
+                )
+        );
+
+        return soloChallengeMapper.toResponse(saved);
     }
 
     @Override
@@ -132,41 +139,28 @@ public class SoloChallengeServiceImpl
                                 )
                         );
 
-        challenge.setName(
-                request.getName()
-        );
+        String oldName = challenge.getName();
 
-        challenge.setWorkoutType(
-                request.getType()
-        );
-
-        challenge.setWorkoutLevel(
-                request.getWorkoutLevel()
-        );
-
-        challenge.setTargetValue(
-                request.getTargetValue()
-        );
-
-        challenge.setTargetUnit(
-                request.getTargetUnit()
-        );
-
-        challenge.setDescription(
-                request.getDescription()
-        );
-
-        challenge.setUpdatedAt(
-                LocalDateTime.now()
-        );
+        challenge.setName(request.getName());
+        challenge.setWorkoutType(request.getType());
+        challenge.setWorkoutLevel(request.getWorkoutLevel());
+        challenge.setTargetValue(request.getTargetValue());
+        challenge.setTargetUnit(request.getTargetUnit());
+        challenge.setDescription(request.getDescription());
+        challenge.setUpdatedAt(LocalDateTime.now());
 
         SoloChallenge saved =
-                soloChallengeRepository.save(
-                        challenge
-                );
+                soloChallengeRepository.save(challenge);
 
-        return soloChallengeMapper
-                .toResponse(saved);
+        featureEventTrackingService.handle(
+                fitnessChallengeEventFactory.soloChallengeUpdated(
+                        saved,
+                        currentUserService.getCurrentUser(),
+                        oldName
+                )
+        );
+
+        return soloChallengeMapper.toResponse(saved);
     }
 
     @Override
@@ -174,17 +168,19 @@ public class SoloChallengeServiceImpl
             Integer challengeId
     ) {
 
-        SoloChallenge challenge =
-                soloChallengeRepository
-                        .findById(challengeId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Solo challenge not found."
-                                )
-                        );
+        User currentUser = currentUserService.getCurrentUser();
 
-        soloChallengeRepository.delete(
-                challenge
+        SoloChallenge challenge = soloChallengeRepository.findById(challengeId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Solo challenge not found."));
+
+        soloChallengeRepository.delete(challenge);
+
+        featureEventTrackingService.handle(
+                fitnessChallengeEventFactory.soloChallengeDeleted(
+                        challenge,
+                        currentUser
+                )
         );
     }
 }

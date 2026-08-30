@@ -34,10 +34,15 @@ public class FeatureEvent {
     private String newValue;
 
     private User notificationReceiver;
+
+    private boolean notifyActivityGroup;
+
     private NotificationType notificationType;
     private ReferenceType referenceType;
 
     private String referenceId;
+    private String feedReferenceId;
+
     private String notificationTitle;
     private String notificationMessage;
 

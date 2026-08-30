@@ -6,25 +6,19 @@ import com.movem.backend.Dto.response.TaskResponses.TaskChecklistResponse;
 import com.movem.backend.Entity.Auth.User;
 import com.movem.backend.Entity.Tasks.Task;
 import com.movem.backend.Entity.Tasks.TaskChecklist;
-import com.movem.backend.Event.FeatureEvent;
 import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Mapper.TaskMapper.TaskChecklistMapper;
 import com.movem.backend.Repository.TaskRepositories.TaskChecklistRepository;
 import com.movem.backend.Repository.TaskRepositories.TaskRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
-import com.movem.backend.Service.SharedServices.Event.FeatureEventTrackingService;
+import com.movem.backend.Service.Event.Factory.ChecklistEventFactory;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.Service.TaskServices.TaskChecklistService;
-import com.movem.backend.model.enums.Activity.ActivityFeedEvent;
-import com.movem.backend.model.enums.Audit.AuditCategory;
-import com.movem.backend.model.enums.Audit.AuditSeverity;
-import com.movem.backend.model.enums.Event.FeatureEventAction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +30,7 @@ public class TaskChecklistServiceImpl
     private final CurrentUserService currentUserService;
     private final TaskChecklistMapper taskChecklistMapper;
     private final FeatureEventTrackingService featureEventTrackingService;
-
+    private final ChecklistEventFactory checklistEventFactory;
 
     @Override
     public void createChecklistItems(
@@ -68,29 +62,19 @@ public class TaskChecklistServiceImpl
             checklists.add(checklist);
         }
 
-        taskChecklistRepository.saveAll(
-                checklists
-        );
+        taskChecklistRepository.saveAll(checklists);
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         featureEventTrackingService.handle(
-                FeatureEvent.builder()
-                        .activity(task.getActivity())
-                        .actor(currentUser)
-                        .feedEvent(ActivityFeedEvent.CHECKLIST_ADDED)
-                        .feedMessage("added checklist items.")
-                        .auditCategory(AuditCategory.TASK)
-                        .auditSeverity(AuditSeverity.INFO)
-                        .auditEntity("checklist")
-                        .auditMessage("Added checklist items.")
-                        .oldValue(null)
-                        .newValue(String.valueOf(checklists.size()))
-                        .referenceId(null)
-                        .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
-                        .build()
+                checklistEventFactory.added(
+                        task.getActivity(),
+                        currentUser,
+                        checklists.size()
+                )
         );
+
+
     }
 
 
@@ -141,29 +125,19 @@ public class TaskChecklistServiceImpl
 
         checklist.setIsCompleted(true);
 
-        taskChecklistRepository.save(
-                checklist
-        );
+        TaskChecklist saved =
+                taskChecklistRepository.save(checklist);
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         featureEventTrackingService.handle(
-                FeatureEvent.builder()
-                        .activity(checklist.getTask().getActivity())
-                        .actor(currentUser)
-                        .feedEvent(ActivityFeedEvent.CHECKLIST_COMPLETED)
-                        .feedMessage("completed a checklist item.")
-                        .auditCategory(AuditCategory.TASK)
-                        .auditSeverity(AuditSeverity.INFO)
-                        .auditEntity("checklist")
-                        .auditMessage("Completed checklist item.")
-                        .oldValue("INCOMPLETE")
-                        .newValue("COMPLETED")
-                        .referenceId(String.valueOf(checklist.getId()))
-                        .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
-                        .build()
+                checklistEventFactory.completed(
+                        saved,
+                        currentUser
+                )
         );
+
+
     }
 
 
@@ -192,29 +166,19 @@ public class TaskChecklistServiceImpl
         checklist.setIsCompleted(false);
 
         TaskChecklist saved =
-                taskChecklistRepository.save(
-                        checklist
-                );
+                taskChecklistRepository.save(checklist);
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         featureEventTrackingService.handle(
-                FeatureEvent.builder()
-                        .activity(task.getActivity())
-                        .actor(currentUser)
-                        .feedEvent(ActivityFeedEvent.CHECKLIST_ADDED)
-                        .feedMessage("added a checklist item.")
-                        .auditCategory(AuditCategory.TASK)
-                        .auditSeverity(AuditSeverity.INFO)
-                        .auditEntity("checklist")
-                        .auditMessage("Added checklist item.")
-                        .oldValue(null)
-                        .newValue(saved.getItemName())
-                        .referenceId(String.valueOf(saved.getId()))
-                        .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
-                        .build()
+                checklistEventFactory.added(
+                        task.getActivity(),
+                        currentUser,
+                        1
+                )
         );
+
+
     }
 
 
@@ -224,45 +188,24 @@ public class TaskChecklistServiceImpl
             UpdateChecklistItemRequest request
     ) {
 
-        TaskChecklist checklist =
-                taskChecklistRepository
-                        .findById(checklistId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Checklist item not found."
-                                )
-                        );
+        TaskChecklist checklist = taskChecklistRepository.findById(checklistId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Checklist item not found."));
 
-        String oldItemName =
-                checklist.getItemName();
+        String oldItemName = checklist.getItemName();
 
-        checklist.setItemName(
-                request.getItemName()
-        );
+        checklist.setItemName(request.getItemName());
 
-        TaskChecklist saved =
-                taskChecklistRepository.save(
-                        checklist
-                );
+        TaskChecklist saved = taskChecklistRepository.save(checklist);
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         featureEventTrackingService.handle(
-                FeatureEvent.builder()
-                        .activity(saved.getTask().getActivity())
-                        .actor(currentUser)
-                        .feedEvent(ActivityFeedEvent.CHECKLIST_UPDATED)
-                        .feedMessage("updated a checklist item.")
-                        .auditCategory(AuditCategory.TASK)
-                        .auditSeverity(AuditSeverity.INFO)
-                        .auditEntity("checklist")
-                        .auditMessage("Updated checklist item.")
-                        .oldValue(oldItemName)
-                        .newValue(saved.getItemName())
-                        .referenceId(String.valueOf(saved.getId()))
-                        .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
-                        .build()
+                checklistEventFactory.updated(
+                        saved,
+                        currentUser,
+                        oldItemName
+                )
         );
     }
 
@@ -281,41 +224,27 @@ public class TaskChecklistServiceImpl
                         );
 
         boolean oldCompleted =
-                Boolean.TRUE.equals(
-                        checklist.getIsCompleted()
-                );
+                Boolean.TRUE.equals(checklist.getIsCompleted());
 
-        boolean newCompleted =
-                !oldCompleted;
+        boolean newCompleted = !oldCompleted;
 
-        checklist.setIsCompleted(
-                newCompleted
-        );
+        checklist.setIsCompleted(newCompleted);
 
         TaskChecklist saved =
-                taskChecklistRepository.save(
-                        checklist
-                );
+                taskChecklistRepository.save(checklist);
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         featureEventTrackingService.handle(
-                FeatureEvent.builder()
-                        .activity(saved.getTask().getActivity())
-                        .actor(currentUser)
-                        .feedEvent( ActivityFeedEvent.CHECKLIST_COMPLETED)
-                        .feedMessage(newCompleted ? "completed a checklist item." : "marked a checklist item as incomplete.")
-                        .auditCategory(AuditCategory.TASK)
-                        .auditSeverity(AuditSeverity.INFO)
-                        .auditEntity("checklist")
-                        .auditMessage(newCompleted ? "Completed checklist item." : "Marked checklist item as incomplete.")
-                        .oldValue(oldCompleted ? "COMPLETED" : "INCOMPLETE")
-                        .newValue(newCompleted ? "COMPLETED" : "INCOMPLETE")
-                        .referenceId(String.valueOf(saved.getId()))
-                        .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
-                        .build()
+                checklistEventFactory.toggled(
+                        saved,
+                        currentUser,
+                        oldCompleted,
+                        newCompleted
+                )
         );
+
+
     }
 
 
@@ -333,37 +262,25 @@ public class TaskChecklistServiceImpl
                                 )
                         );
 
-        String deletedItemName =
-                checklist.getItemName();
+        String deletedItemName = checklist.getItemName();
 
-        Task activityTask =
-                checklist.getTask();
+        Task activityTask = checklist.getTask();
 
-        Integer deletedChecklistId =
-                checklist.getId();
+        Integer deletedChecklistId = checklist.getId();
 
-        taskChecklistRepository.delete(
-                checklist
-        );
+        taskChecklistRepository.delete( checklist );
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         featureEventTrackingService.handle(
-                FeatureEvent.builder()
-                        .activity(activityTask.getActivity())
-                        .actor(currentUser)
-                        .feedEvent(ActivityFeedEvent.CHECKLIST_REMOVED)
-                        .feedMessage("deleted a checklist item.")
-                        .auditCategory(AuditCategory.TASK)
-                        .auditSeverity(AuditSeverity.INFO)
-                        .auditEntity("checklist")
-                        .auditMessage("Deleted checklist item.")
-                        .oldValue(deletedItemName)
-                        .newValue(null)
-                        .referenceId(String.valueOf(deletedChecklistId))
-                        .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
-                        .build()
+                checklistEventFactory.removed(
+                        checklist,
+                        currentUser
+                )
         );
+
+        taskChecklistRepository.delete(checklist);
+
+
     }
 }

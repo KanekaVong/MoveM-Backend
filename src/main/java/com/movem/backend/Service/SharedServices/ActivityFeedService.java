@@ -13,7 +13,7 @@ public interface ActivityFeedService {
             User user,
             ActivityFeedEvent eventType,
             String message,
-            Long referenceId
+            String referenceId
     );
 
     Page<ActivityFeedResponse> getActivityFeed(

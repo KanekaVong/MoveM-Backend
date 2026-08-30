@@ -2,7 +2,7 @@ package com.movem.backend.Mapper.SharedMapper;
 
 import com.movem.backend.Dto.response.ActivityFeedResponse;
 import com.movem.backend.Entity.FeedsAndLogs.ActivityFeed;
-import com.movem.backend.Mapper.AbstractBaseMapper;
+import com.movem.backend.Mapper.BaseMapper.AbstractBaseMapper;
 import lombok.*;
 import org.springframework.stereotype.Component;
 

@@ -14,6 +14,8 @@ public interface FitnessGoalRepository
 
     Optional<FitnessGoal> findByIdAndUser (Integer id, User user);
 
-    Optional<FitnessGoal> findByUserAndStatus(User user, String status);
-
+    Optional<FitnessGoal> findFirstByUserAndStatusOrderByCreatedAtDesc(
+            User user,
+            String status
+    );
 }

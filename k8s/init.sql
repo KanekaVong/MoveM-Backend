@@ -6,6 +6,114 @@
 -- ==========================================
 
 -- New Tables to create:
+
+CREATE TABLE user_invite (
+                             id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+                             token VARCHAR(100) NOT NULL UNIQUE,
+
+                             invited_by INT NOT NULL,
+
+                             created_at DATETIME(6) NOT NULL,
+
+                             expires_at DATETIME(6) NULL,
+
+                             CONSTRAINT fk_invite_invited_by
+                                 FOREIGN KEY (invited_by)
+                                     REFERENCES user(id)
+);
+
+CREATE INDEX idx_invite_token
+    ON user_invite(token);
+
+CREATE INDEX idx_invite_invited_by
+    ON user_invite(invited_by);
+
+CREATE INDEX idx_invite_expires_at
+    ON user_invite(expires_at);
+
+CREATE INDEX idx_invite_token
+    ON user_invite(token);
+
+CREATE INDEX idx_invite_invited_by
+    ON user_invite(invited_by);
+
+CREATE INDEX idx_invite_expires_at
+    ON user_invite(expires_at);
+
+CREATE TABLE attachment (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    original_file_name VARCHAR(255) NOT NULL,
+    stored_file_name VARCHAR(255) NOT NULL UNIQUE,
+    file_type VARCHAR(100) NOT NULL,
+    file_size BIGINT NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    uploaded_by INT NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    deleted_at DATETIME(6) NULL,
+    task_activity_id VARCHAR(255) NULL,
+    trip_activity_id VARCHAR(255) NULL,
+    workout_session_id INT NULL,
+
+    CONSTRAINT fk_attachment_user
+        FOREIGN KEY (uploaded_by)
+            REFERENCES user(id),
+
+    CONSTRAINT fk_attachment_task
+        FOREIGN KEY (task_activity_id)
+            REFERENCES Task(activity_id),
+
+    CONSTRAINT fk_attachment_workout
+        FOREIGN KEY (workout_session_id)
+            REFERENCES Fitness_Workout_Session(id);
+
+);
+CREATE INDEX idx_attachment_task
+    ON attachment(task_activity_id);
+
+CREATE INDEX idx_attachment_trip
+    ON attachment(trip_activity_id);
+
+CREATE INDEX idx_attachment_workout
+    ON attachment(workout_session_id);
+
+
+CREATE TABLE fitness_workout_kudos (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    workout_session_id INT NOT NULL,
+    user_id INT NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    CONSTRAINT uk_workout_kudos_user
+        UNIQUE (workout_session_id, user_id),
+    CONSTRAINT fk_workout_kudos_session
+        FOREIGN KEY (workout_session_id)
+            REFERENCES fitness_workout_session(id)
+            ON DELETE CASCADE,
+
+    CONSTRAINT fk_workout_kudos_user
+        FOREIGN KEY (user_id)
+            REFERENCES user(id)
+            ON DELETE CASCADE,
+
+    INDEX idx_workout_kudos_session (workout_session_id),
+    INDEX idx_workout_kudos_user (user_id)
+);
+
+CREATE TABLE fitness_workout_analysis (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    workout_session_id INT NOT NULL UNIQUE,
+    exercise VARCHAR(50) NOT NULL,
+    reps INT NOT NULL DEFAULT 0,
+    valid_reps INT NOT NULL DEFAULT 0,
+    invalid_reps INT NOT NULL DEFAULT 0,
+    form_score INT NULL,
+    feedback TEXT NULL,
+    created_at DATETIME NULL,
+    updated_at DATETIME NULL,
+    FOREIGN KEY (workout_session_id)
+        REFERENCES fitness_workout_session(id)
+);
+
 CREATE TABLE user_devices (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -117,7 +225,7 @@ CREATE TABLE `achievements` (
   `description` VARCHAR(255),
   `icon` VARCHAR(255),
   `condition_type` VARCHAR(50),
-  `condition_value` INT,
+  `condition_value` DECIMAL(12,2),
   `created_at` TIMESTAMP NULL
 );
 
@@ -188,29 +296,7 @@ CREATE TABLE activity_feed (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     activity_id VARCHAR(10) NOT NULL,
     user_id INT NOT NULL,
-    event_type ENUM(
-    'TASK_CREATED','TASK_UPDATED', 'TASK_COMPLETED', 'TASK_DELETED', 'TASK_RESTORED', 'TASK_RECURRED',
-
-    'CHECKLIST_ADDED', 'CHECKLIST_UPDATED', 'CHECKLIST_COMPLETED', 'CHECKLIST_REMOVED',
-
-    'COMMENT_CREATED', 'COMMENT_UPDATED', 'COMMENT_DELETED',
-
-    'FRIEND_REQUEST_SENT', 'FRIEND_REQUEST_ACCEPTED', 'FRIEND_REQUEST_REJECTED', 'FRIEND_REMOVED',
-
-    'GROUP_CREATED', 'GROUP_UPDATED', 'GROUP_DELETED',
-
-    'MEMBER_INVITED', 'MEMBER_JOINED', 'MEMBER_LEFT', 'MEMBER_REMOVED',
-
-    'INVITE_ACCEPTED', 'INVITE_REJECTED',
-
-    'JOIN_REQUEST_SENT', 'JOIN_REQUEST_APPROVED', 'JOIN_REQUEST_REJECTED',
-
-    'ACTIVITY_SOFT_DELETED', 'ACTIVITY_RESTORED', 'ACTIVITY_HARD_DELETED',
-    -- Activity Changes
-    'DEADLINE_CHANGED',
-
-    'LABEL_ADDED', 'LABEL_REMOVED'
-) NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
 
     message VARCHAR(500) NOT NULL,
 
@@ -434,7 +520,12 @@ CREATE TABLE fitness_workout_session (
     group_challenge_participant_id INT NULL,
 
     workout_type VARCHAR(50) NOT NULL,
+    tracking_mode VARCHAR(20) NOT NULL DEFAULT 'STEPS',
+
     status VARCHAR(30) NOT NULL,
+
+    is_shared BOOLEAN NOT NULL DEFAULT FALSE,
+    share_description TEXT NULL,
 
     started_at DATETIME(6) NULL,
     paused_at DATETIME(6) NULL,

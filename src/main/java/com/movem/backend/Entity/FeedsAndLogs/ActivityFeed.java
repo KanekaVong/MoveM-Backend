@@ -65,7 +65,7 @@ public class ActivityFeed {
     @Column(nullable = false, length = 500)
     private String message;
 
-    private Long referenceId;
+    private String referenceId;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

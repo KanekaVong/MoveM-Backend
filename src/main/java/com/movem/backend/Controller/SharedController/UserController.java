@@ -1,13 +1,13 @@
 package com.movem.backend.Controller.SharedController;
 
 import com.movem.backend.Dto.request.AuthRequest.ChangeEmailRequest;
-import com.movem.backend.Dto.request.AuthRequest.UpdateProfileRequest;
 import com.movem.backend.Dto.request.AuthRequest.ChangePasswordRequest;
+import com.movem.backend.Dto.request.AuthRequest.UpdateProfileRequest;
 import com.movem.backend.Dto.response.AuthResponses.AuthResponse;
 import com.movem.backend.Dto.response.AuthResponses.UserResponse;
 import com.movem.backend.Entity.Auth.TrustedDevice;
 import com.movem.backend.Entity.Auth.User;
-import com.movem.backend.Mapper.CurrentUserMapper;
+import com.movem.backend.Mapper.BaseMapper.CurrentUserMapper;
 import com.movem.backend.Repository.AuthRepository.TrustedDeviceRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
 import com.movem.backend.Service.AuthServices.UserService;

@@ -1,12 +1,8 @@
 package com.movem.backend.Service.FitnessServices.Workout;
 
-import com.movem.backend.Dto.request.FitnessRequest.Workout.StartWorkoutRequest;
-import com.movem.backend.Dto.request.FitnessRequest.Workout.WorkoutProgressRequest;
-import com.movem.backend.Dto.request.FitnessRequest.Workout.WorkoutRoutePointsRequest;
-import com.movem.backend.Dto.response.FitnessResponse.Workout.FitnessWorkoutSessionResponse;
-import com.movem.backend.Dto.response.FitnessResponse.Workout.WorkoutDetailsResponse;
-import com.movem.backend.Dto.response.FitnessResponse.Workout.WorkoutHistoryResponse;
-import com.movem.backend.Dto.response.FitnessResponse.Workout.WorkoutRoutePointResponse;
+import com.movem.backend.Dto.request.FitnessRequest.Workout.*;
+import com.movem.backend.Dto.response.FitnessResponse.Social.SocialWorkoutResponse;
+import com.movem.backend.Dto.response.FitnessResponse.Workout.*;
 
 import java.util.List;
 
@@ -58,5 +54,20 @@ public interface FitnessWorkoutSessionService {
             Integer sessionId
     );
 
+    SocialWorkoutResponse getSocialWorkout(Integer sessionId);
 
+    FitnessWorkoutSummaryResponse getWorkoutSummary(
+            Integer sessionId
+    );
+
+    void updateWorkoutSharing(
+            Integer sessionId,
+            ShareWorkoutRequest request
+    );
+
+    List<SharedWorkoutPostResponse> getSocialWorkoutFeed();
+
+    List<WorkoutHistoryResponse> searchWorkouts(
+            FitnessWorkoutSearchRequest request
+    );
 }

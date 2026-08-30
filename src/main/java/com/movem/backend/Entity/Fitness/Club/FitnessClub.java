@@ -59,11 +59,6 @@ public class FitnessClub {
     )
     private ClubPrivacy privacy;
 
-    /**
-     * Used for joining a club through a shared invite/join link.
-     * Can remain null for private clubs if you do not want
-     * link-based joining.
-     */
     @Column(
             name = "join_token",
             unique = true,
