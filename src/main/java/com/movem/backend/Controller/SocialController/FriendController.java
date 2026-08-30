@@ -24,7 +24,6 @@ public class FriendController {
 
     private final FriendService friendService;
 
-    // Send friend request
     @PostMapping("/request")
     public ResponseEntity<FriendRequestResponse> sendFriendRequest(
             @Valid @RequestBody SendFriendRequestRequest request
@@ -32,7 +31,6 @@ public class FriendController {
         return ResponseEntity.ok(friendService.sendFriendRequest(request));
     }
 
-    // Accept friend request
     @PatchMapping("/requests/{requestId}/accept")
     public ResponseEntity<FriendRequestResponse> acceptFriendRequest(
             @PathVariable Long requestId
@@ -40,7 +38,6 @@ public class FriendController {
         return ResponseEntity.ok(friendService.acceptFriendRequest(requestId));
     }
 
-    // Reject friend request
     @PatchMapping("/requests/{requestId}/reject")
     public ResponseEntity<FriendRequestResponse> rejectFriendRequest(
             @PathVariable Long requestId
@@ -48,19 +45,16 @@ public class FriendController {
         return ResponseEntity.ok(friendService.rejectFriendRequest(requestId));
     }
 
-    // Incoming requests
     @GetMapping("/requests/incoming")
     public ResponseEntity<List<FriendRequestResponse>> getIncomingRequests() {
         return ResponseEntity.ok(friendService.getIncomingRequests());
     }
 
-    // Outgoing requests
     @GetMapping("/requests/outgoing")
     public ResponseEntity<List<FriendRequestResponse>> getOutgoingRequests() {
         return ResponseEntity.ok(friendService.getOutgoingRequests());
     }
 
-    // Friends list
     @GetMapping
     public ResponseEntity<List<FriendResponse>> getFriends() {
         return ResponseEntity.ok(friendService.getFriends());
@@ -95,5 +89,13 @@ public class FriendController {
         return ResponseEntity
                 .noContent()
                 .build();
+    }
+
+    @GetMapping("/suggestions")
+    public ResponseEntity<List<SearchUserResponse>> getSuggestedFriends() {
+
+        return ResponseEntity.ok(
+                friendService.getSuggestedFriends()
+        );
     }
 }

@@ -1,9 +1,6 @@
 package com.movem.backend.Service.FitnessServices.Workout;
 
-import com.movem.backend.Dto.request.FitnessRequest.Workout.ShareWorkoutRequest;
-import com.movem.backend.Dto.request.FitnessRequest.Workout.StartWorkoutRequest;
-import com.movem.backend.Dto.request.FitnessRequest.Workout.WorkoutProgressRequest;
-import com.movem.backend.Dto.request.FitnessRequest.Workout.WorkoutRoutePointsRequest;
+import com.movem.backend.Dto.request.FitnessRequest.Workout.*;
 import com.movem.backend.Dto.response.FitnessResponse.Social.SocialWorkoutResponse;
 import com.movem.backend.Dto.response.FitnessResponse.Workout.*;
 
@@ -68,7 +65,9 @@ public interface FitnessWorkoutSessionService {
             ShareWorkoutRequest request
     );
 
-
-
     List<SharedWorkoutPostResponse> getSocialWorkoutFeed();
+
+    List<WorkoutHistoryResponse> searchWorkouts(
+            FitnessWorkoutSearchRequest request
+    );
 }

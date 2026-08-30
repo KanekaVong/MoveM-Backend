@@ -20,8 +20,6 @@ public class FitnessGoalResponse {
 
     private GoalType goalType;
 
-    private FitnessGoalMetric metricType;
-
     private BigDecimal targetWeight;
 
     private LocalDate targetTimeline;

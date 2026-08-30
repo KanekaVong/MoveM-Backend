@@ -34,7 +34,7 @@ public class FriendRequestMapper {
 
         response.setSenderProfilePic(
                 friendRequest.getSender() != null
-                        ? Arrays.toString(friendRequest.getSender().getProfilePic())
+                        ? friendRequest.getSender().getProfilePic()
                         : null
         );
 

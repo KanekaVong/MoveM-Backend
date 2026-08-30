@@ -359,6 +359,62 @@ public class FriendServiceImpl implements FriendService {
                 .toList();
     }
 
+    @Override
+    public List<SearchUserResponse> getSuggestedFriends() {
+
+        User currentUser =
+                currentUserService.getCurrentUser();
+
+        List<User> allUsers =
+                userRepository.findAll();
+
+        return allUsers.stream()
+
+                .filter(user ->
+                        !user.getId().equals(
+                                currentUser.getId()
+                        )
+                )
+
+                .filter(user ->
+                        !areFriends(
+                                currentUser,
+                                user
+                        )
+                )
+
+                .filter(user ->
+                        friendRequestRepository
+                                .findBySenderAndReceiverAndStatus(
+                                        currentUser,
+                                        user,
+                                        FriendRequestStatus.PENDING
+                                )
+                                .isEmpty()
+                )
+
+                .filter(user ->
+                        friendRequestRepository
+                                .findBySenderAndReceiverAndStatus(
+                                        user,
+                                        currentUser,
+                                        FriendRequestStatus.PENDING
+                                )
+                                .isEmpty()
+                )
+
+                .map(user ->
+                        friendMapper.toSearchUserResponse(
+                                user,
+                                FriendStatus.NONE
+                        )
+                )
+
+                .limit(10)
+
+                .toList();
+    }
+
     private Friend createFriend(User a, User b){
 
         User first = first(a, b);

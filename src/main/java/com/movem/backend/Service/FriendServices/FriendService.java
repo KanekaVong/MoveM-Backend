@@ -36,4 +36,5 @@ public interface FriendService {
 
     List<SearchUserResponse> searchUsers(String keyword);
 
+    List<SearchUserResponse> getSuggestedFriends();
 }

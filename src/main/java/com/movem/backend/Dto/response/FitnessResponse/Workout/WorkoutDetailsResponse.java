@@ -1,5 +1,6 @@
 package com.movem.backend.Dto.response.FitnessResponse.Workout;
 
+import com.movem.backend.Dto.response.Attachment.AttachmentResponse;
 import com.movem.backend.model.enums.Fitness.FitnessWorkoutStatus;
 import com.movem.backend.model.enums.Fitness.WorkoutType;
 import lombok.Builder;
@@ -7,6 +8,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Builder
@@ -37,5 +39,7 @@ public class WorkoutDetailsResponse {
     private BigDecimal totalDistance;
     private BigDecimal totalCaloriesBurned;
     private Long totalWorkoutSeconds;
+
+    private List<AttachmentResponse> attachments;
 
 }

@@ -18,7 +18,7 @@ public class GroupMemberResponse {
 
     private String lastname;
 
-    private byte[] profilePic;
+    private String profilePic;
 
     private GroupRole role;
 

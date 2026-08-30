@@ -1,25 +1,24 @@
 package com.movem.backend.Mapper.TripMapper;
 
+import com.movem.backend.Dto.response.Attachment.AttachmentResponse;
 import com.movem.backend.Dto.response.TripResponses.TripResponse;
 import com.movem.backend.Dto.response.TripResponses.TripSummaryResponse;
 import com.movem.backend.Entity.Activity.Activity;
+import com.movem.backend.Entity.Attachment.Attachment;
 import com.movem.backend.Entity.Trip.Trip;
 import com.movem.backend.Mapper.BaseMapper.AbstractBaseMapper;
+import com.movem.backend.Repository.AttachmentRepository.AttachmentRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Component
+@RequiredArgsConstructor
 public class TripMapperImpl
         extends AbstractBaseMapper<Trip, TripResponse>
         implements TripMapper {
 
     private final TripStopMapper tripStopMapper;
-
-    public TripMapperImpl(TripStopMapper tripStopMapper) {
-        this.tripStopMapper = tripStopMapper;
-    }
+    private final AttachmentRepository attachmentRepository;
 
     @Override
     public TripResponse toResponse(Trip trip) {
@@ -53,6 +52,36 @@ public class TripMapperImpl
                         tripStopMapper.toResponseList(
                                 trip.getStops()
                         )
+                )
+                .attachments(
+                        attachmentRepository
+                                .findByTripActivityIdAndDeletedAtIsNull(
+                                        activity.getId()
+                                )
+                                .stream()
+                                .map(attachment -> AttachmentResponse.builder()
+                                        .id(attachment.getId())
+                                        .originalFileName(
+                                                attachment.getOriginalFileName()
+                                        )
+                                        .fileType(
+                                                attachment.getFileType()
+                                        )
+                                        .fileSize(
+                                                attachment.getFileSize()
+                                        )
+                                        .filePath(
+                                                attachment.getFilePath()
+                                        )
+                                        .uploadedBy(
+                                                attachment.getUploadedBy().getId()
+                                        )
+                                        .createdAt(
+                                                attachment.getCreatedAt()
+                                        )
+                                        .build()
+                                )
+                                .toList()
                 )
                 .build();
     }

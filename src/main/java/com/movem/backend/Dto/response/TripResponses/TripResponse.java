@@ -1,5 +1,6 @@
 package com.movem.backend.Dto.response.TripResponses;
 
+import com.movem.backend.Dto.response.Attachment.AttachmentResponse;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 import lombok.*;
 
@@ -38,5 +39,7 @@ public class TripResponse {
     private BigDecimal totalAllocatedBudget;
     private BigDecimal totalSpent;
     private BigDecimal perPersonShare;
+
+    private List<AttachmentResponse> attachments;
 
 }

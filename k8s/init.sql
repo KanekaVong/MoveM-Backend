@@ -7,6 +7,77 @@
 
 -- New Tables to create:
 
+CREATE TABLE user_invite (
+                             id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+                             token VARCHAR(100) NOT NULL UNIQUE,
+
+                             invited_by INT NOT NULL,
+
+                             created_at DATETIME(6) NOT NULL,
+
+                             expires_at DATETIME(6) NULL,
+
+                             CONSTRAINT fk_invite_invited_by
+                                 FOREIGN KEY (invited_by)
+                                     REFERENCES user(id)
+);
+
+CREATE INDEX idx_invite_token
+    ON user_invite(token);
+
+CREATE INDEX idx_invite_invited_by
+    ON user_invite(invited_by);
+
+CREATE INDEX idx_invite_expires_at
+    ON user_invite(expires_at);
+
+CREATE INDEX idx_invite_token
+    ON user_invite(token);
+
+CREATE INDEX idx_invite_invited_by
+    ON user_invite(invited_by);
+
+CREATE INDEX idx_invite_expires_at
+    ON user_invite(expires_at);
+
+CREATE TABLE attachment (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    original_file_name VARCHAR(255) NOT NULL,
+    stored_file_name VARCHAR(255) NOT NULL UNIQUE,
+    file_type VARCHAR(100) NOT NULL,
+    file_size BIGINT NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    uploaded_by INT NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    deleted_at DATETIME(6) NULL,
+    task_activity_id VARCHAR(255) NULL,
+    trip_activity_id VARCHAR(255) NULL,
+    workout_session_id INT NULL,
+
+    CONSTRAINT fk_attachment_user
+        FOREIGN KEY (uploaded_by)
+            REFERENCES user(id),
+
+    CONSTRAINT fk_attachment_task
+        FOREIGN KEY (task_activity_id)
+            REFERENCES Task(activity_id),
+
+    CONSTRAINT fk_attachment_workout
+        FOREIGN KEY (workout_session_id)
+            REFERENCES Fitness_Workout_Session(id);
+
+);
+CREATE INDEX idx_attachment_task
+    ON attachment(task_activity_id);
+
+CREATE INDEX idx_attachment_trip
+    ON attachment(trip_activity_id);
+
+CREATE INDEX idx_attachment_workout
+    ON attachment(workout_session_id);
+
+
 CREATE TABLE fitness_workout_kudos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     workout_session_id INT NOT NULL,

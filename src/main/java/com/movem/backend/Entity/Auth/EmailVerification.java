@@ -20,6 +20,9 @@ public class EmailVerification {
     @Column(name = "user_id", nullable = false)
     private Integer userId;
 
+    @Column(name = "pending_email", length = 100)
+    private String pendingEmail;
+
     @Column(name = "code_hash", nullable = false)
     private String codeHash;
 

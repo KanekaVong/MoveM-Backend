@@ -38,14 +38,17 @@ public class User {
     @Column(length = 15)
     private String phone;
 
+    @Column(length = 500)
+    private String bio;
+
     @Enumerated(EnumType.STRING)
     @Column(
-            columnDefinition = "ENUM('male','female','other','prefer_not_to_say')"
+            columnDefinition = "ENUM('MALE','FEMALE','OTHER','PREFER_NOT_TO_SAY')"
     )
     private Gender gender;
 
-    @Lob
-    private byte[] profilePic;
+    @Column(name = "profile_pic", length = 1000)
+    private String profilePic;
 
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;

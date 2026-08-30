@@ -3,10 +3,8 @@ package com.movem.backend.Service.Implement.FitnessServices.Workout;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.movem.backend.Dto.request.FitnessRequest.Workout.ShareWorkoutRequest;
-import com.movem.backend.Dto.request.FitnessRequest.Workout.StartWorkoutRequest;
-import com.movem.backend.Dto.request.FitnessRequest.Workout.WorkoutProgressRequest;
-import com.movem.backend.Dto.request.FitnessRequest.Workout.WorkoutRoutePointsRequest;
+import com.movem.backend.Dto.request.FitnessRequest.Workout.*;
+import com.movem.backend.Dto.response.Attachment.AttachmentResponse;
 import com.movem.backend.Dto.response.FitnessResponse.Social.SocialWorkoutResponse;
 import com.movem.backend.Dto.response.FitnessResponse.Workout.*;
 import com.movem.backend.Entity.Activity.Activity;
@@ -21,6 +19,8 @@ import com.movem.backend.Entity.Friend.Friend;
 import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Exception.UnauthorizedActionException;
 import com.movem.backend.Mapper.FitnessMapper.Workout.FitnessWorkoutSessionMapper;
+import com.movem.backend.Repository.AttachmentRepository.AttachmentRepository;
+import com.movem.backend.Repository.FitnessRepository.Workout.Specification.FitnessWorkoutSessionSpecification;
 import com.movem.backend.Repository.SocialRepository.CommentRepository;
 import com.movem.backend.Repository.FitnessRepository.Challenge.FitnessChallengeParticipantRepository;
 import com.movem.backend.Repository.FitnessRepository.Challenge.SoloChallengeCatalogRepository;
@@ -43,6 +43,7 @@ import com.movem.backend.model.enums.Activity.ActivityType;
 import com.movem.backend.model.enums.Fitness.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -65,6 +66,7 @@ public class FitnessWorkoutSessionServiceImpl
     private final ActivityService activityService;
     private final ObjectMapper objectMapper;
     private final KudosRepository kudosRepository;
+    private final AttachmentRepository attachmentRepository;
     private final CommentRepository commentRepository;
     private final FriendRepository friendRepository;
     private final FeatureEventTrackingService featureEventTrackingService;
@@ -453,39 +455,101 @@ public class FitnessWorkoutSessionServiceImpl
                                 )
                         );
 
-        if (
-                !session.getUser()
-                        .getId()
-                        .equals(currentUser.getId())
-        ) {
+        if (!session.getUser().getId().equals(currentUser.getId())) {
 
             throw new IllegalArgumentException(
                     "You can only update your own workout session."
             );
         }
 
-
-        if (
-                session.getStatus()
-                        != FitnessWorkoutStatus.IN_PROGRESS
-        ) {
+        if (session.getStatus() != FitnessWorkoutStatus.IN_PROGRESS) {
 
             throw new IllegalArgumentException(
                     "Only an active workout session can be updated."
             );
         }
 
+        if (request.getDurationSeconds() != null
+                && request.getDurationSeconds() >= 0) {
 
-        session.setDurationSeconds(
-                request.getDurationSeconds()
-        );
+            session.setDurationSeconds(
+                    request.getDurationSeconds()
+            );
+        }
 
-        session.setSteps(
-                request.getSteps()
-        );
+        if (request.getSteps() != null
+                && request.getSteps() >= 0) {
 
-        session.setDistance(
-                request.getDistance()
+            session.setSteps(
+                    request.getSteps()
+            );
+        }
+
+        if (session.getTrackingMode() == TrackingMode.GPS) {
+
+            List<FitnessWorkoutRoutePoint> routePoints =
+                    workoutRoutePointRepository
+                            .findByWorkoutSessionOrderByPointSequenceAsc(
+                                    session
+                            );
+
+            if (routePoints.size() >= 2) {
+
+                BigDecimal gpsDistance =
+                        workoutRouteCalculationService
+                                .calculateDistance(routePoints);
+
+                session.setDistance(
+                        gpsDistance
+                );
+
+                if (session.getDurationSeconds() != null
+                        && session.getDurationSeconds() > 0) {
+
+                    BigDecimal speed =
+                            workoutRouteCalculationService
+                                    .calculateSpeed(
+                                            gpsDistance,
+                                            session.getDurationSeconds()
+                                    );
+
+                    session.setAverageSpeed(
+                            speed
+                    );
+
+                    BigDecimal pace =
+                            workoutRouteCalculationService
+                                    .calculatePace(
+                                            gpsDistance,
+                                            session.getDurationSeconds()
+                                    );
+
+                    session.setAveragePace(
+                            pace
+                    );
+                }
+            }
+
+        } else {
+
+            if (request.getDistance() != null
+                    && request.getDistance()
+                    .compareTo(BigDecimal.ZERO) >= 0) {
+
+                session.setDistance(
+                        request.getDistance()
+                );
+            }
+        }
+
+        BigDecimal liveCalories =
+                calorieCalculationService.calculateCalories(
+                        currentUser,
+                        session
+                );
+
+        session.setCaloriesBurned(
+                liveCalories
         );
 
         session.setUpdatedAt(
@@ -663,6 +727,31 @@ public class FitnessWorkoutSessionServiceImpl
         return workoutSessionMapper.toResponse(
                 saved
         );
+    }
+
+    @Override
+    @Transactional
+    public List<WorkoutHistoryResponse> searchWorkouts(
+            FitnessWorkoutSearchRequest request
+    ) {
+
+        User currentUser =
+                currentUserService.getCurrentUser();
+
+        Specification<FitnessWorkoutSession> specification =
+                FitnessWorkoutSessionSpecification.filter(
+                        currentUser,
+                        request
+                );
+
+        List<FitnessWorkoutSession> workouts =
+                workoutSessionRepository.findAll(
+                        specification
+                );
+
+        return workouts.stream()
+                .map(workoutSessionMapper::toHistoryResponse)
+                .toList();
     }
 
     @Override
@@ -1776,6 +1865,39 @@ public class FitnessWorkoutSessionServiceImpl
                             )
                             .shareDescription(
                                     session.getShareDescription()
+                            )
+                            .attachments(
+                                    attachmentRepository
+                                            .findByWorkoutSessionAndDeletedAtIsNull(
+                                                    session
+                                            )
+                                            .stream()
+                                            .map(attachment ->
+                                                    AttachmentResponse.builder()
+                                                            .id(attachment.getId())
+                                                            .originalFileName(
+                                                                    attachment.getOriginalFileName()
+                                                            )
+                                                            .fileType(
+                                                                    attachment.getFileType()
+                                                            )
+                                                            .fileSize(
+                                                                    attachment.getFileSize()
+                                                            )
+                                                            .filePath(
+                                                                    attachment.getFilePath()
+                                                            )
+                                                            .uploadedBy(
+                                                                    attachment
+                                                                            .getUploadedBy()
+                                                                            .getId()
+                                                            )
+                                                            .createdAt(
+                                                                    attachment.getCreatedAt()
+                                                            )
+                                                            .build()
+                                            )
+                                            .toList()
                             )
                             .distance(
                                     session.getDistance()

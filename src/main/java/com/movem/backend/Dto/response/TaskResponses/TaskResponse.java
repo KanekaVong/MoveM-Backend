@@ -1,7 +1,9 @@
 package com.movem.backend.Dto.response.TaskResponses;
 
+import com.movem.backend.Dto.response.Attachment.AttachmentResponse;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 import com.movem.backend.model.enums.Priority;
+import com.movem.backend.model.enums.RecurringType;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -37,10 +39,12 @@ public class TaskResponse {
     private Priority priority;
 
     private Boolean recurring;
+    private RecurringType recurringType;
 
     private LocalDateTime startActivity;
 
     private LocalDateTime deadline;
 
+    private List<AttachmentResponse> attachments;
 
 }

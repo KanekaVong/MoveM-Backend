@@ -2,6 +2,7 @@ package com.movem.backend.Entity.Fitness.WorkoutSession;
 
 
 import com.movem.backend.Entity.Activity.Activity;
+import com.movem.backend.Entity.Attachment.Attachment;
 import com.movem.backend.Entity.Fitness.Challenge.FitnessChallengeParticipant;
 import com.movem.backend.Entity.Fitness.Challenge.SoloChallenge;
 import com.movem.backend.Entity.Auth.User;
@@ -153,7 +154,7 @@ public class FitnessWorkoutSession {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    @OrderBy("pointSequence ASC")
-    private List<FitnessWorkoutRoutePoint> routePoints =
+    private List<Attachment> attachments =
             new ArrayList<>();
+
 }

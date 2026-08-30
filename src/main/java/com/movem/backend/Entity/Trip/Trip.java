@@ -1,6 +1,7 @@
 package com.movem.backend.Entity.Trip;
 
 import com.movem.backend.Entity.Activity.Activity;
+import com.movem.backend.Entity.Attachment.Attachment;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -43,4 +44,11 @@ public class Trip {
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TripPackingItem> packingItems = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "trip",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<Attachment> attachments = new ArrayList<>();
 }

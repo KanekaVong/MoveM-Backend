@@ -119,26 +119,23 @@ public class WorkoutRouteCalculationServiceImpl
             Integer durationSeconds
     ) {
 
-        if (
-                distanceKm == null ||
-                        durationSeconds == null ||
-                        distanceKm.compareTo(BigDecimal.ZERO) <= 0 ||
-                        durationSeconds <= 0
-        ) {
+        if (distanceKm == null
+                || durationSeconds == null
+                || distanceKm.compareTo(BigDecimal.ZERO) <= 0
+                || durationSeconds <= 0) {
+
             return BigDecimal.ZERO;
         }
 
-        return BigDecimal.valueOf(durationSeconds)
-                .divide(
-                        distanceKm,
-                        6,
-                        RoundingMode.HALF_UP
-                )
-                .divide(
-                        BigDecimal.valueOf(60),
-                        6,
-                        RoundingMode.HALF_UP
-                )
+        BigDecimal secondsPerKm =
+                BigDecimal.valueOf(durationSeconds)
+                        .divide(
+                                distanceKm,
+                                6,
+                                RoundingMode.HALF_UP
+                        );
+
+        return secondsPerKm
                 .setScale(
                         2,
                         RoundingMode.HALF_UP

@@ -18,5 +18,7 @@ public class FitnessProfileResponse {
 
     private BigDecimal bmi;
 
+    private FitnessGoalResponse fitnessGoal;
+
     private LocalDateTime updatedAt;
 }

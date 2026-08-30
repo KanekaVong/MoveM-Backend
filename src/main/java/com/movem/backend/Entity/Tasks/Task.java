@@ -1,6 +1,7 @@
 package com.movem.backend.Entity.Tasks;
 
 import com.movem.backend.Entity.Activity.Activity;
+import com.movem.backend.Entity.Attachment.Attachment;
 import com.movem.backend.model.enums.Priority;
 import com.movem.backend.model.enums.RecurringType;
 import jakarta.persistence.*;
@@ -54,4 +55,11 @@ public class Task {
             cascade = CascadeType.ALL ,
             orphanRemoval = true)
     private List<TaskReminder> reminders = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "task",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<Attachment> attachments = new ArrayList<>();
 }

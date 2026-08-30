@@ -8,12 +8,14 @@ import com.movem.backend.Entity.Auth.User;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 import com.movem.backend.model.enums.Fitness.FitnessWorkoutStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface FitnessWorkoutSessionRepository
-        extends JpaRepository<FitnessWorkoutSession, Integer> {
+        extends JpaRepository<FitnessWorkoutSession, Integer>,
+        JpaSpecificationExecutor<FitnessWorkoutSession> {
 
     List<FitnessWorkoutSession> findByUser(
             User user
