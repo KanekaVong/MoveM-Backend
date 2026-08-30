@@ -40,6 +40,7 @@ spec:
       # Wait for MySQL's port to actually accept connections before
       # starting Spring — otherwise the app can crash-loop on cold
       # start while MySQL is still initializing the schema.
+      serviceAccountName: movem-backend-ksa
       initContainers:
         - name: wait-for-mysql
           image: busybox:1.36
@@ -59,7 +60,7 @@ spec:
           # TODO: replace with your real Artifact Registry path once
           # you know the project/region/repo you're using (see the
           # commands in chat).
-          image: us-central1-docker.pkg.dev/movem-cloud/movem-repo/movem-backend:latest
+          image: us-central1-docker.pkg.dev/movem-cloud-2/movem-repo/movem-backend:latest
           ports:
             - containerPort: 8080
           env:
@@ -83,6 +84,11 @@ spec:
                 secretKeyRef:
                   name: movem-secrets
                   key: GMAIL_APP_PASSWORD
+            - name: GOOGLE_MAPS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                   key: GOOGLE_MAPS_API_KEY
+                   name: movem-secrets
           startupProbe:
             httpGet:
               path: /actuator/health/liveness
