@@ -8,19 +8,16 @@
 -- New Tables to create:
 
 CREATE TABLE user_invite (
-                             id BIGINT AUTO_INCREMENT PRIMARY KEY,
 
-                             token VARCHAR(100) NOT NULL UNIQUE,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    token VARCHAR(100) NOT NULL UNIQUE,
+    invited_by INT NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    expires_at DATETIME(6) NULL,
 
-                             invited_by INT NOT NULL,
-
-                             created_at DATETIME(6) NOT NULL,
-
-                             expires_at DATETIME(6) NULL,
-
-                             CONSTRAINT fk_invite_invited_by
-                                 FOREIGN KEY (invited_by)
-                                     REFERENCES user(id)
+    CONSTRAINT fk_invite_invited_by
+        FOREIGN KEY (invited_by)
+            REFERENCES user(id)
 );
 
 CREATE INDEX idx_invite_token
@@ -64,7 +61,7 @@ CREATE TABLE attachment (
             REFERENCES Task(activity_id),
 
     CONSTRAINT fk_attachment_workout
-        FOREIGN KEY (workout_session_id)
+        FOREIGN KEY (workout_session_id)Fitness_Workout_Session
             REFERENCES Fitness_Workout_Session(id);
 
 );
@@ -355,23 +352,30 @@ CREATE TABLE `Task` (
   FOREIGN KEY (`activity_id`) REFERENCES `Activity` (`id`)
 );
 
-CREATE TABLE `task_checklists` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `task_activity_id` VARCHAR(10) NOT NULL,
-  `item_name` VARCHAR(255) NOT NULL,
-  `is_completed` BOOLEAN DEFAULT false,
-  `created_at` TIMESTAMP NULL,
-  FOREIGN KEY (`task_activity_id`) REFERENCES `Task` (`activity_id`)
+CREATE TABLE checklists (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    task_activity_id VARCHAR(10) NULL,
+    trip_activity_id VARCHAR(10) NULL,
+    item_name VARCHAR(255) NOT NULL,
+    is_completed BOOLEAN DEFAULT false,
+    created_at TIMESTAMP NULL,
+    FOREIGN KEY (task_activity_id)
+        REFERENCES Task(activity_id),
+    FOREIGN KEY (trip_activity_id)
+        REFERENCES Trip(activity_id)
 );
 
-CREATE TABLE `task_reminders` (
+CREATE TABLE `reminders` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `task_activity_id` VARCHAR(10) NOT NULL,
+  `trip_activity_id`  VARCHAR(10) DEFAULT NULL,
   `remind_at` TIMESTAMP NOT NULL,
   `type` ENUM('due_date','start_date','custom') DEFAULT 'custom',
   `is_sent` BOOLEAN DEFAULT false,
   `created_at` TIMESTAMP NULL,
-  FOREIGN KEY (`task_activity_id`) REFERENCES `Task` (`activity_id`)
+  FOREIGN KEY (`task_activity_id`) REFERENCES `Task` (`activity_id`),
+  FOREIGN KEY (trip_activity_id) REFERENCES trip(activity_id),
+  CONSTRAINT chk_reminder_owner CHECK ( (task_activity_id IS NOT NULL AND trip_activity_id IS NULL) OR (task_activity_id IS NULL AND trip_activity_id IS NOT NULL))
 );
 
 CREATE TABLE fitness_profile (
@@ -778,8 +782,6 @@ CREATE INDEX idx_notification_reference ON Notification(reference_id);
 CREATE TABLE `Trip` (
   `activity_id` VARCHAR(10) PRIMARY KEY,
   `destination` VARCHAR(100),
-  `flight_number` VARCHAR(50),
-  `hotel_name` VARCHAR(100),
   FOREIGN KEY (`activity_id`) REFERENCES `Activity` (`id`)
 );
 

@@ -1,6 +1,5 @@
 package com.movem.backend.Service.TripServices;
 
-
 import com.movem.backend.Dto.request.TripRequest.Create.CreateTripRequest;
 import com.movem.backend.Dto.request.TripRequest.Update.UpdateTripRequest;
 import com.movem.backend.Dto.response.TripResponses.*;
@@ -21,14 +20,7 @@ public interface TripService {
 
     TripResponse getTrip(String activityId);
 
-    List<TripSummaryResponse> searchTrips(
-            String search,
-            ActivityStatus status,
-            String sortBy,
-            String direction,
-            Boolean upcoming,
-            Boolean active
-    );
+    List<TripSummaryResponse> searchTrips(String search, ActivityStatus status, String sortBy, String direction, Boolean upcoming, Boolean active);
 
     TripResponse updateTrip(String activityId, UpdateTripRequest request);
 
@@ -38,37 +30,18 @@ public interface TripService {
 
     TripResponse completeTrip(String activityId);
 
-    TripDistanceResponse calculateTripDistance(
-            String activityId
-    );
+    TripDistanceResponse calculateTripDistance(String activityId);
 
-    TripTravelTimeResponse calculateTripTravelTime(
-            String activityId,
-            String travelMode
-    );
+    TripTravelTimeResponse calculateTripTravelTime(String activityId, String travelMode);
 
     TripRouteResponse getTripRoute(String activityId, String travelMode);
 
+    TripOptimizedRouteResponse optimizeTripRoute(String activityId, String travelMode);
 
-    TripOptimizedRouteResponse optimizeTripRoute(
-            String activityId,
-            String travelMode
-    );
+    List<NearbyPlaceResponse> getNearbyPlaces(String activityId, Integer stopId, String type, Double radiusKm);
 
-    List<NearbyPlaceResponse> getNearbyPlaces(
-            String activityId,
-            Integer stopId,
-            String type,
-            Double radiusKm
-    );
+    ExternalRouteResponse getExternalRoute(String activityId, String travelMode);
 
-    ExternalRouteResponse getExternalRoute(
-            String activityId,
-            String travelMode
-    );
-
-    TripProgressResponse getTripProgress(
-            String activityId
-    );
+    TripProgressResponse getTripProgress(String activityId);
 
 }

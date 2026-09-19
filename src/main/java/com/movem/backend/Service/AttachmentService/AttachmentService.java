@@ -10,14 +10,9 @@ import java.util.List;
 public interface AttachmentService {
 
     AttachmentResponse upload(MultipartFile file);
-
-    List<AttachmentResponse> getMyAttachments();
-
     AttachmentResponse getAttachment(Long attachmentId);
-
+    List<AttachmentResponse> getMyAttachments();
     void delete(Long attachmentId);
-
     ResponseEntity<Resource> view(Long attachmentId);
-
     ResponseEntity<Resource> download(Long attachmentId);
 }

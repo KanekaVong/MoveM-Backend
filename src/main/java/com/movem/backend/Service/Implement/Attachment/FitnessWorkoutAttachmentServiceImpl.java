@@ -20,131 +20,62 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class FitnessWorkoutAttachmentServiceImpl
-        implements FitnessWorkoutAttachmentService {
-
+public class FitnessWorkoutAttachmentServiceImpl implements FitnessWorkoutAttachmentService {
     private final AttachmentRepository attachmentRepository;
     private final FitnessWorkoutSessionRepository workoutSessionRepository;
     private final AttachmentService attachmentService;
     private final CurrentUserService currentUserService;
 
     @Override
-    public AttachmentResponse upload(
-            Integer sessionId,
-            MultipartFile file
-    ) {
+    public AttachmentResponse upload(Integer sessionId, MultipartFile file) {
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findByIdAndUser(
-                                sessionId,
-                                currentUser
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
+        FitnessWorkoutSession session = workoutSessionRepository
+                        .findByIdAndUser(sessionId, currentUser)
+                        .orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
-        if (
-                session.getStatus()
-                        != FitnessWorkoutStatus.COMPLETED
-        ) {
-            throw new IllegalArgumentException(
-                    "Attachments can only be added to completed workouts."
-            );
+        if (session.getStatus() != FitnessWorkoutStatus.COMPLETED) {
+            throw new IllegalArgumentException("Attachments can only be added to completed workouts.");
         }
 
-        if (!Boolean.TRUE.equals(session.getIsShared())) {
-            throw new IllegalArgumentException(
-                    "You must share the workout before adding attachments."
-            );
-        }
 
-        /*
-         * Use the existing generic attachment uploader.
-         */
-        AttachmentResponse uploaded =
-                attachmentService.upload(file);
+        AttachmentResponse uploaded = attachmentService.upload(file);
 
-        Attachment attachment =
-                attachmentRepository
+        Attachment attachment = attachmentRepository
                         .findById(uploaded.getId())
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Uploaded attachment not found."
-                                )
-                        );
+                        .orElseThrow(() -> new ResourceNotFoundException("Uploaded attachment not found."));
 
         attachment.setWorkoutSession(session);
+        attachment.setCreatedAt(attachment.getCreatedAt() != null ? attachment.getCreatedAt() : LocalDateTime.now());
 
-        attachment.setCreatedAt(
-                attachment.getCreatedAt() != null
-                        ? attachment.getCreatedAt()
-                        : LocalDateTime.now()
-        );
-
-        return toResponse(
-                attachmentRepository.save(attachment)
-        );
+        return toResponse(attachmentRepository.save(attachment));
     }
 
     @Override
-    public List<AttachmentResponse> getAttachments(
-            Integer sessionId
-    ) {
+    public List<AttachmentResponse> getAttachments(Integer sessionId) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findByIdAndUser(
-                                sessionId,
-                                currentUser
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
+        FitnessWorkoutSession session = workoutSessionRepository
+                        .findByIdAndUser(sessionId, currentUser)
+                        .orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
         return attachmentRepository
-                .findByWorkoutSessionAndDeletedAtIsNull(
-                        session
-                )
+                .findByWorkoutSessionAndDeletedAtIsNull(session)
                 .stream()
                 .map(this::toResponse)
                 .toList();
     }
 
-    private AttachmentResponse toResponse(
-            Attachment attachment
-    ) {
-
+    private AttachmentResponse toResponse(Attachment attachment) {
         return AttachmentResponse.builder()
                 .id(attachment.getId())
-                .originalFileName(
-                        attachment.getOriginalFileName()
-                )
-                .fileType(
-                        attachment.getFileType()
-                )
-                .fileSize(
-                        attachment.getFileSize()
-                )
-                .filePath(
-                        attachment.getFilePath()
-                )
-                .uploadedBy(
-                        attachment.getUploadedBy().getId()
-                )
-                .createdAt(
-                        attachment.getCreatedAt()
-                )
+                .originalFileName(attachment.getOriginalFileName())
+                .fileType(attachment.getFileType())
+                .fileSize(attachment.getFileSize())
+                .filePath(attachment.getFilePath())
+                .uploadedBy(attachment.getUploadedBy().getId())
+                .createdAt(attachment.getCreatedAt())
                 .build();
     }
 }

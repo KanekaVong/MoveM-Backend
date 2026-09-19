@@ -2,38 +2,34 @@ package com.movem.backend.Dto.response.FitnessResponse.Workout;
 
 import com.movem.backend.model.enums.Fitness.FitnessWorkoutStatus;
 import com.movem.backend.model.enums.Fitness.WorkoutType;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class FitnessWorkoutSessionResponse {
-
-    private Integer sessionId;
-
-    private Integer userId;
-
-    private Integer soloChallengeId;
-
-    private Integer groupChallengeParticipantId;
-
-    private WorkoutType workoutType;
-
-    private FitnessWorkoutStatus status;
-
-    private LocalDateTime startedAt;
-
-    private LocalDateTime finishedAt;
-
-    private Integer durationSeconds;
-
-    private Integer steps;
-
-    private BigDecimal distance;
-
-    private BigDecimal caloriesBurned;
-
-    private String averagePace;}
+     Integer sessionId;
+     Integer userId;
+     Integer soloChallengeId;
+     Integer groupChallengeParticipantId;
+     WorkoutType workoutType;
+     FitnessWorkoutStatus status;
+     LocalDateTime startedAt;
+     LocalDateTime finishedAt;
+     Integer durationSeconds;
+     Integer steps;
+     BigDecimal distance;
+     BigDecimal caloriesBurned;
+     String averagePace;
+     BigDecimal height;
+     BigDecimal weight;
+     BigDecimal bmi;
+}

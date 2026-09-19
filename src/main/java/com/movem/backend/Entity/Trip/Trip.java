@@ -18,37 +18,21 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Trip {
-
     @Id
     private String activityId;
-
     @OneToOne
     @MapsId
     @JoinColumn(name = "activity_id")
     private Activity activity;
-
     private String destination;
-
-    @Column(name = "flight_number")
-    private String flightNumber;
-
-    @Column(name = "hotel_name")
-    private String hotelName;
-
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sequenceOrder ASC")
     private List<TripStop> stops = new ArrayList<>();
-
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TripBudget> budgets = new ArrayList<>();
-
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TripPackingItem> packingItems = new ArrayList<>();
 
-    @OneToMany(
-            mappedBy = "trip",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
+    @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Attachment> attachments = new ArrayList<>();
 }

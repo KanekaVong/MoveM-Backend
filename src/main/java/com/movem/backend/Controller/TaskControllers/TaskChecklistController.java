@@ -2,8 +2,8 @@ package com.movem.backend.Controller.TaskControllers;
 
 import com.movem.backend.Dto.request.TaskRequests.Create.CreateChecklistItemRequest;
 import com.movem.backend.Dto.request.TaskRequests.Update.UpdateChecklistItemRequest;
-import com.movem.backend.Dto.response.TaskResponses.TaskChecklistResponse;
-import com.movem.backend.Service.TaskServices.TaskChecklistService;
+import com.movem.backend.Dto.response.TaskResponses.ChecklistResponse;
+import com.movem.backend.Service.TaskServices.ChecklistService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,15 +21,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TaskChecklistController {
 
-    private final TaskChecklistService taskChecklistService;
+    private final ChecklistService checklistService;
 
     @GetMapping("/{activityId}/checklists")
-    public ResponseEntity<List<TaskChecklistResponse>> getChecklistItems(
+    public ResponseEntity<List<ChecklistResponse>> getChecklistItems(
             @PathVariable String activityId
     ) {
 
         return ResponseEntity.ok(
-                taskChecklistService.getChecklistItems(activityId)
+                checklistService.getChecklistItems(activityId)
         );
 
     }
@@ -40,7 +40,7 @@ public class TaskChecklistController {
             @Valid @RequestBody CreateChecklistItemRequest request
     ) {
 
-        taskChecklistService.addChecklistItem(
+        checklistService.addChecklistItem(
                 activityId,
                 request
         );
@@ -54,7 +54,7 @@ public class TaskChecklistController {
             @Valid @RequestBody UpdateChecklistItemRequest request
     ) {
 
-        taskChecklistService.updateChecklistItem(
+        checklistService.updateChecklistItem(
                 checklistId,
                 request
         );
@@ -68,7 +68,7 @@ public class TaskChecklistController {
             @PathVariable Integer checklistId
     ) {
 
-        taskChecklistService.toggleChecklistCompletion(checklistId);
+        checklistService.toggleChecklistCompletion(checklistId);
 
         return ResponseEntity.noContent().build();
     }
@@ -77,7 +77,7 @@ public class TaskChecklistController {
             @PathVariable Integer checklistId
     ) {
 
-        taskChecklistService.deleteChecklistItem(checklistId);
+        checklistService.deleteChecklistItem(checklistId);
 
         return ResponseEntity.noContent().build();
     }

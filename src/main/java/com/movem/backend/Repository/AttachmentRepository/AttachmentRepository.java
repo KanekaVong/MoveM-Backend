@@ -10,29 +10,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-public interface AttachmentRepository
-        extends JpaRepository<Attachment, Long> {
-
+public interface AttachmentRepository extends JpaRepository<Attachment, Long> {
     List<Attachment> findByUploadedByAndDeletedAtIsNull(User user);
-
-    Optional<Attachment> findByIdAndUploadedByAndDeletedAtIsNull(
-            Long id,
-            User user
-    );
-
-    List<Attachment> findByTaskAndDeletedAtIsNull(
-            Task task
-    );
-
-    List<Attachment> findByTripAndDeletedAtIsNull(
-            Trip trip
-    );
-
-    List<Attachment> findByTripActivityIdAndDeletedAtIsNull(
-            String activityId
-    );
-
-    List<Attachment> findByWorkoutSessionAndDeletedAtIsNull(
-            FitnessWorkoutSession workoutSession
-    );
+    Optional<Attachment> findByIdAndUploadedByAndDeletedAtIsNull(Long id, User user);
+    List<Attachment> findByTaskAndDeletedAtIsNull(Task task);
+    List<Attachment> findByTripAndDeletedAtIsNull(Trip trip);
+    List<Attachment> findByTripActivityIdAndDeletedAtIsNull(String activityId);
+    List<Attachment> findByWorkoutSessionAndDeletedAtIsNull(FitnessWorkoutSession workoutSession);
 }

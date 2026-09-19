@@ -42,6 +42,8 @@ public enum NotificationType {
 
     TRIP_EXPENSE_LOGGED,
 
+    TRIP_REMINDER,
+
     FRIEND_REQUEST,
 
     FRIEND_ACCEPTED,

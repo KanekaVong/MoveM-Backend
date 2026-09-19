@@ -7,12 +7,7 @@ import java.util.List;
 
 public interface FitnessWorkoutAttachmentService {
 
-    AttachmentResponse upload(
-            Integer sessionId,
-            MultipartFile file
-    );
+    AttachmentResponse upload(Integer sessionId, MultipartFile file);
 
-    List<AttachmentResponse> getAttachments(
-            Integer sessionId
-    );
+    List<AttachmentResponse> getAttachments(Integer sessionId);
 }

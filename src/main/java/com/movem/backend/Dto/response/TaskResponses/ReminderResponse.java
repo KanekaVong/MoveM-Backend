@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TaskReminderResponse {
+public class ReminderResponse {
 
     private Integer id;
 

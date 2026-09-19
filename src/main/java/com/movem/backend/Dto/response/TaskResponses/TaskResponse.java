@@ -22,9 +22,9 @@ public class TaskResponse {
 
     private List<TaskLabelResponse> labels;
 
-    private List<TaskChecklistResponse> checklists;
+    private List<ChecklistResponse> checklists;
 
-    private List<TaskReminderResponse> reminders;
+    private List<ReminderResponse> reminders;
 
     private Integer totalChecklistItems;
 
@@ -46,5 +46,8 @@ public class TaskResponse {
     private LocalDateTime deadline;
 
     private List<AttachmentResponse> attachments;
+
+    private String parentActivityId;
+    private String parentActivityName;
 
 }

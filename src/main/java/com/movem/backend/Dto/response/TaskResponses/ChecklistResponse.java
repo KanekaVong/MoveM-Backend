@@ -7,7 +7,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TaskChecklistResponse {
+public class ChecklistResponse {
 
     private Integer id;
 

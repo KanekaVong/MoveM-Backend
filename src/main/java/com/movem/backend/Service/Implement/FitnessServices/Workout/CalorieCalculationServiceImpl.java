@@ -87,10 +87,7 @@ public class CalorieCalculationServiceImpl
             return null;
         }
 
-        long totalSeconds =
-                secondsPerKm
-                        .setScale(0, RoundingMode.HALF_UP)
-                        .longValue();
+        long totalSeconds = secondsPerKm.setScale(0, RoundingMode.HALF_UP).longValue();
 
         long minutes = totalSeconds / 60;
         long seconds = totalSeconds % 60;
@@ -105,7 +102,6 @@ public class CalorieCalculationServiceImpl
     private BigDecimal getMetValue(
             WorkoutType workoutType
     ) {
-
         if (workoutType == null) {
             return BigDecimal.ZERO;
         }
@@ -113,20 +109,15 @@ public class CalorieCalculationServiceImpl
 
         return switch (workoutType) {
 
-            case RUNNING ->
-                    BigDecimal.valueOf(9.8);
+            case RUNNING -> BigDecimal.valueOf(9.8);
 
-            case WALKING ->
-                    BigDecimal.valueOf(3.5);
+            case WALKING -> BigDecimal.valueOf(3.5);
 
-            case CYCLING ->
-                    BigDecimal.valueOf(7.5);
+            case CYCLING -> BigDecimal.valueOf(7.5);
 
-            case SWIMMING ->
-                    BigDecimal.valueOf(8.0);
+            case SWIMMING -> BigDecimal.valueOf(8.0);
 
-            default ->
-                    BigDecimal.valueOf(5.0);
+            default -> BigDecimal.valueOf(5.0);
         };
     }
 }

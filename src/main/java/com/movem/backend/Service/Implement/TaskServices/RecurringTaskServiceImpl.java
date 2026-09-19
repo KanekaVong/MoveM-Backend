@@ -2,11 +2,11 @@ package com.movem.backend.Service.Implement.TaskServices;
 
 import com.movem.backend.Entity.Activity.Activity;
 import com.movem.backend.Entity.Tasks.Task;
-import com.movem.backend.Entity.Tasks.TaskChecklist;
-import com.movem.backend.Entity.Tasks.TaskReminder;
+import com.movem.backend.Entity.Tasks.Checklist;
+import com.movem.backend.Entity.Tasks.Reminder;
 import com.movem.backend.Repository.SharedRepository.ActivityRepository;
-import com.movem.backend.Repository.TaskRepositories.TaskChecklistRepository;
-import com.movem.backend.Repository.TaskRepositories.TaskReminderRepository;
+import com.movem.backend.Repository.TaskRepositories.ChecklistRepository;
+import com.movem.backend.Repository.TaskRepositories.ReminderRepository;
 import com.movem.backend.Repository.TaskRepositories.TaskRepository;
 import com.movem.backend.Service.Event.Factory.TaskEventFactory;
 import com.movem.backend.Service.Event.FeatureEventTrackingService;
@@ -31,8 +31,8 @@ public class RecurringTaskServiceImpl implements RecurringTaskService {
 
     private final ActivityRepository activityRepository;
     private final TaskRepository taskRepository;
-    private final TaskChecklistRepository checklistRepository;
-    private final TaskReminderRepository reminderRepository;
+    private final ChecklistRepository checklistRepository;
+    private final ReminderRepository reminderRepository;
     private final ActivityIdGenerator activityIdGenerator;
     private final FeatureEventTrackingService featureEventTrackingService;
     private final TaskEventFactory taskEventFactory;
@@ -235,14 +235,14 @@ public class RecurringTaskServiceImpl implements RecurringTaskService {
             Task oldTask,
             Task newTask
     ) {
-        List<TaskChecklist> oldItems =
+        List<Checklist> oldItems =
                 checklistRepository.findByTask(oldTask);
 
-        List<TaskChecklist> newItems = new ArrayList<>();
+        List<Checklist> newItems = new ArrayList<>();
 
-        for (TaskChecklist oldItem : oldItems) {
+        for (Checklist oldItem : oldItems) {
 
-            TaskChecklist newItem = new TaskChecklist();
+            Checklist newItem = new Checklist();
 
             newItem.setTask(newTask);
 
@@ -264,15 +264,15 @@ public class RecurringTaskServiceImpl implements RecurringTaskService {
             Task newTask
     ) {
 
-        List<TaskReminder> oldReminders =
+        List<Reminder> oldReminders =
                 reminderRepository.findByTask(oldTask);
 
-        List<TaskReminder> newReminders =
+        List<Reminder> newReminders =
                 new ArrayList<>();
 
-        for (TaskReminder oldReminder : oldReminders) {
+        for (Reminder oldReminder : oldReminders) {
 
-            TaskReminder newReminder = new TaskReminder();
+            Reminder newReminder = new Reminder();
 
             newReminder.setTask(newTask);
 

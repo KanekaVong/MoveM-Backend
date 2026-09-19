@@ -13,26 +13,19 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class TripMapperImpl
-        extends AbstractBaseMapper<Trip, TripResponse>
-        implements TripMapper {
-
+public class TripMapperImpl extends AbstractBaseMapper<Trip, TripResponse> implements TripMapper {
     private final TripStopMapper tripStopMapper;
     private final AttachmentRepository attachmentRepository;
 
     @Override
     public TripResponse toResponse(Trip trip) {
-
         if (trip == null) {
             return null;
         }
-
         Activity activity = trip.getActivity();
-
         if (activity == null) {
             return null;
         }
-
         return TripResponse.builder()
                 .activityId(activity.getId())
                 .activityName(activity.getActivityName())
@@ -46,49 +39,23 @@ public class TripMapperImpl
                 .lng(activity.getLng())
                 .googlePlaceId(activity.getGooglePlaceId())
                 .destination(trip.getDestination())
-                .flightNumber(trip.getFlightNumber())
-                .hotelName(trip.getHotelName())
-                .stops(
-                        tripStopMapper.toResponseList(
-                                trip.getStops()
-                        )
-                )
-                .attachments(
-                        attachmentRepository
-                                .findByTripActivityIdAndDeletedAtIsNull(
-                                        activity.getId()
-                                )
+                .stops(tripStopMapper.toResponseList(trip.getStops()))
+                .attachments(attachmentRepository
+                                .findByTripActivityIdAndDeletedAtIsNull(activity.getId())
                                 .stream()
                                 .map(attachment -> AttachmentResponse.builder()
                                         .id(attachment.getId())
-                                        .originalFileName(
-                                                attachment.getOriginalFileName()
-                                        )
-                                        .fileType(
-                                                attachment.getFileType()
-                                        )
-                                        .fileSize(
-                                                attachment.getFileSize()
-                                        )
-                                        .filePath(
-                                                attachment.getFilePath()
-                                        )
-                                        .uploadedBy(
-                                                attachment.getUploadedBy().getId()
-                                        )
-                                        .createdAt(
-                                                attachment.getCreatedAt()
-                                        )
-                                        .build()
-                                )
-                                .toList()
-                )
-                .build();
+                                        .originalFileName(attachment.getOriginalFileName())
+                                        .fileType(attachment.getFileType())
+                                        .fileSize(attachment.getFileSize())
+                                        .filePath(attachment.getFilePath())
+                                        .uploadedBy(attachment.getUploadedBy().getId())
+                                        .createdAt(attachment.getCreatedAt())
+                                        .build()).toList()).build();
     }
 
     @Override
     public TripSummaryResponse toSummaryResponse(Trip trip) {
-
         if (trip == null) {
             return null;
         }

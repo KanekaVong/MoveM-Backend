@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UpdateChecklistItemRequest {
-
+    private Integer id;
     @NotBlank
     private String itemName;
 

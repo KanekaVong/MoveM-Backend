@@ -57,19 +57,10 @@ public class TripBudgetServiceImpl implements TripBudgetService {
     private final TripEventFactory tripEventFactory;
 
     @Override
-    public TripBudgetResponse addBudgetCategory(
-            String tripActivityId,
-            CreateTripBudgetRequest request
-    ) {
-
+    public TripBudgetResponse addBudgetCategory(String tripActivityId, CreateTripBudgetRequest request) {
         User user = currentUserService.getCurrentUser();
-
         Trip trip = findTripOrThrow(tripActivityId);
-
-        activityPermissionService.validateCanManageTrip(
-                trip.getActivity(),
-                user
-        );
+        activityPermissionService.validateCanManageTrip(trip.getActivity(),user);
 
         TripBudget budget = new TripBudget();
 
@@ -85,107 +76,64 @@ public class TripBudgetServiceImpl implements TripBudgetService {
 
 
     @Override
-    public List<TripBudgetResponse> getBudgets(
-            String tripActivityId
-    ) {
+    public List<TripBudgetResponse> getBudgets(String tripActivityId) {
 
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
 
-        activityPermissionService.validateActivityAccess(
-                trip.getActivity(),
-                user
-        );
+        activityPermissionService.validateActivityAccess(trip.getActivity(), user);
 
-        return tripBudgetRepository.findByTrip(trip)
-                .stream()
-                .map(budget -> toResponse(budget, trip))
-                .collect(Collectors.toList());
+        return tripBudgetRepository.findByTrip(trip).stream().map(budget -> toResponse(budget, trip)).collect(Collectors.toList());
     }
 
 
     @Override
-    public TripBudgetResponse updateBudgetCategory(
-            String tripActivityId,
-            Integer budgetId,
-            UpdateTripBudgetRequest request
-    ) {
+    public TripBudgetResponse updateBudgetCategory(String tripActivityId, Integer budgetId, UpdateTripBudgetRequest request) {
 
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
 
-        activityPermissionService.validateCanManageTrip(
-                trip.getActivity(),
-                user
-        );
+        activityPermissionService.validateCanManageTrip(trip.getActivity(), user);
 
-        TripBudget budget =
-                findBudgetOrThrow(trip, budgetId);
+        TripBudget budget = findBudgetOrThrow(trip, budgetId);
 
         budget.setCategory(request.getCategory());
-        budget.setAllocatedAmount(
-                request.getAllocatedAmount()
-        );
+        budget.setAllocatedAmount(request.getAllocatedAmount());
 
         return toResponse(budget, trip);
     }
 
 
     @Override
-    public void deleteBudgetCategory(
-            String tripActivityId,
-            Integer budgetId
-    ) {
+    public void deleteBudgetCategory(String tripActivityId, Integer budgetId) {
 
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
 
-        activityPermissionService.validateCanManageTrip(
-                trip.getActivity(),
-                user
-        );
+        activityPermissionService.validateCanManageTrip(trip.getActivity(), user);
 
-        TripBudget budget =
-                findBudgetOrThrow(trip, budgetId);
-
+        TripBudget budget = findBudgetOrThrow(trip, budgetId);
         tripBudgetRepository.delete(budget);
     }
 
     @Override
-    public TripExpenseResponse logExpense(
-            String tripActivityId,
-            CreateTripExpenseRequest request
-    ) {
+    public TripExpenseResponse logExpense(String tripActivityId, CreateTripExpenseRequest request) {
 
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
 
-        activityPermissionService.validateCanContributeToTrip(
-                trip.getActivity(),
-                user
-        );
+        activityPermissionService.validateCanContributeToTrip(trip.getActivity(), user);
 
-        TripBudget budget =
-                findBudgetOrThrow(
-                        trip,
-                        request.getBudgetId()
-                );
+        TripBudget budget = findBudgetOrThrow(trip, request.getBudgetId());
 
         User payer = user;
 
-        if (
-                request.getPayerId() != null
-                        && !request.getPayerId().equals(user.getId())
-        ) {
-
-            payer = resolveMember(
-                    trip,
-                    request.getPayerId()
-            );
+        if (request.getPayerId() != null && !request.getPayerId().equals(user.getId())) {
+            payer = resolveMember(trip, request.getPayerId());
         }
 
         TripExpense expense = new TripExpense();
@@ -194,203 +142,104 @@ public class TripBudgetServiceImpl implements TripBudgetService {
         expense.setPayer(payer);
         expense.setAmount(request.getAmount());
         expense.setDescription(request.getDescription());
+        expense.setExpenseDate(request.getExpenseDate() != null ? request.getExpenseDate() : LocalDateTime.now());
+        expense.setSplits(buildSplits(trip, expense, request));
 
-        expense.setExpenseDate(
-                request.getExpenseDate() != null
-                        ? request.getExpenseDate()
-                        : LocalDateTime.now()
-        );
+        BigDecimal currentSpent = budget.getSpentAmount() == null ? BigDecimal.ZERO : budget.getSpentAmount();
 
-        expense.setSplits(
-                buildSplits(
-                        trip,
-                        expense,
-                        request
-                )
-        );
-
-        BigDecimal currentSpent =
-                budget.getSpentAmount() == null
-                        ? BigDecimal.ZERO
-                        : budget.getSpentAmount();
-
-        budget.setSpentAmount(
-                currentSpent.add(request.getAmount())
-        );
+        budget.setSpentAmount(currentSpent.add(request.getAmount()));
 
         tripExpenseRepository.save(expense);
 
-        featureEventTrackingService.handle(
-                tripEventFactory.expenseLogged(
-                        expense,
-                        user
-                )
-        );
+        featureEventTrackingService.handle(tripEventFactory.expenseLogged(expense, user));
 
-
-        return toResponse(
-                expense,
-                budget
-        );
+        return toResponse(expense, budget);
     }
 
 
     @Override
-    public List<TripExpenseResponse> getExpenses(
-            String tripActivityId,
-            Integer budgetId
-    ) {
+    public List<TripExpenseResponse> getExpenses(String tripActivityId, Integer budgetId) {
 
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
 
-        activityPermissionService.validateActivityAccess(
-                trip.getActivity(),
-                user
-        );
+        activityPermissionService.validateActivityAccess(trip.getActivity(), user);
 
 
-        // Get expenses for one budget
         if (budgetId != null) {
-
-            TripBudget budget =
-                    findBudgetOrThrow(
-                            trip,
-                            budgetId
-                    );
+            TripBudget budget = findBudgetOrThrow(trip, budgetId);
 
             return tripExpenseRepository
                     .findByBudget(budget)
                     .stream()
-                    .map(expense ->
-                            toResponse(
-                                    expense,
-                                    budget
-                            )
-                    )
+                    .map(expense -> toResponse(expense, budget))
                     .collect(Collectors.toList());
         }
 
 
-        // Get expenses for the entire trip
-        List<TripBudget> budgets =
-                tripBudgetRepository.findByTrip(trip);
+        List<TripBudget> budgets = tripBudgetRepository.findByTrip(trip);
 
         return tripExpenseRepository
                 .findByBudgetIn(budgets)
                 .stream()
-                .map(expense ->
-                        toResponse(
-                                expense,
-                                expense.getBudget()
-                        )
-                )
+                .map(expense -> toResponse(expense, expense.getBudget()))
                 .collect(Collectors.toList());
     }
 
 
     @Override
-    public void deleteExpense(
-            String tripActivityId,
-            Integer expenseId
-    ) {
+    public void deleteExpense(String tripActivityId, Integer expenseId) {
 
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
 
-        activityPermissionService.validateCanManageTrip(
-                trip.getActivity(),
-                user
-        );
+        activityPermissionService.validateCanManageTrip(trip.getActivity(), user);
 
-        TripExpense expense =
-                findExpenseOrThrow(
-                        trip,
-                        expenseId
-                );
+        TripExpense expense = findExpenseOrThrow(trip, expenseId);
+        TripBudget budget = expense.getBudget();
 
-        TripBudget budget =
-                expense.getBudget();
+        BigDecimal currentSpent = budget.getSpentAmount() == null ? BigDecimal.ZERO : budget.getSpentAmount();
 
-
-        BigDecimal currentSpent =
-                budget.getSpentAmount() == null
-                        ? BigDecimal.ZERO
-                        : budget.getSpentAmount();
-
-        budget.setSpentAmount(
-                currentSpent
-                        .subtract(expense.getAmount())
-                        .max(BigDecimal.ZERO)
-        );
+        budget.setSpentAmount(currentSpent.subtract(expense.getAmount()).max(BigDecimal.ZERO));
 
         tripExpenseRepository.delete(expense);
     }
 
     @Override
-    public TripExpenseResponse settleSplit(
-            String tripActivityId,
-            Integer expenseId,
-            Integer splitId
-    ) {
+    public TripExpenseResponse settleSplit(String tripActivityId, Integer expenseId, Integer splitId) {
 
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
 
-        activityPermissionService.validateCanEditActivity(
-                trip.getActivity(),
-                user
-        );
+        activityPermissionService.validateCanEditActivity(trip.getActivity(), user);
 
-        TripExpense expense =
-                findExpenseOrThrow(
-                        trip,
-                        expenseId
-                );
+        TripExpense expense = findExpenseOrThrow(trip, expenseId);
 
-        TripExpenseSplit split =
-                expense.getSplits()
+        TripExpenseSplit split = expense.getSplits()
                         .stream()
-                        .filter(s ->
-                                s.getId().equals(splitId)
-                        )
+                        .filter(s -> s.getId().equals(splitId))
                         .findFirst()
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Split not found: " + splitId
-                                )
-                        );
+                        .orElseThrow(() -> new ResourceNotFoundException("Split not found: " + splitId));
 
         if (!split.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedActionException(
-                    "You can only settle your own split."
-            );
+            throw new UnauthorizedActionException("You can only settle your own split.");
         }
 
         if (Boolean.TRUE.equals(split.getIsSettled())) {
-            throw new BadRequestException(
-                    "This split is already settled."
-            );
+            throw new BadRequestException("This split is already settled.");
         }
 
         split.setIsSettled(true);
         split.setSettledAt(LocalDateTime.now());
 
 
-        return toResponse(
-                expense,
-                expense.getBudget()
-        );
+        return toResponse(expense, expense.getBudget());
     }
 
-    private List<TripExpenseSplit> buildSplits(
-            Trip trip,
-            TripExpense expense,
-            CreateTripExpenseRequest request
-    ) {
+    private List<TripExpenseSplit> buildSplits(Trip trip, TripExpense expense, CreateTripExpenseRequest request) {
 
         if (request.getSplitMode() == TripSplitMode.NONE) {
             return new ArrayList<>();
@@ -398,235 +247,90 @@ public class TripBudgetServiceImpl implements TripBudgetService {
 
         if (request.getSplitMode() == TripSplitMode.CUSTOM) {
 
-            if (
-                    request.getCustomSplits() == null
-                            || request.getCustomSplits().isEmpty()
-            ) {
-
-                throw new BadRequestException(
-                        "customSplits is required when splitMode is CUSTOM"
-                );
+            if (request.getCustomSplits() == null || request.getCustomSplits().isEmpty()) {
+                throw new BadRequestException("customSplits is required when splitMode is CUSTOM");
             }
-
-
-            BigDecimal sum =
-                    request.getCustomSplits()
-                            .stream()
-                            .map(
-                                    CreateTripExpenseRequest
-                                            .ExpenseSplitEntry::getAmount
-                            )
-                            .reduce(
-                                    BigDecimal.ZERO,
-                                    BigDecimal::add
-                            );
-
-
-            if (
-                    sum.compareTo(
-                            request.getAmount()
-                    ) != 0
-            ) {
-
-                throw new BadRequestException(
-                        "customSplits must add up to the expense amount"
-                );
+            BigDecimal sum = request.getCustomSplits().stream().map(CreateTripExpenseRequest.ExpenseSplitEntry::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (sum.compareTo(request.getAmount()) != 0) {
+                throw new BadRequestException("customSplits must add up to the expense amount");
             }
-
-
             return request.getCustomSplits()
                     .stream()
                     .map(entry -> {
-
-                        TripExpenseSplit split =
-                                new TripExpenseSplit();
+                        TripExpenseSplit split = new TripExpenseSplit();
 
                         split.setExpense(expense);
-
-                        split.setUser(
-                                resolveMember(
-                                        trip,
-                                        entry.getUserId()
-                                )
-                        );
-
-                        split.setAmountOwed(
-                                entry.getAmount()
-                        );
-
+                        split.setUser(resolveMember(trip, entry.getUserId()));
+                        split.setAmountOwed(entry.getAmount());
                         split.setIsSettled(false);
-
                         return split;
-                    })
-                    .collect(Collectors.toList());
+                    }).collect(Collectors.toList());
         }
 
-        List<User> members =
-                tripMembers(trip);
+        List<User> members = tripMembers(trip);
 
         int count = members.size();
 
         if (count == 0) {
-
-            throw new BadRequestException(
-                    "Trip has no members to split the expense with"
-            );
+            throw new BadRequestException("Trip has no members to split the expense with");
         }
 
+        BigDecimal share = request.getAmount().divide(BigDecimal.valueOf(count), 2, RoundingMode.HALF_UP);
+        BigDecimal roundingRemainder = request.getAmount().subtract(share.multiply(BigDecimal.valueOf(count)));
 
-        BigDecimal share =
-                request.getAmount()
-                        .divide(
-                                BigDecimal.valueOf(count),
-                                2,
-                                RoundingMode.HALF_UP
-                        );
-
-
-        BigDecimal roundingRemainder =
-                request.getAmount()
-                        .subtract(
-                                share.multiply(
-                                        BigDecimal.valueOf(count)
-                                )
-                        );
-
-
-        List<TripExpenseSplit> splits =
-                new ArrayList<>();
-
+        List<TripExpenseSplit> splits = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
-
-            TripExpenseSplit split =
-                    new TripExpenseSplit();
+            TripExpenseSplit split = new TripExpenseSplit();
 
             split.setExpense(expense);
-
-            split.setUser(
-                    members.get(i)
-            );
-
-            split.setAmountOwed(
-                    i == 0
-                            ? share.add(
-                            roundingRemainder
-                    )
-                            : share
-            );
-
+            split.setUser(members.get(i));
+            split.setAmountOwed(i == 0 ? share.add(roundingRemainder) : share);
             split.setIsSettled(false);
-
             splits.add(split);
         }
-
         return splits;
     }
 
-    private List<User> tripMembers(
-            Trip trip
-    ) {
+    private List<User> tripMembers(Trip trip) {
+        Optional<ActivityGroup> group = groupRepository.findByActivity(trip.getActivity());
+        List<User> members = new ArrayList<>();
 
-        Optional<ActivityGroup> group =
-                groupRepository.findByActivity(
-                        trip.getActivity()
-                );
-
-        List<User> members =
-                new ArrayList<>();
+        members.add(trip.getActivity().getUser());
 
 
-        // Trip owner
-        members.add(
-                trip.getActivity().getUser()
-        );
-
-
-        // Collaborative members
-        group.ifPresent(g ->
-                groupMemberRepository
-                        .findByActivityGroup(g)
-                        .forEach(groupMember -> {
-
-                            User member =
-                                    groupMember.getUser();
-
-                            if (
-                                    !member.getId().equals(
-                                            trip.getActivity()
-                                                    .getUser()
-                                                    .getId()
-                                    )
-                            ) {
-
+        group.ifPresent(g -> groupMemberRepository.findByActivityGroup(g)
+                        .forEach(groupMember -> {User member = groupMember.getUser();
+                            if (!member.getId().equals(trip.getActivity().getUser().getId())) {
                                 members.add(member);
                             }
-                        })
-        );
-
+                        }));
         return members;
     }
 
 
-    private User resolveMember(
-            Trip trip,
-            Integer userId
-    ) {
+    private User resolveMember(Trip trip, Integer userId) {
 
         return tripMembers(trip)
                 .stream()
-                .filter(user ->
-                        user.getId().equals(userId)
-                )
+                .filter(user -> user.getId().equals(userId))
                 .findFirst()
-                .orElseThrow(() ->
-                        new BadRequestException(
-                                "User "
-                                        + userId
-                                        + " is not part of this trip"
-                        )
-                );
+                .orElseThrow(() -> new BadRequestException("User " + userId + " is not part of this trip"));
     }
 
-    private TripBudgetResponse toResponse(
-            TripBudget budget,
-            Trip trip
-    ) {
+    private TripBudgetResponse toResponse(TripBudget budget, Trip trip) {
 
-        BigDecimal spent =
-                budget.getSpentAmount() == null
-                        ? BigDecimal.ZERO
-                        : budget.getSpentAmount();
+        BigDecimal spent = budget.getSpentAmount() == null ? BigDecimal.ZERO : budget.getSpentAmount();
+        BigDecimal remaining = budget.getAllocatedAmount().subtract(spent);
 
+        int memberCount = tripMembers(trip).size();
 
-        BigDecimal remaining =
-                budget.getAllocatedAmount()
-                        .subtract(spent);
-
-
-        int memberCount =
-                tripMembers(trip).size();
-
-
-        BigDecimal perPerson =
-                memberCount > 0
-                        ? budget.getAllocatedAmount()
-                        .divide(
-                                BigDecimal.valueOf(
-                                        memberCount
-                                ),
-                                2,
-                                RoundingMode.HALF_UP
-                        )
-                        : budget.getAllocatedAmount();
-
+        BigDecimal perPerson = memberCount > 0 ? budget.getAllocatedAmount().divide(BigDecimal.valueOf(memberCount), 2, RoundingMode.HALF_UP) : budget.getAllocatedAmount();
 
         return TripBudgetResponse.builder()
                 .id(budget.getId())
                 .category(budget.getCategory())
-                .allocatedAmount(
-                        budget.getAllocatedAmount()
-                )
+                .allocatedAmount(budget.getAllocatedAmount())
                 .spentAmount(spent)
                 .remaining(remaining)
                 .perPersonShare(perPerson)
@@ -634,38 +338,23 @@ public class TripBudgetServiceImpl implements TripBudgetService {
     }
 
 
-    private TripExpenseResponse toResponse(
-            TripExpense expense,
-            TripBudget budget
-    ) {
+    private TripExpenseResponse toResponse(TripExpense expense, TripBudget budget) {
 
         return TripExpenseResponse.builder()
                 .id(expense.getId())
                 .budgetId(budget.getId())
                 .category(budget.getCategory())
-                .payerId(
-                        expense.getPayer().getId()
-                )
-                .payerName(
-                        expense.getPayer().getUsername()
-                )
+                .payerId(expense.getPayer().getId())
+                .payerName(expense.getPayer().getUsername())
                 .amount(expense.getAmount())
                 .description(expense.getDescription())
                 .expenseDate(expense.getExpenseDate())
-                .splits(
-                        expense.getSplits()
-                                .stream()
-                                .map(this::toResponse)
-                                .collect(Collectors.toList())
-                )
+                .splits(expense.getSplits().stream().map(this::toResponse).collect(Collectors.toList()))
                 .build();
     }
 
 
-    private TripExpenseSplitResponse toResponse(
-            TripExpenseSplit split
-    ) {
-
+    private TripExpenseSplitResponse toResponse(TripExpenseSplit split) {
         return TripExpenseSplitResponse.builder()
                 .id(split.getId())
                 .userId(split.getUser().getId())
@@ -676,60 +365,25 @@ public class TripBudgetServiceImpl implements TripBudgetService {
                 .build();
     }
 
-    private Trip findTripOrThrow(
-            String tripActivityId
-    ) {
-
+    private Trip findTripOrThrow(String tripActivityId) {
         return tripRepository
                 .findByActivityId(tripActivityId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Trip not found: "
-                                        + tripActivityId
-                        )
-                );
+                .orElseThrow(() -> new ResourceNotFoundException("Trip not found: " + tripActivityId));
     }
 
 
-    private TripBudget findBudgetOrThrow(
-            Trip trip,
-            Integer budgetId
-    ) {
-
-        return tripBudgetRepository
-                .findByIdAndTrip(
-                        budgetId,
-                        trip
-                )
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Budget category not found: "
-                                        + budgetId
-                        )
-                );
+    private TripBudget findBudgetOrThrow(Trip trip, Integer budgetId) {
+        return tripBudgetRepository.findByIdAndTrip(budgetId, trip)
+                .orElseThrow(() -> new ResourceNotFoundException("Budget category not found: " + budgetId));
     }
 
 
-    private TripExpense findExpenseOrThrow(
-            Trip trip,
-            Integer expenseId
-    ) {
-
-        return tripExpenseRepository
-                .findById(expenseId)
-                .filter(expense ->
+    private TripExpense findExpenseOrThrow(Trip trip, Integer expenseId) {
+        return tripExpenseRepository.findById(expenseId).filter(expense ->
                         expense.getBudget()
                                 .getTrip()
                                 .getActivityId()
-                                .equals(
-                                        trip.getActivityId()
-                                )
-                )
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Expense not found: "
-                                        + expenseId
-                        )
-                );
+                                .equals(trip.getActivityId()))
+                .orElseThrow(() -> new ResourceNotFoundException("Expense not found: " + expenseId));
     }
 }

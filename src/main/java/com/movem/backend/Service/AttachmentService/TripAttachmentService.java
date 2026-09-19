@@ -7,12 +7,7 @@ import java.util.List;
 
 public interface TripAttachmentService {
 
-    AttachmentResponse upload(
-            String activityId,
-            MultipartFile file
-    );
+    AttachmentResponse upload(String activityId, MultipartFile file);
 
-    List<AttachmentResponse> getAttachments(
-            String activityId
-    );
+    List<AttachmentResponse> getAttachments(String activityId);
 }

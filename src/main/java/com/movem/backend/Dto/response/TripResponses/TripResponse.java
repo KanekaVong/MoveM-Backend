@@ -1,6 +1,8 @@
 package com.movem.backend.Dto.response.TripResponses;
 
 import com.movem.backend.Dto.response.Attachment.AttachmentResponse;
+import com.movem.backend.Dto.response.TaskResponses.ChecklistResponse;
+import com.movem.backend.Dto.response.TaskResponses.ReminderResponse;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 import lombok.*;
 
@@ -29,17 +31,16 @@ public class TripResponse {
     private String googlePlaceId;
 
     private String destination;
-    private String flightNumber;
-    private String hotelName;
-
-    private List<TripStopResponse> stops;
 
     private Integer memberCount;
 
     private BigDecimal totalAllocatedBudget;
-    private BigDecimal totalSpent;
-    private BigDecimal perPersonShare;
 
+
+    private List<TripStopResponse> stops;
     private List<AttachmentResponse> attachments;
-
+    private List<ChecklistResponse> checklists;
+    private List<ReminderResponse> reminders;
+    private List<TripBudgetResponse> budgets;
+    private List<TripPackingItemResponse> packingItems;
 }

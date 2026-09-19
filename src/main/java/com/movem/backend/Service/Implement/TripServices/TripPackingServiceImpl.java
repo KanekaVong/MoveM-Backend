@@ -32,7 +32,6 @@ public class TripPackingServiceImpl implements TripPackingService {
 
     @Override
     public TripPackingItemResponse addItem(String tripActivityId, CreateTripPackingItemRequest request) {
-
         User user = currentUserService.getCurrentUser();
         Trip trip = findTripOrThrow(tripActivityId);
         activityPermissionService.validateCanEditActivity(trip.getActivity(), user);

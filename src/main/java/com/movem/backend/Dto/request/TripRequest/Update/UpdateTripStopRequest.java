@@ -14,23 +14,15 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateTripStopRequest {
-
+    private Integer id;
     @NotBlank
     private String locationName;
-
     private LocalDateTime arrivalTime;
-
     private LocalDateTime departureTime;
-
     private String locationAddress;
-
     private BigDecimal lat;
-
     private BigDecimal lng;
-
     private String googlePlaceId;
-
     private String coordinates;
-
     private Boolean isCompleted;
 }

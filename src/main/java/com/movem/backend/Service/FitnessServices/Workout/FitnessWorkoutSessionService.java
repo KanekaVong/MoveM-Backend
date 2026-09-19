@@ -7,67 +7,36 @@ import com.movem.backend.Dto.response.FitnessResponse.Workout.*;
 import java.util.List;
 
 public interface FitnessWorkoutSessionService {
+    FitnessWorkoutSessionResponse startWorkout(StartWorkoutRequest request);
 
-    FitnessWorkoutSessionResponse startWorkout(
-            StartWorkoutRequest request
-    );
+    void pauseWorkout(Integer sessionId);
+    void resumeWorkout(Integer sessionId);
 
-    void pauseWorkout(
-            Integer sessionId
-    );
-
-    void resumeWorkout(
-            Integer sessionId
-    );
-
-    FitnessWorkoutSessionResponse getSession(
-            Integer sessionId
-    );
+    FitnessWorkoutSessionResponse getSession(Integer sessionId);
 
     List<FitnessWorkoutSessionResponse> getMySessions();
 
-    FitnessWorkoutSessionResponse updateProgress(
-            Integer sessionId,
-            WorkoutProgressRequest request
-    );
-
-    FitnessWorkoutSessionResponse finishWorkout(
-            Integer sessionId
-    );
+    FitnessWorkoutSessionResponse finishWorkout(Integer sessionId, FinishWorkoutRequest request);
 
     List<WorkoutHistoryResponse> getWorkoutHistory();
 
-    WorkoutDetailsResponse getWorkoutDetails(
-            Integer sessionId
-    );
+    WorkoutDetailsResponse getWorkoutDetails(Integer sessionId);
 
     void deleteWorkout(Integer sessionId);
 
     //GPS ROUTE
 
-    void addRoutePoints(
-            Integer sessionId,
-            WorkoutRoutePointsRequest request
-    );
+    void addRoutePoints(Integer sessionId, WorkoutRoutePointsRequest request);
 
-    List<WorkoutRoutePointResponse> getWorkoutRoute(
-            Integer sessionId
-    );
+    List<WorkoutRoutePointResponse> getWorkoutRoute(Integer sessionId);
 
     SocialWorkoutResponse getSocialWorkout(Integer sessionId);
 
-    FitnessWorkoutSummaryResponse getWorkoutSummary(
-            Integer sessionId
-    );
+    FitnessWorkoutSummaryResponse getWorkoutSummary(Integer sessionId);
 
-    void updateWorkoutSharing(
-            Integer sessionId,
-            ShareWorkoutRequest request
-    );
+    void updateWorkoutSharing(Integer sessionId, ShareWorkoutRequest request);
 
     List<SharedWorkoutPostResponse> getSocialWorkoutFeed();
 
-    List<WorkoutHistoryResponse> searchWorkouts(
-            FitnessWorkoutSearchRequest request
-    );
+    List<WorkoutHistoryResponse> searchWorkouts(FitnessWorkoutSearchRequest request);
 }

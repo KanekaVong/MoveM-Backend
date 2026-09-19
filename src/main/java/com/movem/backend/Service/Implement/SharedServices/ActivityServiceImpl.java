@@ -1,24 +1,29 @@
 package com.movem.backend.Service.Implement.SharedServices;
 
+import com.movem.backend.Dto.response.TaskResponses.TaskResponse;
 import com.movem.backend.Entity.Activity.Activity;
-import com.movem.backend.Entity.Tasks.TaskLabel;
 import com.movem.backend.Entity.Auth.User;
+import com.movem.backend.Entity.Tasks.TaskLabel;
+import com.movem.backend.Exception.BadRequestException;
 import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Exception.UnauthorizedActionException;
-import com.movem.backend.Service.Event.FeatureEventTrackingService;
-import com.movem.backend.model.enums.Activity.ActivityStatus;
-import com.movem.backend.model.enums.Activity.ActivityType;
+import com.movem.backend.Mapper.TaskMapper.TaskMapper;
 import com.movem.backend.Repository.SharedRepository.ActivityRepository;
 import com.movem.backend.Repository.SharedRepository.AuditLogRepository;
 import com.movem.backend.Repository.TaskRepositories.TaskLabelRepository;
+import com.movem.backend.Repository.TaskRepositories.TaskRepository;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
+import com.movem.backend.Service.Event.FeatureEventTrackingService;
 import com.movem.backend.Service.SharedServices.ActivityDeletionService;
+import com.movem.backend.Service.SharedServices.ActivityPermissionService;
 import com.movem.backend.Service.SharedServices.ActivityService;
-import com.movem.backend.Util.*;
+import com.movem.backend.Util.ActivityIdGenerator;
 import com.movem.backend.Util.Base.BaseActivityCreateSource;
 import com.movem.backend.Util.Base.BaseActivityUpdateSource;
 import com.movem.backend.Util.TripUtil.TripCreateSource;
 import com.movem.backend.Util.TripUtil.TripUpdateSource;
+import com.movem.backend.model.enums.Activity.ActivityStatus;
+import com.movem.backend.model.enums.Activity.ActivityType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,8 +41,11 @@ public class ActivityServiceImpl implements ActivityService {
     private final ActivityRepository activityRepository;
     private final ActivityIdGenerator activityIdGenerator;
     private final TaskLabelRepository taskLabelRepository;
+    private final TaskRepository taskRepository;
+    private final TaskMapper taskMapper;
     private final AuditLogRepository auditLogRepository;
     private final CurrentUserService currentUserService;
+    private final ActivityPermissionService activityPermissionService;
     private final FeatureEventTrackingService featureEventTrackingService;
     private final ActivityDeletionService activityDeletionService;
 
@@ -48,9 +56,7 @@ public class ActivityServiceImpl implements ActivityService {
             User user,
             ActivityType activityType
     ) {
-
         Activity activity = new Activity();
-
         activity.setId(activityIdGenerator.generate());
 
         applyCommonFields(activity, source);
@@ -66,12 +72,9 @@ public class ActivityServiceImpl implements ActivityService {
         activity.setCreatedAt(LocalDateTime.now());
         activity.setUpdatedAt(LocalDateTime.now());
 
-        if (source.getParentActivityId() != null &&
-                !source.getParentActivityId().isBlank()) {
-
+        if (source.getParentActivityId() != null && !source.getParentActivityId().isBlank()) {
             Activity parent = activityRepository.findById(source.getParentActivityId())
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException("Parent activity not found."));
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent activity not found: " + source.getParentActivityId()));
 
             activity.setParentActivity(parent);
         }
@@ -84,7 +87,6 @@ public class ActivityServiceImpl implements ActivityService {
             Activity activity,
             BaseActivityUpdateSource source
     ) {
-
         applyCommonUpdateFields(activity, source);
 
         if (source instanceof TripUpdateSource tripSource) {
@@ -92,7 +94,6 @@ public class ActivityServiceImpl implements ActivityService {
         }
 
         activity.setUpdatedAt(LocalDateTime.now());
-
         return activityRepository.save(activity);
     }
 
@@ -101,7 +102,6 @@ public class ActivityServiceImpl implements ActivityService {
             Activity activity,
             List<Integer> labelIds
     ) {
-
         if (labelIds == null || labelIds.isEmpty()) {
             return activity;
         }
@@ -128,12 +128,10 @@ public class ActivityServiceImpl implements ActivityService {
     @Override
     @Transactional
     public void permanentlyDeleteActivity(String activityId) {
-
         User currentUser = currentUserService.getCurrentUser();
 
         Activity activity = activityRepository.findById(activityId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Activity not found."));
+                .orElseThrow(() -> new ResourceNotFoundException("Activity not found: " + activityId));
 
         if (!activity.getUser().getId().equals(currentUser.getId())) {
             throw new UnauthorizedActionException(
@@ -142,7 +140,6 @@ public class ActivityServiceImpl implements ActivityService {
         }
 
         auditLogRepository.detachActivity(activity.getId());
-
         activityDeletionService.permanentlyDelete(activity);
 
         featureEventTrackingService.handleDeletedActivity(
@@ -151,6 +148,8 @@ public class ActivityServiceImpl implements ActivityService {
                 currentUser
         );
     }
+
+    // Helper Methods
 
     private void applyCommonFields(
             Activity activity,
@@ -194,7 +193,4 @@ public class ActivityServiceImpl implements ActivityService {
         activity.setGooglePlaceId(source.getGooglePlaceId());
         activity.setCoordinates(source.getCoordinates());
     }
-
-
-
 }

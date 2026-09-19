@@ -161,13 +161,15 @@ data:
       FOREIGN KEY (`activity_id`) REFERENCES `Activity` (`id`)
     );
 
-    CREATE TABLE `task_checklists` (
+    CREATE TABLE `checklists` (
       `id` INT AUTO_INCREMENT PRIMARY KEY,
       `task_activity_id` VARCHAR(10) NOT NULL,
+      ' trip_activity_id' VARCHAR(10) NULL,
       `item_name` VARCHAR(255) NOT NULL,
       `is_completed` BOOLEAN DEFAULT false,
       `created_at` TIMESTAMP NULL,
-      FOREIGN KEY (`task_activity_id`) REFERENCES `Task` (`activity_id`)
+      FOREIGN KEY (`task_activity_id`) REFERENCES `Task` (`activity_id`),
+      FOREIGN KEY ('trip_actiivty)id') REFERENCES 'Trip' ('activity_id')
     );
 
     CREATE TABLE `task_reminders` (
@@ -236,8 +238,6 @@ data:
     CREATE TABLE `Trip` (
       `activity_id` VARCHAR(10) PRIMARY KEY,
       `destination` VARCHAR(100),
-      `flight_number` VARCHAR(50),
-      `hotel_name` VARCHAR(100),
       FOREIGN KEY (`activity_id`) REFERENCES `Activity` (`id`)
     );
 

@@ -17,77 +17,34 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PushNotificationServiceImpl
-        implements PushNotificationService {
+public class PushNotificationServiceImpl implements PushNotificationService {
 
     private final UserDeviceRepository userDeviceRepository;
 
     @Override
-    public void sendPushNotification(
-            User receiver,
-            String title,
-            String message
-    ) {
+    public void sendPushNotification(User receiver, String title, String message) {
 
-        List<UserDevice> devices =
-                userDeviceRepository
-                        .findByUserAndIsActiveTrue(receiver);
+        List<UserDevice> devices = userDeviceRepository.findByUserAndIsActiveTrue(receiver);
 
         if (devices.isEmpty()) {
-
-            log.info(
-                    "No active notification devices found for user {}.",
-                    receiver.getId()
-            );
-
+            log.info("No active notification devices found for user {}.", receiver.getId());
             return;
         }
 
         for (UserDevice device : devices) {
-
-            String deviceToken =
-                    device.getDeviceToken();
-
-            if (
-                    deviceToken == null ||
-                            deviceToken.isBlank()
-            ) {
+            String deviceToken = device.getDeviceToken();
+            if (deviceToken == null || deviceToken.isBlank()) {
                 continue;
             }
 
-            Message firebaseMessage =
-                    Message.builder()
-                            .setToken(deviceToken)
-                            .setNotification(
-                                    Notification.builder()
-                                            .setTitle(title)
-                                            .setBody(message)
-                                            .build()
-                            )
-                            .build();
+            Message firebaseMessage = Message.builder().setToken(deviceToken).setNotification(Notification.builder().setTitle(title).setBody(message).build()).build();
 
             try {
-
-                String response =
-                        FirebaseMessaging
-                                .getInstance()
-                                .send(firebaseMessage);
-
-                log.info(
-                        "FCM notification sent. user={}, device={}, response={}",
-                        receiver.getId(),
-                        device.getId(),
-                        response
-                );
-
+                String response = FirebaseMessaging.getInstance().send(firebaseMessage);
+                log.info("FCM notification sent. user={}, device={}, response={}", receiver.getId(), device.getId(), response);
             } catch (FirebaseMessagingException e) {
 
-                log.error(
-                        "Failed to send FCM notification. user={}, device={}",
-                        receiver.getId(),
-                        device.getId(),
-                        e
-                );
+                log.error("Failed to send FCM notification. user={}, device={}", receiver.getId(), device.getId(), e);
             }
         }
     }

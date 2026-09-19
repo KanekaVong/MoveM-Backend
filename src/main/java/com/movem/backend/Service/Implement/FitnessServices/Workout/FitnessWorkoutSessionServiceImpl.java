@@ -11,6 +11,7 @@ import com.movem.backend.Entity.Activity.Activity;
 import com.movem.backend.Entity.Fitness.Challenge.FitnessChallengeParticipant;
 import com.movem.backend.Entity.Fitness.Challenge.GroupFitnessChallenge;
 import com.movem.backend.Entity.Fitness.Challenge.SoloChallenge;
+import com.movem.backend.Entity.Fitness.ProfileAndGoal.FitnessProfile;
 import com.movem.backend.Entity.Fitness.WorkoutSession.FitnessWorkoutAnalysis;
 import com.movem.backend.Entity.Fitness.WorkoutSession.FitnessWorkoutRoutePoint;
 import com.movem.backend.Entity.Fitness.WorkoutSession.FitnessWorkoutSession;
@@ -20,6 +21,7 @@ import com.movem.backend.Exception.ResourceNotFoundException;
 import com.movem.backend.Exception.UnauthorizedActionException;
 import com.movem.backend.Mapper.FitnessMapper.Workout.FitnessWorkoutSessionMapper;
 import com.movem.backend.Repository.AttachmentRepository.AttachmentRepository;
+import com.movem.backend.Repository.FitnessRepository.ProfileAndGoal.FitnessProfileRepository;
 import com.movem.backend.Repository.FitnessRepository.Workout.Specification.FitnessWorkoutSessionSpecification;
 import com.movem.backend.Repository.SocialRepository.CommentRepository;
 import com.movem.backend.Repository.FitnessRepository.Challenge.FitnessChallengeParticipantRepository;
@@ -55,10 +57,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class FitnessWorkoutSessionServiceImpl
-        implements FitnessWorkoutSessionService {
+public class FitnessWorkoutSessionServiceImpl implements FitnessWorkoutSessionService {
 
     private final FitnessWorkoutSessionRepository workoutSessionRepository;
+    private final FitnessProfileRepository fitnessProfileRepository;
     private final SoloChallengeCatalogRepository soloChallengeRepository;
     private final FitnessChallengeParticipantRepository participantRepository;
     private final CalorieCalculationService calorieCalculationService;
@@ -79,358 +81,152 @@ public class FitnessWorkoutSessionServiceImpl
 
     @Override
     @Transactional
-    public FitnessWorkoutSessionResponse startWorkout(
-            StartWorkoutRequest request
-    ) {
+    public FitnessWorkoutSessionResponse startWorkout(StartWorkoutRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        FitnessProfile fitnessProfile = fitnessProfileRepository.findByUser(currentUser).orElse(null);
 
         SoloChallenge soloChallenge = null;
         FitnessChallengeParticipant participant = null;
         GroupFitnessChallenge groupChallenge = null;
 
         if (request.getSoloChallengeId() != null) {
-
-            soloChallenge =
-                    soloChallengeRepository
-                            .findById(
-                                    request.getSoloChallengeId()
-                            )
-                            .orElseThrow(() ->
-                                    new ResourceNotFoundException(
-                                            "Solo challenge not found."
-                                    )
-                            );
+            soloChallenge = soloChallengeRepository.findById(request.getSoloChallengeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Solo challenge not found."));
         }
 
         if (request.getParticipantId() != null) {
+            participant = participantRepository.findById(request.getParticipantId()).orElseThrow(() -> new ResourceNotFoundException("Challenge participant not found."));
 
-            participant =
-                    participantRepository
-                            .findById(
-                                    request.getParticipantId()
-                            )
-                            .orElseThrow(() ->
-                                    new ResourceNotFoundException(
-                                            "Challenge participant not found."
-                                    )
-                            );
-
-            if (
-                    !participant.getUser()
-                            .getId()
-                            .equals(currentUser.getId())
-            ) {
-
-                throw new IllegalArgumentException(
-                        "You can only start your own challenge workout."
-                );
+            if (!participant.getUser().getId().equals(currentUser.getId())) {
+                throw new IllegalArgumentException("You can only start your own challenge workout.");
+            }
+            if (participant.getStatus() != FitnessChallengeParticipantStatus.ACTIVE) {
+                throw new IllegalArgumentException("Only an active challenge participant can start a workout.");
             }
 
-            if (
-                    participant.getStatus()
-                            != FitnessChallengeParticipantStatus.ACTIVE
-            ) {
-
-                throw new IllegalArgumentException(
-                        "Only an active challenge participant can start a workout."
-                );
-            }
-
-
-            groupChallenge =
-                    participant.getChallenge();
-
+            groupChallenge = participant.getChallenge();
 
             if (groupChallenge == null) {
-
-                throw new IllegalStateException(
-                        "Challenge participant is not linked to a group fitness challenge."
-                );
+                throw new IllegalStateException("Challenge participant is not linked to a group fitness challenge.");
             }
 
-
-            if (
-                    groupChallenge.getStatus()
-                            == FitnessChallengeStatus.COMPLETE
-            ) {
-
-                throw new IllegalArgumentException(
-                        "This group fitness challenge has already ended."
-                );
+            if (groupChallenge.getStatus() == FitnessChallengeStatus.COMPLETE) {
+                throw new IllegalArgumentException("This group fitness challenge has already ended.");
             }
-
-            if (
-                    groupChallenge.getStatus()
-                            == FitnessChallengeStatus.CANCELLED
-            ) {
-
-                throw new IllegalArgumentException(
-                        "This group fitness challenge has been cancelled."
-                );
+            if (groupChallenge.getStatus() == FitnessChallengeStatus.CANCELLED) {
+                throw new IllegalArgumentException("This group fitness challenge has been cancelled.");
             }
         }
 
-        if (
-                soloChallenge != null &&
-                        participant != null
-        ) {
-
-            throw new IllegalArgumentException(
-                    "A workout cannot belong to both a solo challenge and a group challenge."
-            );
+        if (soloChallenge != null && participant != null) {
+            throw new IllegalArgumentException("A workout cannot belong to both a solo challenge and a group challenge.");
         }
 
         WorkoutType workoutType;
 
         if (soloChallenge != null) {
-
-            workoutType =
-                    soloChallenge.getWorkoutType();
-
+            workoutType = soloChallenge.getWorkoutType();
         } else if (groupChallenge != null) {
-
-            workoutType =
-                    groupChallenge.getWorkoutType();
-
+            workoutType = groupChallenge.getWorkoutType();
         } else {
-
-            workoutType =
-                    request.getWorkoutType();
+            workoutType = request.getWorkoutType();
         }
 
-        FitnessChallengeCreateSource source =
-                new FitnessChallengeCreateSource();
+        FitnessChallengeCreateSource source = new FitnessChallengeCreateSource();
 
-        source.setActivityName(
-                workoutType.name() + " Workout"
-        );
+        source.setActivityName(workoutType.name() + " Workout");
+        source.setDescription("Fitness workout session.");
+        source.setStartActivity(LocalDateTime.now());
+        source.setDeadline(null);
+        source.setParentActivityId(null);
 
-        source.setDescription(
-                "Fitness workout session."
-        );
+        Activity activity = activityService.createActivity(source, currentUser, ActivityType.FITNESS);
 
-        source.setStartActivity(
-                LocalDateTime.now()
-        );
+        FitnessWorkoutSession session = new FitnessWorkoutSession();
 
-        source.setDeadline(
-                null
-        );
-
-        source.setParentActivityId(
-                null
-        );
-
-
-        Activity activity =
-                activityService.createActivity(
-                        source,
-                        currentUser,
-                        ActivityType.FITNESS
-                );
-
-        FitnessWorkoutSession session =
-                new FitnessWorkoutSession();
-
-        session.setActivity(
-                activity
-        );
-
-        session.setUser(
-                currentUser
-        );
-
-        session.setSoloChallenge(
-                soloChallenge
-        );
-
-        session.setGroupChallengeParticipant(
-                participant
-        );
-
-        session.setWorkoutType(
-                workoutType
-        );
-
-        session.setTrackingMode(
-                resolveTrackingMode(workoutType)
-        );
-
-        session.setStatus(
-                FitnessWorkoutStatus.IN_PROGRESS
-        );
-
-        session.setStartedAt(
-                LocalDateTime.now()
-        );
-
+        session.setActivity(activity);
+        session.setUser(currentUser);
+        session.setSoloChallenge(soloChallenge);
+        session.setGroupChallengeParticipant(participant);
+        session.setWorkoutType(workoutType);
+        session.setTrackingMode(resolveTrackingMode(workoutType));
+        session.setStatus(FitnessWorkoutStatus.IN_PROGRESS);
+        session.setStartedAt(LocalDateTime.now());
         session.setDurationSeconds(0);
-
         session.setSteps(0);
+        session.setDistance(BigDecimal.ZERO);
+        session.setCaloriesBurned(BigDecimal.ZERO);
+        session.setCreatedAt(LocalDateTime.now());
+        session.setUpdatedAt(LocalDateTime.now());
 
-        session.setDistance(
-                BigDecimal.ZERO
-        );
+        FitnessWorkoutSession saved = workoutSessionRepository.save(session);
 
-        session.setCaloriesBurned(
-                BigDecimal.ZERO
-        );
-
-        session.setCreatedAt(
-                LocalDateTime.now()
-        );
-
-        session.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-
-        FitnessWorkoutSession saved =
-                workoutSessionRepository.save(
-                        session
-                );
-
-        return workoutSessionMapper.toResponse(
-                saved
-        );
+        return workoutSessionMapper.toStartResponse(saved, fitnessProfile);
     }
 
     @Override
     @Transactional
-    public void pauseWorkout(
-            Integer sessionId
-    ) {
+    public void pauseWorkout(Integer sessionId) {
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
-        FitnessWorkoutSession session =
-                workoutSessionRepository
+        FitnessWorkoutSession session = workoutSessionRepository
                         .findById(sessionId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
-
-        if (
-                !session.getUser()
-                        .getId()
-                        .equals(currentUser.getId())
-        ) {
-            throw new IllegalArgumentException(
-                    "You can only pause your own workout."
-            );
+                        .orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
+        if (!session.getUser().getId().equals(currentUser.getId())) {
+            throw new IllegalArgumentException("You can only pause your own workout.");
         }
 
         if (session.getSoloChallenge() == null) {
-            throw new IllegalArgumentException(
-                    "Pause is only available for solo workouts."
-            );
+            throw new IllegalArgumentException("Pause is only available for solo workouts.");
         }
 
-        if (
-                session.getStatus()
-                        != FitnessWorkoutStatus.IN_PROGRESS
-        ) {
-            throw new IllegalArgumentException(
-                    "Only an active workout can be paused."
-            );
+        if (session.getStatus() != FitnessWorkoutStatus.IN_PROGRESS) {
+            throw new IllegalArgumentException("Only an active workout can be paused.");
         }
 
-        session.setPausedAt(
-                LocalDateTime.now()
-        );
-
-        session.setStatus(
-                FitnessWorkoutStatus.PAUSED
-        );
-
-        session.setUpdatedAt(
-                LocalDateTime.now()
-        );
+        session.setPausedAt(LocalDateTime.now());
+        session.setStatus(FitnessWorkoutStatus.PAUSED);
+        session.setUpdatedAt(LocalDateTime.now());
 
         workoutSessionRepository.save(session);
     }
 
     @Override
     @Transactional
-    public void resumeWorkout(
-            Integer sessionId
-    ) {
+    public void resumeWorkout(Integer sessionId) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        FitnessWorkoutSession session =
-                workoutSessionRepository
+        FitnessWorkoutSession session = workoutSessionRepository
                         .findById(sessionId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
+                        .orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
-        if (
-                !session.getUser()
-                        .getId()
-                        .equals(currentUser.getId())
-        ) {
-            throw new IllegalArgumentException(
-                    "You can only resume your own workout."
-            );
+        if (!session.getUser().getId().equals(currentUser.getId())) {
+            throw new IllegalArgumentException("You can only resume your own workout.");
         }
 
         if (session.getSoloChallenge() == null) {
-            throw new IllegalArgumentException(
-                    "Resume is only available for solo workouts."
-            );
+            throw new IllegalArgumentException("Resume is only available for solo workouts.");
         }
 
-        if (
-                session.getStatus()
-                        != FitnessWorkoutStatus.PAUSED
-        ) {
-            throw new IllegalArgumentException(
-                    "Only a paused workout can be resumed."
-            );
+        if (session.getStatus() != FitnessWorkoutStatus.PAUSED) {
+            throw new IllegalArgumentException("Only a paused workout can be resumed.");
         }
 
         if (session.getPausedAt() == null) {
-            throw new IllegalStateException(
-                    "Paused time was not recorded."
-            );
+            throw new IllegalStateException("Paused time was not recorded.");
         }
 
-        LocalDateTime now =
-                LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
 
-        long pausedSeconds =
-                java.time.Duration
-                        .between(
-                                session.getPausedAt(),
-                                now
-                        )
-                        .getSeconds();
+        long pausedSeconds = java.time.Duration.between(session.getPausedAt(), now).getSeconds();
 
-        int currentPausedSeconds =
-                session.getTotalPausedSeconds() != null
-                        ? session.getTotalPausedSeconds()
-                        : 0;
+        int currentPausedSeconds = session.getTotalPausedSeconds() != null ? session.getTotalPausedSeconds() : 0;
 
-        session.setTotalPausedSeconds(
-                currentPausedSeconds
-                        + (int) pausedSeconds
-        );
-
+        session.setTotalPausedSeconds(currentPausedSeconds + (int) pausedSeconds);
         session.setPausedAt(null);
-
-        session.setStatus(
-                FitnessWorkoutStatus.IN_PROGRESS
-        );
-
+        session.setStatus(FitnessWorkoutStatus.IN_PROGRESS);
         session.setUpdatedAt(now);
 
         workoutSessionRepository.save(session);
@@ -438,316 +234,102 @@ public class FitnessWorkoutSessionServiceImpl
 
     @Override
     @Transactional
-    public FitnessWorkoutSessionResponse updateProgress(
-            Integer sessionId,
-            WorkoutProgressRequest request
-    ) {
+    public FitnessWorkoutSessionResponse finishWorkout(Integer sessionId, FinishWorkoutRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findById(sessionId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
-
-        if (!session.getUser().getId().equals(currentUser.getId())) {
-
-            throw new IllegalArgumentException(
-                    "You can only update your own workout session."
-            );
-        }
+        FitnessWorkoutSession session = workoutSessionRepository
+                        .findByIdAndUserAndActivity_StatusNot(sessionId, currentUser, ActivityStatus.DELETED)
+                        .orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
         if (session.getStatus() != FitnessWorkoutStatus.IN_PROGRESS) {
-
-            throw new IllegalArgumentException(
-                    "Only an active workout session can be updated."
-            );
+            throw new IllegalArgumentException("Only an active workout session can be finished.");
         }
 
-        if (request.getDurationSeconds() != null
-                && request.getDurationSeconds() >= 0) {
+        LocalDateTime now = LocalDateTime.now();
 
-            session.setDurationSeconds(
-                    request.getDurationSeconds()
-            );
-        }
-
-        if (request.getSteps() != null
-                && request.getSteps() >= 0) {
-
-            session.setSteps(
-                    request.getSteps()
-            );
-        }
-
-        if (session.getTrackingMode() == TrackingMode.GPS) {
-
-            List<FitnessWorkoutRoutePoint> routePoints =
-                    workoutRoutePointRepository
-                            .findByWorkoutSessionOrderByPointSequenceAsc(
-                                    session
-                            );
-
-            if (routePoints.size() >= 2) {
-
-                BigDecimal gpsDistance =
-                        workoutRouteCalculationService
-                                .calculateDistance(routePoints);
-
-                session.setDistance(
-                        gpsDistance
-                );
-
-                if (session.getDurationSeconds() != null
-                        && session.getDurationSeconds() > 0) {
-
-                    BigDecimal speed =
-                            workoutRouteCalculationService
-                                    .calculateSpeed(
-                                            gpsDistance,
-                                            session.getDurationSeconds()
-                                    );
-
-                    session.setAverageSpeed(
-                            speed
-                    );
-
-                    BigDecimal pace =
-                            workoutRouteCalculationService
-                                    .calculatePace(
-                                            gpsDistance,
-                                            session.getDurationSeconds()
-                                    );
-
-                    session.setAveragePace(
-                            pace
-                    );
-                }
-            }
-
-        } else {
-
-            if (request.getDistance() != null
-                    && request.getDistance()
-                    .compareTo(BigDecimal.ZERO) >= 0) {
-
-                session.setDistance(
-                        request.getDistance()
-                );
-            }
-        }
-
-        BigDecimal liveCalories =
-                calorieCalculationService.calculateCalories(
-                        currentUser,
-                        session
-                );
-
-        session.setCaloriesBurned(
-                liveCalories
-        );
-
-        session.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-        FitnessWorkoutSession saved =
-                workoutSessionRepository.save(
-                        session
-                );
-
-        return workoutSessionMapper.toResponse(
-                saved
-        );
-    }
-
-    @Override
-    @Transactional
-    public FitnessWorkoutSessionResponse finishWorkout(
-            Integer sessionId
-    ) {
-
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findByIdAndUserAndActivity_StatusNot(
-                                sessionId,
-                                currentUser,
-                                ActivityStatus.DELETED
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
-
-        if (
-                session.getStatus()
-                        != FitnessWorkoutStatus.IN_PROGRESS
-        ) {
-
-            throw new IllegalArgumentException(
-                    "Only an active workout session can be finished."
-            );
-        }
-
-        LocalDateTime now =
-                LocalDateTime.now();
-
-        int activeDurationSeconds =
-                calculateCurrentActiveDuration(
-                        session,
-                        now
-                );
-
-        session.setDurationSeconds(
-                activeDurationSeconds
-        );
+        session.setDurationSeconds(request.getDurationSeconds());
+        session.setSteps(request.getSteps());
 
         boolean gpsWorkout = session.getTrackingMode() == TrackingMode.GPS;
 
         if (gpsWorkout) {
 
-            List<FitnessWorkoutRoutePoint> routePoints =
-                    workoutRoutePointRepository
-                            .findByWorkoutSessionOrderByPointSequenceAsc(
-                                    session
-                            );
+            List<FitnessWorkoutRoutePoint> routePoints = workoutRoutePointRepository
+                            .findByWorkoutSessionOrderByPointSequenceAsc(session);
 
             if (!routePoints.isEmpty()) {
 
-                BigDecimal finalDistance =
-                        workoutRouteCalculationService
-                                .calculateDistance(routePoints);
+                BigDecimal finalDistance = workoutRouteCalculationService.calculateDistance(routePoints);
 
                 session.setDistance(finalDistance);
 
-                BigDecimal finalSpeed =
-                        workoutRouteCalculationService
-                                .calculateSpeed(
-                                        finalDistance,
-                                        activeDurationSeconds
-                                );
+                if (session.getDurationSeconds() > 0) {
 
+                    BigDecimal finalSpeed = workoutRouteCalculationService.calculateSpeed(finalDistance, session.getDurationSeconds());
+
+                    session.setAverageSpeed(finalSpeed);
+
+                    BigDecimal finalPace = workoutRouteCalculationService.calculatePace(finalDistance, session.getDurationSeconds());
+
+                    session.setAveragePace(finalPace);
+                }
+            }
+
+        } else {
+
+            if (request.getDistance() != null && request.getDistance().compareTo(BigDecimal.ZERO) >= 0) {
+                session.setDistance(request.getDistance());
+            }
+
+            if (session.getDistance() != null && session.getDurationSeconds() > 0) {
+                BigDecimal finalSpeed = workoutRouteCalculationService.calculateSpeed(session.getDistance(), session.getDurationSeconds());
                 session.setAverageSpeed(finalSpeed);
-
-                BigDecimal finalPace =
-                        workoutRouteCalculationService
-                                .calculatePace(
-                                        finalDistance,
-                                        activeDurationSeconds
-                                );
-
+                BigDecimal finalPace = workoutRouteCalculationService.calculatePace(session.getDistance(), session.getDurationSeconds());
                 session.setAveragePace(finalPace);
             }
         }
+        BigDecimal calories = calorieCalculationService.calculateCalories(currentUser, session);
 
+        session.setCaloriesBurned(calories);
+        session.setFinishedAt(now);
+        session.setStatus(FitnessWorkoutStatus.COMPLETED);
 
-        session.setFinishedAt(
-                now
-        );
-
-        session.setStatus(
-                FitnessWorkoutStatus.COMPLETED
-        );
-
-        Activity activity =
-                session.getActivity();
+        Activity activity = session.getActivity();
 
         if (activity != null) {
-
-            activity.setStatus(
-                    ActivityStatus.COMPLETE
-            );
-
-            activity.setUpdatedAt(
-                    now
-            );
-
-            activityRepository.save(
-                    activity
-            );
+            activity.setStatus(ActivityStatus.COMPLETE);
+            activity.setUpdatedAt(now);
+            activityRepository.save(activity);
         }
 
-        BigDecimal calories =
-                calorieCalculationService.calculateCalories(
-                        currentUser,
-                        session
-                );
+        FitnessChallengeParticipant participant = session.getGroupChallengeParticipant();
 
-        session.setCaloriesBurned(
-                calories
-        );
+        if (participant != null && participant.getStatus() == FitnessChallengeParticipantStatus.ACTIVE) {
 
-        FitnessChallengeParticipant participant =
-                session.getGroupChallengeParticipant();
+            participant.setStatus(FitnessChallengeParticipantStatus.COMPLETED);
+            participant.setCompletedAt(now);
 
-        if (
-                participant != null &&
-                        participant.getStatus()
-                                == FitnessChallengeParticipantStatus.ACTIVE
-        ) {
-
-            participant.setStatus(
-                    FitnessChallengeParticipantStatus.COMPLETED
-            );
-
-            participant.setCompletedAt(
-                    now
-            );
-
-            participantRepository.save(
-                    participant
-            );
+            participantRepository.save(participant);
         }
 
-        session.setUpdatedAt(
-                now
-        );
+        session.setUpdatedAt(now);
 
-        FitnessWorkoutSession saved =
-                workoutSessionRepository.save(
-                        session
-                );
+        FitnessWorkoutSession saved = workoutSessionRepository.save(session);
 
-        featureEventTrackingService.handle(
-                workoutEventFactory.completed(
-                        saved,
-                        currentUser
-                )
-        );
+        featureEventTrackingService.handle(workoutEventFactory.completed(saved, currentUser));
 
-        return workoutSessionMapper.toResponse(
-                saved
-        );
+        return workoutSessionMapper.toResponse(saved);
     }
 
     @Override
     @Transactional
-    public List<WorkoutHistoryResponse> searchWorkouts(
-            FitnessWorkoutSearchRequest request
-    ) {
+    public List<WorkoutHistoryResponse> searchWorkouts(FitnessWorkoutSearchRequest request) {
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
-        Specification<FitnessWorkoutSession> specification =
-                FitnessWorkoutSessionSpecification.filter(
-                        currentUser,
-                        request
-                );
+        Specification<FitnessWorkoutSession> specification = FitnessWorkoutSessionSpecification.filter(currentUser, request);
 
-        List<FitnessWorkoutSession> workouts =
-                workoutSessionRepository.findAll(
-                        specification
-                );
+        List<FitnessWorkoutSession> workouts = workoutSessionRepository.findAll(specification);
 
         return workouts.stream()
                 .map(workoutSessionMapper::toHistoryResponse)
@@ -758,15 +340,9 @@ public class FitnessWorkoutSessionServiceImpl
     @Transactional
     public List<WorkoutHistoryResponse> getWorkoutHistory() {
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
-        return workoutSessionRepository
-                .findByUserAndStatusAndActivity_StatusNotOrderByFinishedAtDesc(
-                        currentUser,
-                        FitnessWorkoutStatus.COMPLETED,
-                        ActivityStatus.DELETED
-                )
+        return workoutSessionRepository.findByUserAndStatusAndActivity_StatusNotOrderByFinishedAtDesc(currentUser, FitnessWorkoutStatus.COMPLETED, ActivityStatus.DELETED)
                 .stream()
                 .map(workoutSessionMapper::toHistoryResponse)
                 .toList();
@@ -774,54 +350,30 @@ public class FitnessWorkoutSessionServiceImpl
 
     @Override
     @Transactional
-    public void deleteWorkout(
-            Integer sessionId
-    ) {
+    public void deleteWorkout(Integer sessionId) {
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
-        FitnessWorkoutSession session =
-                workoutSessionRepository
+        FitnessWorkoutSession session = workoutSessionRepository
                         .findByIdAndUserAndActivity_StatusNot(sessionId,currentUser,ActivityStatus.DELETED)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
+                        .orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
-        if (
-                session.getStatus()
-                        == FitnessWorkoutStatus.IN_PROGRESS
-                        ||
-                        session.getStatus()
-                                == FitnessWorkoutStatus.PAUSED
-        ) {
-
-            throw new IllegalArgumentException(
-                    "An active workout cannot be deleted."
-            );
+        if (session.getStatus() == FitnessWorkoutStatus.IN_PROGRESS || session.getStatus() == FitnessWorkoutStatus.PAUSED) {
+            throw new IllegalArgumentException("An active workout cannot be deleted.");
         }
 
-        Activity activity =
-                session.getActivity();
+        Activity activity = session.getActivity();
 
         if (activity == null) {
-            throw new IllegalStateException(
-                    "Workout session is not linked to an activity."
-            );
+            throw new IllegalStateException("Workout session is not linked to an activity.");
         }
 
-        LocalDateTime now =
-                LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
 
-        activity.setStatus(
-                ActivityStatus.DELETED
-        );
+        activity.setStatus(ActivityStatus.DELETED);
 
         activity.setDeletedAt(now);
         activity.setUpdatedAt(now);
-
         activityRepository.save(activity);
 
         session.setUpdatedAt(now);
@@ -831,42 +383,21 @@ public class FitnessWorkoutSessionServiceImpl
 
     @Override
     @Transactional
-    public FitnessWorkoutSessionResponse getSession(
-            Integer sessionId
-    ) {
-
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findByIdAndUserAndActivity_StatusNot(
-                                sessionId,
-                                currentUser,
-                                ActivityStatus.DELETED
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
+    public FitnessWorkoutSessionResponse getSession(Integer sessionId) {
+        User currentUser = currentUserService.getCurrentUser();
+        FitnessProfile fitnessProfile = fitnessProfileRepository.findByUser(currentUser).orElse(null);
+        FitnessWorkoutSession session = workoutSessionRepository.findByIdAndUserAndActivity_StatusNot(sessionId, currentUser, ActivityStatus.DELETED).orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
         return workoutSessionMapper.toResponse(session);
     }
 
-
     @Override
     @Transactional
     public List<FitnessWorkoutSessionResponse> getMySessions() {
-
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         return workoutSessionRepository
-                .findByUserAndActivity_StatusNot(
-                        currentUser,
-                        ActivityStatus.DELETED
-                )
+                .findByUserAndActivity_StatusNot(currentUser, ActivityStatus.DELETED)
                 .stream()
                 .map(workoutSessionMapper::toResponse)
                 .toList();
@@ -874,192 +405,82 @@ public class FitnessWorkoutSessionServiceImpl
 
     @Override
     @Transactional
-    public WorkoutDetailsResponse getWorkoutDetails(
-            Integer sessionId
-    ) {
+    public WorkoutDetailsResponse getWorkoutDetails(Integer sessionId) {
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findByIdAndUserAndActivity_StatusNot(
-                                sessionId,
-                                currentUser,
-                                ActivityStatus.DELETED
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
+        FitnessWorkoutSession session = workoutSessionRepository
+                        .findByIdAndUserAndActivity_StatusNot(sessionId, currentUser, ActivityStatus.DELETED)
+                        .orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
-        Integer durationSeconds =
-                session.getDurationSeconds() != null
-                        ? session.getDurationSeconds()
-                        : 0;
+        Integer durationSeconds = session.getDurationSeconds() != null ? session.getDurationSeconds() : 0;
 
-        BigDecimal distance =
-                session.getDistance() != null
-                        ? session.getDistance()
-                        : BigDecimal.ZERO;
+        BigDecimal distance = session.getDistance() != null ? session.getDistance() : BigDecimal.ZERO;
+        BigDecimal calories = session.getCaloriesBurned() != null ? session.getCaloriesBurned() : BigDecimal.ZERO;
+        BigDecimal averageSpeed = session.getAverageSpeed() != null ? session.getAverageSpeed() : BigDecimal.ZERO;
+        BigDecimal averagePace = session.getAveragePace();
 
-        BigDecimal calories =
-                session.getCaloriesBurned() != null
-                        ? session.getCaloriesBurned()
-                        : BigDecimal.ZERO;
-
-        BigDecimal averageSpeed =
-                session.getAverageSpeed() != null
-                        ? session.getAverageSpeed()
-                        : BigDecimal.ZERO;
-
-        BigDecimal averagePace =
-                session.getAveragePace();
-
-        BigDecimal caloriesPerMinute =
-                BigDecimal.ZERO;
+        BigDecimal caloriesPerMinute = BigDecimal.ZERO;
 
         if (durationSeconds > 0) {
-
-            caloriesPerMinute =
-                    calories
-                            .divide(
-                                    BigDecimal.valueOf(
-                                            durationSeconds
-                                    ),
-                                    6,
-                                    RoundingMode.HALF_UP
-                            )
-                            .multiply(
-                                    BigDecimal.valueOf(60)
-                            )
-                            .setScale(
-                                    2,
-                                    RoundingMode.HALF_UP
-                            );
+            caloriesPerMinute = calories.divide(BigDecimal.valueOf(durationSeconds), 6, RoundingMode.HALF_UP)
+                            .multiply(BigDecimal.valueOf(60))
+                            .setScale(2, RoundingMode.HALF_UP);
         }
 
-        /*
-         * Challenge information
-         */
         WorkoutChallengeDetailsResponse challenge = null;
 
         if (session.getSoloChallenge() != null) {
+            SoloChallenge soloChallenge = session.getSoloChallenge();
 
-            SoloChallenge soloChallenge =
-                    session.getSoloChallenge();
-
-            challenge =
-                    WorkoutChallengeDetailsResponse.builder()
+            challenge = WorkoutChallengeDetailsResponse.builder()
                             .type("SOLO")
                             .id(soloChallenge.getId())
                             .participantId(null)
                             .name(soloChallenge.getName())
-                            .targetValue(
-                                    soloChallenge.getTargetValue()
-                            )
-                            .targetUnit(
-                                    soloChallenge.getTargetUnit() != null
-                                            ? soloChallenge
-                                            .getTargetUnit()
-                                            .name()
-                                            : null
-                            )
+                            .targetValue(soloChallenge.getTargetValue())
+                            .targetUnit(soloChallenge.getTargetUnit() != null ? soloChallenge.getTargetUnit().name() : null)
                             .build();
         }
 
-        else if (
-                session.getGroupChallengeParticipant() != null
-        ) {
+        else if (session.getGroupChallengeParticipant() != null) {
 
-            FitnessChallengeParticipant participant =
-                    session.getGroupChallengeParticipant();
+            FitnessChallengeParticipant participant = session.getGroupChallengeParticipant();
 
-            GroupFitnessChallenge groupChallenge =
-                    participant.getChallenge();
+            GroupFitnessChallenge groupChallenge = participant.getChallenge();
 
             if (groupChallenge != null) {
 
-                challenge =
-                        WorkoutChallengeDetailsResponse.builder()
+                challenge = WorkoutChallengeDetailsResponse.builder()
                                 .type("GROUP")
                                 .id(groupChallenge.getId())
-                                .participantId(
-                                        participant.getId()
-                                )
-                                .name(
-                                        groupChallenge.getName()
-                                )
-                                .targetValue(
-                                        groupChallenge
-                                                .getTargetValue()
-                                )
-                                .targetUnit(
-                                        groupChallenge
-                                                .getTargetUnit() != null
-                                                ? groupChallenge
-                                                .getTargetUnit()
-                                                .name()
-                                                : null
-                                )
+                                .participantId(participant.getId())
+                                .name(groupChallenge.getName())
+                                .targetValue(groupChallenge.getTargetValue())
+                                .targetUnit(groupChallenge.getTargetUnit() != null ? groupChallenge.getTargetUnit().name() : null)
                                 .build();
             }
         }
 
-        /*
-         * User's overall workout totals
-         */
-        List<FitnessWorkoutSession> completedWorkouts =
-                workoutSessionRepository
-                        .findByUserAndStatusAndActivity_StatusNotOrderByFinishedAtDesc(
-                                currentUser,
-                                FitnessWorkoutStatus.COMPLETED,
-                                ActivityStatus.DELETED
+        List<FitnessWorkoutSession> completedWorkouts = workoutSessionRepository.findByUserAndStatusAndActivity_StatusNotOrderByFinishedAtDesc(currentUser, FitnessWorkoutStatus.COMPLETED, ActivityStatus.DELETED
                         );
 
-        int totalCompletedWorkouts =
-                completedWorkouts.size();
+        int totalCompletedWorkouts = completedWorkouts.size();
 
-        BigDecimal totalDistance =
-                completedWorkouts.stream()
-                        .map(
-                                workout ->
-                                        workout.getDistance() != null
-                                                ? workout.getDistance()
-                                                : BigDecimal.ZERO
+        BigDecimal totalDistance = completedWorkouts.stream()
+                        .map(workout -> workout.getDistance() != null ? workout.getDistance() : BigDecimal.ZERO
                         )
-                        .reduce(
-                                BigDecimal.ZERO,
-                                BigDecimal::add
-                        );
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalCalories =
-                completedWorkouts.stream()
-                        .map(
-                                workout ->
-                                        workout.getCaloriesBurned() != null
-                                                ? workout.getCaloriesBurned()
-                                                : BigDecimal.ZERO
-                        )
-                        .reduce(
-                                BigDecimal.ZERO,
-                                BigDecimal::add
-                        );
+        BigDecimal totalCalories = completedWorkouts.stream()
+                        .map(workout -> workout.getCaloriesBurned() != null ? workout.getCaloriesBurned() : BigDecimal.ZERO)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        long totalWorkoutSeconds =
-                completedWorkouts.stream()
-                        .mapToLong(
-                                workout ->
-                                        workout.getDurationSeconds() != null
-                                                ? workout.getDurationSeconds()
-                                                : 0
-                        )
+        long totalWorkoutSeconds = completedWorkouts.stream()
+                        .mapToLong(workout -> workout.getDurationSeconds() != null ? workout.getDurationSeconds() : 0)
                         .sum();
 
-        String formattedPace = formatPace(
-                session.getAveragePace()
-        );
+        String formattedPace = formatPace(session.getAveragePace());
 
         return WorkoutDetailsResponse.builder()
 
@@ -1084,107 +505,46 @@ public class FitnessWorkoutSessionServiceImpl
                 .build();
     }
 
-    //GPS ROUTE
-
     @Override
     @Transactional
-    public void addRoutePoints(
-            Integer sessionId,
-            WorkoutRoutePointsRequest request
-    ) {
+    public void addRoutePoints(Integer sessionId, WorkoutRoutePointsRequest request) {
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findByIdAndUserAndActivity_StatusNot(
-                                sessionId,
-                                currentUser,
-                                ActivityStatus.DELETED
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
+        FitnessWorkoutSession session = workoutSessionRepository
+                        .findByIdAndUserAndActivity_StatusNot(sessionId, currentUser, ActivityStatus.DELETED)
+                        .orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
-        if (
-                session.getStatus()
-                        != FitnessWorkoutStatus.IN_PROGRESS
-        ) {
-            throw new IllegalArgumentException(
-                    "GPS points can only be added to an active workout."
-            );
+        if (session.getStatus() != FitnessWorkoutStatus.IN_PROGRESS) {
+            throw new IllegalArgumentException("GPS points can only be added to an active workout.");
         }
 
         if (session.getSoloChallenge() == null) {
-            throw new IllegalArgumentException(
-                    "GPS route tracking is currently available only for solo workouts."
-            );
+            throw new IllegalArgumentException("GPS route tracking is currently available only for solo workouts.");
         }
 
-        LocalDateTime now =
-                LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
 
-        List<FitnessWorkoutRoutePoint> existingPoints =
-                workoutRoutePointRepository
-                        .findByWorkoutSessionOrderByPointSequenceAsc(
-                                session
-                        );
+        List<FitnessWorkoutRoutePoint> existingPoints = workoutRoutePointRepository.findByWorkoutSessionOrderByPointSequenceAsc(session);
 
-        FitnessWorkoutRoutePoint previousPoint =
-                existingPoints.isEmpty()
-                        ? null
-                        : existingPoints.get(
-                        existingPoints.size() - 1
-                );
+        FitnessWorkoutRoutePoint previousPoint = existingPoints.isEmpty() ? null : existingPoints.get(existingPoints.size() - 1);
 
-        for (
-                WorkoutRoutePointsRequest.RoutePointRequest pointRequest
-                : request.getPoints()
-        ) {
+        for (WorkoutRoutePointsRequest.RoutePointRequest pointRequest : request.getPoints()) {
 
-            if (
-                    pointRequest.getLatitude() == null ||
-                            pointRequest.getLongitude() == null ||
-                            pointRequest.getRecordedAt() == null
-            ) {
-                throw new IllegalArgumentException(
-                        "Latitude, longitude and recordedAt are required."
-                );
+            if (pointRequest.getLatitude() == null || pointRequest.getLongitude() == null || pointRequest.getRecordedAt() == null) {
+                throw new IllegalArgumentException("Latitude, longitude and recordedAt are required.");
             }
 
-            FitnessWorkoutRoutePoint point =
-                    new FitnessWorkoutRoutePoint();
+            FitnessWorkoutRoutePoint point = new FitnessWorkoutRoutePoint();
 
             point.setWorkoutSession(session);
+            point.setPointSequence(pointRequest.getPointSequence());
+            point.setLatitude(pointRequest.getLatitude());
+            point.setLongitude(pointRequest.getLongitude());
+            point.setAccuracy(pointRequest.getAccuracy());
+            point.setAltitude(pointRequest.getAltitude());
+            point.setRecordedAt(pointRequest.getRecordedAt());
 
-            point.setPointSequence(
-                    pointRequest.getPointSequence()
-            );
-
-            point.setLatitude(
-                    pointRequest.getLatitude()
-            );
-
-            point.setLongitude(
-                    pointRequest.getLongitude()
-            );
-
-            point.setAccuracy(
-                    pointRequest.getAccuracy()
-            );
-
-            point.setAltitude(
-                    pointRequest.getAltitude()
-            );
-
-            point.setRecordedAt(
-                    pointRequest.getRecordedAt()
-            );
-
-            // Validate before saving
             if (!hasValidCoordinates(point)) {
                 continue;
             }
@@ -1206,54 +566,22 @@ public class FitnessWorkoutSessionServiceImpl
             }
 
             workoutRoutePointRepository.save(point);
-
-            // Last accepted point becomes reference
             previousPoint = point;
         }
 
-        List<FitnessWorkoutRoutePoint> validPoints =
-                workoutRoutePointRepository
-                        .findByWorkoutSessionOrderByPointSequenceAsc(
-                                session
-                        );
+        List<FitnessWorkoutRoutePoint> validPoints = workoutRoutePointRepository.findByWorkoutSessionOrderByPointSequenceAsc(session);
 
-        BigDecimal distance =
-                workoutRouteCalculationService.calculateDistance(
-                        validPoints
-                );
+        BigDecimal distance = workoutRouteCalculationService.calculateDistance(validPoints);
 
-        int activeDurationSeconds =
-                calculateCurrentActiveDuration(
-                        session,
-                        now
-                );
+        int activeDurationSeconds = calculateCurrentActiveDuration(session, now);
 
-        BigDecimal speed =
-                workoutRouteCalculationService.calculateSpeed(
-                        distance,
-                        activeDurationSeconds
-                );
-
-        BigDecimal pace =
-                workoutRouteCalculationService.calculatePace(
-                        distance,
-                        activeDurationSeconds
-                );
+        BigDecimal speed = workoutRouteCalculationService.calculateSpeed(distance, activeDurationSeconds);
+        BigDecimal pace = workoutRouteCalculationService.calculatePace(distance, activeDurationSeconds);
 
         session.setDistance(distance);
-
-        session.setDurationSeconds(
-                activeDurationSeconds
-        );
-
-        session.setAverageSpeed(
-                speed
-        );
-
-        session.setAveragePace(
-                pace
-        );
-
+        session.setDurationSeconds(activeDurationSeconds);
+        session.setAverageSpeed(speed);
+        session.setAveragePace(pace);
         session.setUpdatedAt(now);
 
         workoutSessionRepository.save(session);
@@ -1261,173 +589,48 @@ public class FitnessWorkoutSessionServiceImpl
 
     @Override
     @Transactional
-    public List<WorkoutRoutePointResponse> getWorkoutRoute(
-            Integer sessionId
-    ) {
+    public List<WorkoutRoutePointResponse> getWorkoutRoute(Integer sessionId) {
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findByIdAndUserAndActivity_StatusNot(
-                                sessionId,
-                                currentUser,
-                                ActivityStatus.DELETED
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
+        FitnessWorkoutSession session = workoutSessionRepository
+                        .findByIdAndUserAndActivity_StatusNot(sessionId, currentUser, ActivityStatus.DELETED)
+                        .orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
         return workoutRoutePointRepository
-                .findByWorkoutSessionOrderByPointSequenceAsc(
-                        session
-                )
+                .findByWorkoutSessionOrderByPointSequenceAsc(session)
                 .stream()
                 .map(point ->
                         WorkoutRoutePointResponse.builder()
                                 .id(point.getId())
-                                .pointSequence(
-                                        point.getPointSequence()
-                                )
-                                .latitude(
-                                        point.getLatitude()
-                                )
-                                .longitude(
-                                        point.getLongitude()
-                                )
-                                .accuracy(
-                                        point.getAccuracy()
-                                )
-                                .altitude(
-                                        point.getAltitude()
-                                )
-                                .recordedAt(
-                                        point.getRecordedAt()
-                                )
-                                .build()
+                                .pointSequence(point.getPointSequence())
+                                .latitude(point.getLatitude())
+                                .longitude(point.getLongitude())
+                                .accuracy(point.getAccuracy())
+                                .altitude(point.getAltitude())
+                                .recordedAt(point.getRecordedAt()).build()
                 )
                 .toList();
-    }
-
-    private boolean isValidRoutePoint(
-            FitnessWorkoutRoutePoint point
-    ) {
-
-        BigDecimal latitude = point.getLatitude();
-        BigDecimal longitude = point.getLongitude();
-
-        if (latitude == null || longitude == null) {
-            return false;
-        }
-
-        if (
-                latitude.compareTo(BigDecimal.valueOf(-90)) < 0 ||
-                        latitude.compareTo(BigDecimal.valueOf(90)) > 0
-        ) {
-            return false;
-        }
-
-        if (
-                longitude.compareTo(BigDecimal.valueOf(-180)) < 0 ||
-                        longitude.compareTo(BigDecimal.valueOf(180)) > 0
-        ) {
-            return false;
-        }
-
-        if (
-                point.getAccuracy() != null &&
-                        point.getAccuracy().compareTo(
-                                BigDecimal.valueOf(50)
-                        ) > 0
-        ) {
-            return false;
-        }
-
-        return true;
-    }
-
-    private int calculateCurrentActiveDuration(
-            FitnessWorkoutSession session,
-            LocalDateTime now
-    ) {
-
-        if (session.getStartedAt() == null) {
-            return 0;
-        }
-
-        long elapsedSeconds =
-                java.time.Duration
-                        .between(
-                                session.getStartedAt(),
-                                now
-                        )
-                        .getSeconds();
-
-        long pausedSeconds =
-                session.getTotalPausedSeconds() != null
-                        ? session.getTotalPausedSeconds()
-                        : 0;
-
-        /*
-         * If the workout is currently paused,
-         * the current pause interval must also be excluded.
-         */
-        if (
-                session.getStatus()
-                        == FitnessWorkoutStatus.PAUSED
-                        &&
-                        session.getPausedAt() != null
-        ) {
-
-            pausedSeconds +=
-                    java.time.Duration
-                            .between(
-                                    session.getPausedAt(),
-                                    now
-                            )
-                            .getSeconds();
-        }
-
-        return (int) Math.max(
-                0,
-                elapsedSeconds - pausedSeconds
-        );
     }
 
     @Override
     @Transactional
     public SocialWorkoutResponse getSocialWorkout(Integer sessionId) {
 
-        FitnessWorkoutSession session =
-                workoutSessionRepository.findById(sessionId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                ));
+        FitnessWorkoutSession session = workoutSessionRepository.findById(sessionId).orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
         if (session.getStatus() != FitnessWorkoutStatus.COMPLETED) {
-            throw new IllegalArgumentException(
-                    "Only completed workouts can be viewed socially."
-            );
+            throw new IllegalArgumentException("Only completed workouts can be viewed socially.");
         }
 
         User currentUser = currentUserService.getCurrentUser();
-
         User owner = session.getUser();
 
-        boolean isOwner =
-                owner.getId().equals(currentUser.getId());
-
-        boolean isFriend =
-                areFriends(owner, currentUser);
+        boolean isOwner = owner.getId().equals(currentUser.getId());
+        boolean isFriend = areFriends(owner, currentUser);
 
         if (!isOwner && !isFriend) {
-            throw new UnauthorizedActionException(
-                    "You are not allowed to view this workout."
-            );
+            throw new UnauthorizedActionException("You are not allowed to view this workout.");
         }
 
         return SocialWorkoutResponse.builder()
@@ -1447,269 +650,23 @@ public class FitnessWorkoutSessionServiceImpl
                 .build();
     }
 
-    private String formatPace(BigDecimal secondsPerKm) {
-
-        if (
-                secondsPerKm == null ||
-                        secondsPerKm.compareTo(BigDecimal.ZERO) <= 0
-        ) {
-            return null;
-        }
-
-        long totalSeconds =
-                secondsPerKm
-                        .setScale(
-                                0,
-                                RoundingMode.HALF_UP
-                        )
-                        .longValue();
-
-        long minutes = totalSeconds / 60;
-        long seconds = totalSeconds % 60;
-
-        return String.format(
-                "%d:%02d",
-                minutes,
-                seconds
-        );
-    }
-
-    private boolean hasValidCoordinates(
-            FitnessWorkoutRoutePoint point
-    ) {
-
-        if (
-                point.getLatitude() == null ||
-                        point.getLongitude() == null
-        ) {
-            return false;
-        }
-
-        return point.getLatitude()
-                .compareTo(BigDecimal.valueOf(-90)) >= 0
-                &&
-                point.getLatitude()
-                        .compareTo(BigDecimal.valueOf(90)) <= 0
-                &&
-                point.getLongitude()
-                        .compareTo(BigDecimal.valueOf(-180)) >= 0
-                &&
-                point.getLongitude()
-                        .compareTo(BigDecimal.valueOf(180)) <= 0;
-    }
-
-    private boolean hasAcceptableAccuracy(
-            FitnessWorkoutRoutePoint point
-    ) {
-
-        if (point.getAccuracy() == null) {
-            return true;
-        }
-
-        return point.getAccuracy()
-                .compareTo(BigDecimal.valueOf(50)) <= 0;
-    }
-
-    private boolean hasValidSequence(
-            FitnessWorkoutRoutePoint point,
-            FitnessWorkoutRoutePoint previousPoint
-    ) {
-
-        if (point.getPointSequence() == null) {
-            return false;
-        }
-
-        if (previousPoint == null) {
-            return true;
-        }
-
-        return point.getPointSequence()
-                > previousPoint.getPointSequence();
-    }
-
-    private boolean hasValidTimestamp(
-            FitnessWorkoutRoutePoint point,
-            FitnessWorkoutRoutePoint previousPoint
-    ) {
-
-        if (point.getRecordedAt() == null) {
-            return false;
-        }
-
-        if (previousPoint == null) {
-            return true;
-        }
-
-        return !point.getRecordedAt()
-                .isBefore(
-                        previousPoint.getRecordedAt()
-                );
-    }
-
-    private boolean isReasonableMovement(
-            FitnessWorkoutRoutePoint previousPoint,
-            FitnessWorkoutRoutePoint currentPoint
-    ) {
-
-        if (
-                previousPoint == null ||
-                        currentPoint == null
-        ) {
-            return true;
-        }
-
-        if (
-                previousPoint.getRecordedAt() == null ||
-                        currentPoint.getRecordedAt() == null
-        ) {
-            return false;
-        }
-
-        long elapsedSeconds =
-                java.time.Duration.between(
-                        previousPoint.getRecordedAt(),
-                        currentPoint.getRecordedAt()
-                ).getSeconds();
-
-        if (elapsedSeconds <= 0) {
-            return false;
-        }
-
-        BigDecimal segmentDistance =
-                calculateSegmentDistance(
-                        previousPoint,
-                        currentPoint
-                );
-
-        double distanceKm =
-                segmentDistance.doubleValue();
-
-        double speedKmh =
-                distanceKm /
-                        (elapsedSeconds / 3600.0);
-
-        /*
-         * Development threshold.
-         * We can tune this after real device testing.
-         */
-        return speedKmh <= 40.0;
-    }
-
-    private BigDecimal calculateSegmentDistance(
-            FitnessWorkoutRoutePoint first,
-            FitnessWorkoutRoutePoint second
-    ) {
-
-        final double earthRadiusKm = 6371.0;
-
-        double lat1 =
-                Math.toRadians(
-                        first.getLatitude().doubleValue()
-                );
-
-        double lon1 =
-                Math.toRadians(
-                        first.getLongitude().doubleValue()
-                );
-
-        double lat2 =
-                Math.toRadians(
-                        second.getLatitude().doubleValue()
-                );
-
-        double lon2 =
-                Math.toRadians(
-                        second.getLongitude().doubleValue()
-                );
-
-        double deltaLat =
-                lat2 - lat1;
-
-        double deltaLon =
-                lon2 - lon1;
-
-        double a =
-                Math.sin(deltaLat / 2)
-                        * Math.sin(deltaLat / 2)
-                        +
-                        Math.cos(lat1)
-                                * Math.cos(lat2)
-                                * Math.sin(deltaLon / 2)
-                                * Math.sin(deltaLon / 2);
-
-        double c =
-                2 *
-                        Math.atan2(
-                                Math.sqrt(a),
-                                Math.sqrt(1 - a)
-                        );
-
-        return BigDecimal.valueOf(
-                earthRadiusKm * c
-        );
-    }
-
-    private boolean areFriends(User a, User b) {
-        User first = a.getId() < b.getId() ? a : b;
-        User second = a.getId() < b.getId() ? b : a;
-
-        return friendRepository.existsByUserOneAndUserTwo(
-                first,
-                second
-        );
-    }
-
-    private TrackingMode resolveTrackingMode(
-            WorkoutType workoutType
-    ) {
-        return switch (workoutType) {
-            case PUSH_UP -> TrackingMode.POSE;
-            case RUNNING, WALKING -> TrackingMode.GPS;
-            case BADMINTON, TENNIS -> TrackingMode.STEPS;
-            default -> TrackingMode.MANUAL;
-        };
-    }
-
     @Override
     @Transactional
-    public FitnessWorkoutSummaryResponse getWorkoutSummary(
-            Integer sessionId
-    ) {
+    public FitnessWorkoutSummaryResponse getWorkoutSummary(Integer sessionId) {
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findByIdAndUser(
-                                sessionId,
-                                currentUser
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                ));
-
-        FitnessWorkoutAnalysis analysis =
-                analysisRepository
-                        .findByWorkoutSession(session)
-                        .orElse(null);
+        FitnessWorkoutSession session = workoutSessionRepository.findByIdAndUser(sessionId, currentUser).orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
+        FitnessWorkoutAnalysis analysis = analysisRepository.findByWorkoutSession(session).orElse(null);
 
         List<String> feedback = List.of();
 
-        if (analysis != null
-                && analysis.getFeedback() != null
-                && !analysis.getFeedback().isBlank()) {
+        if (analysis != null && analysis.getFeedback() != null && !analysis.getFeedback().isBlank()) {
 
             try {
-                feedback = objectMapper.readValue(
-                        analysis.getFeedback(),
-                        new TypeReference<List<String>>() {}
-                );
+                feedback = objectMapper.readValue(analysis.getFeedback(), new TypeReference<List<String>>() {});
             } catch (JsonProcessingException e) {
-                throw new IllegalStateException(
-                        "Unable to read workout feedback."
-                );
+                throw new IllegalStateException("Unable to read workout feedback.");
             }
         }
 
@@ -1735,44 +692,22 @@ public class FitnessWorkoutSessionServiceImpl
 
     @Override
     @Transactional
-    public void updateWorkoutSharing(
-            Integer sessionId,
-            ShareWorkoutRequest request
-    ) {
+    public void updateWorkoutSharing(Integer sessionId, ShareWorkoutRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findByIdAndUser(
-                                sessionId,
-                                currentUser
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
+        FitnessWorkoutSession session = workoutSessionRepository.findByIdAndUser(sessionId, currentUser).orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
         if (session.getStatus() != FitnessWorkoutStatus.COMPLETED) {
-            throw new IllegalArgumentException(
-                    "Only completed workouts can be shared."
-            );
+            throw new IllegalArgumentException("Only completed workouts can be shared.");
         }
 
-        boolean shared =
-                Boolean.TRUE.equals(request.getShared());
+        boolean shared = Boolean.TRUE.equals(request.getShared());
 
         session.setIsShared(shared);
 
         if (shared) {
-            session.setShareDescription(
-                    request.getDescription()
-            );
-        } else {
-            session.setShareDescription(null);
-        }
+            session.setShareDescription(request.getDescription());
+        } else {session.setShareDescription(null);}
 
         session.setUpdatedAt(LocalDateTime.now());
 
@@ -1782,138 +717,65 @@ public class FitnessWorkoutSessionServiceImpl
     @Override
     @Transactional
     public List<SharedWorkoutPostResponse> getSocialWorkoutFeed() {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        List<Friend> friendships =
-                friendRepository.findByUserOneOrUserTwo(
-                        currentUser,
-                        currentUser
-                );
-
-        List<User> feedUsers =
-                new ArrayList<>();
+        List<Friend> friendships = friendRepository.findByUserOneOrUserTwo(currentUser, currentUser);
+        List<User> feedUsers = new ArrayList<>();
 
         feedUsers.add(currentUser);
 
         for (Friend friendship : friendships) {
-
             User friend;
-
-            if (friendship.getUserOne().getId()
-                    .equals(currentUser.getId())) {
-
+            if (friendship.getUserOne().getId().equals(currentUser.getId())) {
                 friend = friendship.getUserTwo();
 
             } else {
-
                 friend = friendship.getUserOne();
             }
 
-            if (friend != null
-                    && feedUsers.stream()
-                    .noneMatch(user ->
-                            user.getId().equals(friend.getId()))) {
-
+            if (friend != null && feedUsers.stream().noneMatch(user -> user.getId().equals(friend.getId()))) {
                 feedUsers.add(friend);
             }
         }
 
-        List<FitnessWorkoutSession> sessions =
-                workoutSessionRepository
-                        .findByUserInAndStatusAndIsSharedTrueOrderByFinishedAtDesc(
-                                feedUsers,
-                                FitnessWorkoutStatus.COMPLETED
-                        );
+        List<FitnessWorkoutSession> sessions = workoutSessionRepository.findByUserInAndStatusAndIsSharedTrueOrderByFinishedAtDesc(feedUsers, FitnessWorkoutStatus.COMPLETED);
 
         return sessions.stream()
                 .map(session -> {
 
-                    boolean myPost =
-                            session.getUser()
-                                    .getId()
-                                    .equals(currentUser.getId());
+                    boolean myPost = session.getUser().getId().equals(currentUser.getId());
 
-                    long kudosCount =
-                            kudosRepository
-                                    .countByWorkoutSession(session);
+                    long kudosCount = kudosRepository.countByWorkoutSession(session);
 
-                    boolean myKudos =
-                            kudosRepository
-                                    .existsByWorkoutSessionAndUser(
-                                            session,
-                                            currentUser
-                                    );
-
-                    long commentCount =
-                            commentRepository
-                                    .countByActivity(
-                                            session.getActivity()
-                                    );
+                    boolean myKudos = kudosRepository.existsByWorkoutSessionAndUser(session, currentUser);
+                    long commentCount = commentRepository.countByActivity(session.getActivity());
 
                     return SharedWorkoutPostResponse.builder()
                             .sessionId(session.getId())
                             .userId(session.getUser().getId())
                             .username(session.getUser().getUsername())
                             .profilePicture(null)
-                            .workoutType(
-                                    session.getWorkoutType().name()
+                            .workoutType(session.getWorkoutType().name())
+                            .trackingMode(session.getTrackingMode().name())
+                            .shareDescription(session.getShareDescription())
+                            .attachments(attachmentRepository.findByWorkoutSessionAndDeletedAtIsNull(session).stream()
+                                    .map(attachment ->
+                                            AttachmentResponse.builder()
+                                                    .id(attachment.getId())
+                                                    .originalFileName(attachment.getOriginalFileName())
+                                                    .fileType(attachment.getFileType())
+                                                    .fileSize(attachment.getFileSize())
+                                                    .filePath(attachment.getFilePath())
+                                                    .uploadedBy(attachment.getUploadedBy().getId())
+                                                    .createdAt(attachment.getCreatedAt())
+                                                    .build())
+                                    .toList()
                             )
-                            .trackingMode(
-                                    session.getTrackingMode().name()
-                            )
-                            .shareDescription(
-                                    session.getShareDescription()
-                            )
-                            .attachments(
-                                    attachmentRepository
-                                            .findByWorkoutSessionAndDeletedAtIsNull(
-                                                    session
-                                            )
-                                            .stream()
-                                            .map(attachment ->
-                                                    AttachmentResponse.builder()
-                                                            .id(attachment.getId())
-                                                            .originalFileName(
-                                                                    attachment.getOriginalFileName()
-                                                            )
-                                                            .fileType(
-                                                                    attachment.getFileType()
-                                                            )
-                                                            .fileSize(
-                                                                    attachment.getFileSize()
-                                                            )
-                                                            .filePath(
-                                                                    attachment.getFilePath()
-                                                            )
-                                                            .uploadedBy(
-                                                                    attachment
-                                                                            .getUploadedBy()
-                                                                            .getId()
-                                                            )
-                                                            .createdAt(
-                                                                    attachment.getCreatedAt()
-                                                            )
-                                                            .build()
-                                            )
-                                            .toList()
-                            )
-                            .distance(
-                                    session.getDistance()
-                            )
-                            .steps(
-                                    session.getSteps()
-                            )
-                            .durationSeconds(
-                                    session.getDurationSeconds()
-                            )
-                            .caloriesBurned(
-                                    session.getCaloriesBurned()
-                            )
-                            .finishedAt(
-                                    session.getFinishedAt()
-                            )
+                            .distance(session.getDistance())
+                            .steps(session.getSteps())
+                            .durationSeconds(session.getDurationSeconds())
+                            .caloriesBurned(session.getCaloriesBurned())
+                            .finishedAt(session.getFinishedAt())
                             .kudosCount(kudosCount)
                             .myKudos(myKudos)
                             .commentCount(commentCount)
@@ -1922,4 +784,153 @@ public class FitnessWorkoutSessionServiceImpl
                 })
                 .toList();
     }
+
+    private String formatPace(BigDecimal secondsPerKm) {
+        if (secondsPerKm == null || secondsPerKm.compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
+        }
+
+        long totalSeconds = secondsPerKm.setScale(0, RoundingMode.HALF_UP).longValue();
+        long minutes = totalSeconds / 60;
+        long seconds = totalSeconds % 60;
+
+        return String.format("%d:%02d", minutes, seconds);
+    }
+
+    private boolean hasValidCoordinates(FitnessWorkoutRoutePoint point) {
+        if (point.getLatitude() == null || point.getLongitude() == null) {
+            return false;
+        }
+
+        return point.getLatitude().compareTo(BigDecimal.valueOf(-90)) >= 0 && point.getLatitude().compareTo(BigDecimal.valueOf(90)) <= 0 && point.getLongitude().compareTo(BigDecimal.valueOf(-180)) >= 0 && point.getLongitude().compareTo(BigDecimal.valueOf(180)) <= 0;
+    }
+
+    private boolean hasAcceptableAccuracy(FitnessWorkoutRoutePoint point) {
+        if (point.getAccuracy() == null) {
+            return true;
+        }
+
+        return point.getAccuracy().compareTo(BigDecimal.valueOf(50)) <= 0;
+    }
+
+    private boolean hasValidSequence(FitnessWorkoutRoutePoint point, FitnessWorkoutRoutePoint previousPoint) {
+        if (point.getPointSequence() == null) {
+            return false;
+        }
+        if (previousPoint == null) {
+            return true;
+        }
+
+        return point.getPointSequence() > previousPoint.getPointSequence();
+    }
+
+    private boolean hasValidTimestamp(FitnessWorkoutRoutePoint point, FitnessWorkoutRoutePoint previousPoint) {
+        if (point.getRecordedAt() == null) {
+            return false;
+        }
+        if (previousPoint == null) {
+            return true;
+        }
+
+        return !point.getRecordedAt().isBefore(previousPoint.getRecordedAt());
+    }
+
+    private boolean isReasonableMovement(FitnessWorkoutRoutePoint previousPoint, FitnessWorkoutRoutePoint currentPoint) {
+
+        if (previousPoint == null || currentPoint == null) {
+            return true;
+        }
+
+        if (previousPoint.getRecordedAt() == null || currentPoint.getRecordedAt() == null)
+        {
+            return false;
+        }
+
+        long elapsedSeconds = java.time.Duration.between(previousPoint.getRecordedAt(), currentPoint.getRecordedAt()).getSeconds();
+
+        if (elapsedSeconds <= 0) {
+            return false;
+        }
+
+        BigDecimal segmentDistance = calculateSegmentDistance(previousPoint, currentPoint);
+
+        double distanceKm = segmentDistance.doubleValue();
+        double speedKmh = distanceKm / (elapsedSeconds / 3600.0);
+
+        return speedKmh <= 40.0;
+    }
+
+    private boolean isValidRoutePoint(FitnessWorkoutRoutePoint point) {
+        BigDecimal latitude = point.getLatitude();
+        BigDecimal longitude = point.getLongitude();
+
+        if (latitude == null || longitude == null) {
+            return false;
+        }
+
+        if (latitude.compareTo(BigDecimal.valueOf(-90)) < 0 || latitude.compareTo(BigDecimal.valueOf(90)) > 0) {
+            return false;
+        }
+
+        if (longitude.compareTo(BigDecimal.valueOf(-180)) < 0 || longitude.compareTo(BigDecimal.valueOf(180)) > 0) {
+            return false;
+        }
+
+        if (point.getAccuracy() != null && point.getAccuracy().compareTo(BigDecimal.valueOf(50)) > 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean areFriends(User a, User b) {
+        User first = a.getId() < b.getId() ? a : b;
+        User second = a.getId() < b.getId() ? b : a;
+
+        return friendRepository.existsByUserOneAndUserTwo(first, second);
+    }
+
+    private int calculateCurrentActiveDuration(FitnessWorkoutSession session, LocalDateTime now) {
+        if (session.getStartedAt() == null) {
+            return 0;
+        }
+
+        long elapsedSeconds = java.time.Duration.between(session.getStartedAt(), now).getSeconds();
+        long pausedSeconds = session.getTotalPausedSeconds() != null ? session.getTotalPausedSeconds() : 0;
+
+        if (session.getStatus() == FitnessWorkoutStatus.PAUSED && session.getPausedAt() != null) {
+            pausedSeconds += java.time.Duration.between(session.getPausedAt(), now).getSeconds();
+        }
+
+        return (int) Math.max(0, elapsedSeconds - pausedSeconds);
+    }
+
+    private BigDecimal calculateSegmentDistance(FitnessWorkoutRoutePoint first, FitnessWorkoutRoutePoint second) {
+
+        final double earthRadiusKm = 6371.0;
+
+        double lat1 = Math.toRadians(first.getLatitude().doubleValue());
+        double lon1 = Math.toRadians(first.getLongitude().doubleValue());
+
+        double lat2 = Math.toRadians(second.getLatitude().doubleValue());
+        double lon2 = Math.toRadians(second.getLongitude().doubleValue());
+
+        double deltaLat = lat2 - lat1;
+        double deltaLon = lon2 - lon1;
+
+        double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return BigDecimal.valueOf(earthRadiusKm * c);
+    }
+
+    private TrackingMode resolveTrackingMode(WorkoutType workoutType) {
+        return switch (workoutType) {
+            case PUSH_UP -> TrackingMode.POSE;
+            case RUNNING, WALKING -> TrackingMode.GPS;
+            case BADMINTON, TENNIS -> TrackingMode.STEPS;
+            default -> TrackingMode.MANUAL;
+        };
+    }
+
 }

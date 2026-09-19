@@ -3,7 +3,7 @@ package com.movem.backend.Dto.response.DashboardResponse;
 import com.movem.backend.Dto.response.ActivityFeedResponse;
 import com.movem.backend.Dto.response.StatisticsResponse.FitnessStatisticsResponse;
 import com.movem.backend.Dto.response.StatisticsResponse.TaskStatisticsResponse;
-import com.movem.backend.Dto.response.TaskResponses.TaskReminderResponse;
+import com.movem.backend.Dto.response.TaskResponses.ReminderResponse;
 import lombok.*;
 
 import java.util.List;
@@ -26,7 +26,7 @@ public class DashboardResponse {
 
     private List<ActivityFeedResponse> recentActivities;
 
-    private List<TaskReminderResponse> upcomingReminders;
+    private List<ReminderResponse> upcomingReminders;
 
 
 

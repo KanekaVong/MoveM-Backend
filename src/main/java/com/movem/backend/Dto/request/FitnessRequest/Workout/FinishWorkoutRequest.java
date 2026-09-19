@@ -10,21 +10,13 @@ import java.math.BigDecimal;
 
 @Getter
 @Setter
-public class WorkoutProgressRequest {
-
+public class FinishWorkoutRequest {
     @NotNull
     @Min(0)
     private Integer durationSeconds;
-
     @NotNull
     @Min(0)
     private Integer steps;
-
-    @NotNull
     @DecimalMin("0.0")
     private BigDecimal distance;
-
-    private BigDecimal latitude;
-
-    private BigDecimal longitude;
 }

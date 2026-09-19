@@ -17,17 +17,11 @@ import java.util.Set;
 @Entity
 @Table(name = "Activity", indexes = {
         @Index(name = "idx_activity_user", columnList = "user_id"),
-
         @Index(name = "idx_activity_status", columnList = "status"),
-
         @Index(name = "idx_activity_type", columnList = "activity_type"),
-
         @Index(name = "idx_activity_deadline", columnList = "deadline"),
-
         @Index(name = "idx_activity_parent", columnList = "parent_activity"),
-
         @Index(name = "idx_activity_deleted", columnList = "deleted_at"),
-
         @Index(name = "idx_activity_start", columnList = "start_activity") })
 @Getter
 @Setter
@@ -91,19 +85,10 @@ public class Activity {
     private LocalDateTime updatedAt;
 
     @ManyToMany
-    @JoinTable(
-            name = "activity_labels",
-            joinColumns = @JoinColumn(name = "activity_id"),
-            inverseJoinColumns = @JoinColumn(name = "label_id")
-    )
+    @JoinTable(name = "activity_labels", joinColumns = @JoinColumn(name = "activity_id"), inverseJoinColumns = @JoinColumn(name = "label_id"))
     private Set<TaskLabel> labels = new HashSet<>();
 
-    @OneToOne(
-            mappedBy = "activity",
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
+    @OneToOne(mappedBy = "activity", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Task task;
 
     private Boolean isCollaborative = false;

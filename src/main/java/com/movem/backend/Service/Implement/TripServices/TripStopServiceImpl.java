@@ -92,7 +92,6 @@ public class TripStopServiceImpl implements TripStopService {
 
     @Override
     public TripStopResponse updateStop(String tripActivityId, Integer stopId, UpdateTripStopRequest request) {
-
         User user = currentUserService.getCurrentUser();
         Trip trip = findTripOrThrow(tripActivityId);
 
@@ -117,12 +116,9 @@ public class TripStopServiceImpl implements TripStopService {
 
     @Override
     public void removeStop(String tripActivityId, Integer stopId) {
-
         User user = currentUserService.getCurrentUser();
         Trip trip = findTripOrThrow(tripActivityId);
-
         activityPermissionService.validateCanEditActivity(trip.getActivity(), user);
-
         TripStop stop = findStopOrThrow(trip, stopId);
         tripStopRepository.delete(stop);
     }
@@ -135,26 +131,15 @@ public class TripStopServiceImpl implements TripStopService {
 
         activityPermissionService.validateCanEditActivity(trip.getActivity(), user);
 
-        TripStop stop =
-                findStopOrThrow(
-                        trip,
-                        stopId
-                );
+        TripStop stop = findStopOrThrow(trip, stopId);
 
         if (Boolean.TRUE.equals(stop.getIsCompleted())) {
-            throw new IllegalStateException(
-                    "Trip stop is already completed."
-            );
+            throw new IllegalStateException("Trip stop is already completed.");
         }
 
         stop.setIsCompleted(true);
 
-        featureEventTrackingService.handle(
-                tripEventFactory.stopCompleted(
-                        stop,
-                        user
-                )
-        );
+        featureEventTrackingService.handle(tripEventFactory.stopCompleted(stop, user));
 
         return tripStopMapper.toResponse(stop);
     }
@@ -168,11 +153,9 @@ public class TripStopServiceImpl implements TripStopService {
         activityPermissionService.validateCanEditActivity(trip.getActivity(), user);
 
         List<TripStop> stops = tripStopRepository.findByTripOrderBySequenceOrderAsc(trip);
-        Map<Integer, TripStop> byId = stops.stream()
-                .collect(Collectors.toMap(TripStop::getId, s -> s));
+        Map<Integer, TripStop> byId = stops.stream().collect(Collectors.toMap(TripStop::getId, s -> s));
 
-        if (request.getStopIds().size() != stops.size()
-                || !byId.keySet().containsAll(request.getStopIds())) {
+        if (request.getStopIds().size() != stops.size() || !byId.keySet().containsAll(request.getStopIds())) {
             throw new BadRequestException("stopIds must include every existing stop exactly once");
         }
 
@@ -181,9 +164,7 @@ public class TripStopServiceImpl implements TripStopService {
             byId.get(stopId).setSequenceOrder(order++);
         }
 
-        return tripStopMapper.toResponseList(
-                tripStopRepository.findByTripOrderBySequenceOrderAsc(trip)
-        );
+        return tripStopMapper.toResponseList(tripStopRepository.findByTripOrderBySequenceOrderAsc(trip));
     }
 
     @Override

@@ -49,12 +49,12 @@ public class Task {
     @OneToMany(mappedBy = "task",
             cascade = CascadeType.ALL,
             orphanRemoval = true)
-    private List<TaskChecklist> checklists = new ArrayList<>();
+    private List<Checklist> checklists = new ArrayList<>();
 
     @OneToMany(mappedBy = "task",
             cascade = CascadeType.ALL ,
             orphanRemoval = true)
-    private List<TaskReminder> reminders = new ArrayList<>();
+    private List<Reminder> reminders = new ArrayList<>();
 
     @OneToMany(
             mappedBy = "task",

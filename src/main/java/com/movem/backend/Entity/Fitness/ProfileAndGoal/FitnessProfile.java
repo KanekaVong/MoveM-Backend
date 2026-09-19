@@ -2,8 +2,10 @@ package com.movem.backend.Entity.Fitness.ProfileAndGoal;
 
 import com.movem.backend.Entity.Auth.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,26 +14,21 @@ import java.time.LocalDateTime;
 @Table(name = "fitness_profile")
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class FitnessProfile {
-
     @Id
     @Column(name = "user_id")
-    private Integer userId;
-
+    Integer userId;
     @OneToOne
     @MapsId
     @JoinColumn(name = "user_id")
-    private User user;
-
+    User user;
     @Column(name = "height", precision = 5, scale = 2)
-    private BigDecimal height;
-
+    BigDecimal height;
     @Column(name = "weight", precision = 5, scale = 2)
-    private BigDecimal weight;
-
+    BigDecimal weight;
     @Column(name = "bmi", precision = 4, scale = 2)
-    private BigDecimal bmi;
-
+    BigDecimal bmi;
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    LocalDateTime updatedAt;
 }

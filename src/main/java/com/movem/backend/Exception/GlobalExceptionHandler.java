@@ -22,14 +22,14 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // 1. Malformed JSON
+    // Malformed JSON
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleMalformedJson(HttpMessageNotReadableException e) {
         return buildResponse(HttpStatus.BAD_REQUEST,
                 "Malformed JSON request. Please check your request body syntax.");
     }
 
-    // 2. Validation errors on @Valid request bodies
+    // Validation errors on @Valid request bodies
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException e) {
         Map<String, String> fieldErrors = new HashMap<>();
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
-    // 3. Authentication Failures
+    // Authentication Failures
     @ExceptionHandler({BadCredentialsException.class, UsernameNotFoundException.class})
     public ResponseEntity<Map<String, Object>> handleBadCredentials(AuthenticationException e) {
         return buildResponse(HttpStatus.UNAUTHORIZED,
@@ -66,7 +66,7 @@ public class GlobalExceptionHandler {
                 "Authentication failed. Please try again.");
     }
 
-    // 4. Permission Failures
+    // Permission Failures
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException e) {
         return buildResponse(HttpStatus.FORBIDDEN, "You do not have permission to perform this action.");
@@ -77,7 +77,7 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.FORBIDDEN, e.getMessage());
     }
 
-    // 5. Resource Failures
+    // Resource Failures
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleResourceNotFound(ResourceNotFoundException e) {
         return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
@@ -90,34 +90,29 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException e) {
-
         e.printStackTrace();   // <-- VERY IMPORTANT
-
-        return buildResponse(
-                HttpStatus.CONFLICT,
-                e.getMostSpecificCause().getMessage()
-        );
+        return buildResponse(HttpStatus.CONFLICT, e.getMostSpecificCause().getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgument(
-            IllegalArgumentException e
-    ) {
-        e.printStackTrace();
-
-        return buildResponse(
-                HttpStatus.BAD_REQUEST,
-                e.getMessage()
-        );
+    public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest().body(ex.getMessage());
     }
 
-    // 6. Generic Fallback (Must be last)
+    // Generic Fallback (Must be last)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception e) {
         e.printStackTrace(); 
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR,
-                "Something went wrong. Please try again later.");
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong. Please try again later.");
     }
+
+    // Email Service Failures
+    @ExceptionHandler(EmailDeliveryException.class)
+    public ResponseEntity<Map<String, Object>> handleEmailDeliveryException(EmailDeliveryException e) {
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
+    }
+
+
 
     // Helper Method
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {

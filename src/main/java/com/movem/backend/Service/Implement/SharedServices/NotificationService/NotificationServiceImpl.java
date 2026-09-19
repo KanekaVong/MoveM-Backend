@@ -37,9 +37,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public List<NotificationResponse> getNotifications() {
-
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         return notificationRepository
                 .findByUserOrderByCreatedAtDesc(currentUser)
@@ -51,9 +49,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public List<NotificationResponse> getUnreadNotifications() {
-
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         return notificationRepository
                 .findByUserAndIsReadFalseOrderByCreatedAtDesc(
@@ -65,18 +61,11 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public List<NotificationResponse> getNotificationsByActivity(
-            String activityId
-    ) {
-
-        User currentUser =
-                currentUserService.getCurrentUser();
+    public List<NotificationResponse> getNotificationsByActivity(String activityId) {
+        User currentUser = currentUserService.getCurrentUser();
 
         return notificationRepository
-                .findByUserAndReferenceIdOrderByCreatedAtDesc(
-                        currentUser,
-                        activityId
-                )
+                .findByUserAndReferenceIdOrderByCreatedAtDesc(currentUser, activityId)
                 .stream()
                 .map(notificationMapper::toResponse)
                 .toList();
@@ -84,9 +73,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public Long getUnreadCount() {
-
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         return notificationRepository
                 .countByUserAndIsReadFalse(currentUser);
@@ -95,21 +82,11 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void markAsRead(Long notificationId) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        Notification notification =
-                notificationRepository
-                        .findByIdAndUser(
-                                notificationId,
-                                currentUser
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Notification not found."
-                                )
-                        );
+        Notification notification = notificationRepository
+                        .findByIdAndUser(notificationId, currentUser)
+                        .orElseThrow(() -> new ResourceNotFoundException("Notification not found."));
 
         if (Boolean.TRUE.equals(notification.getIsRead())) {
             return;
@@ -124,20 +101,11 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void markAllAsRead() {
-
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        List<Notification> notifications =
-                notificationRepository
-                        .findByUserAndIsReadFalseOrderByCreatedAtDesc(
-                                currentUser
-                        );
-
+        User currentUser = currentUserService.getCurrentUser();
+        List<Notification> notifications = notificationRepository.findByUserAndIsReadFalseOrderByCreatedAtDesc(currentUser);
         LocalDateTime now = LocalDateTime.now();
 
         for (Notification notification : notifications) {
-
             notification.setIsRead(true);
             notification.setReadAt(now);
         }
@@ -148,112 +116,51 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void deleteNotification(Long notificationId) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        Notification notification =
-                notificationRepository
-                        .findByIdAndUser(
-                                notificationId,
-                                currentUser
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Notification not found."
-                                )
-                        );
+        Notification notification = notificationRepository
+                        .findByIdAndUser(notificationId, currentUser)
+                        .orElseThrow(() -> new ResourceNotFoundException("Notification not found."));
 
         notificationRepository.delete(notification);
     }
 
 
     @Override
-    public void createNotification(
-            User receiver,
-            User sender,
-            NotificationType notificationType,
-            ReferenceType referenceType,
-            String referenceId,
-            String title,
-            String message
-    ) {
-
-        Notification notification =
-                new Notification();
+    public void createNotification(User receiver, User sender, NotificationType notificationType, ReferenceType referenceType, String referenceId, String title, String message) {
+        Notification notification = new Notification();
 
         notification.setUser(receiver);
         notification.setSender(sender);
-
-        notification.setNotificationType(
-                notificationType
-        );
-
-        notification.setReferenceType(
-                referenceType
-        );
-
-        notification.setReferenceId(
-                referenceId
-        );
-
+        notification.setNotificationType(notificationType);
+        notification.setReferenceType(referenceType);
+        notification.setReferenceId(referenceId);
         notification.setTitle(title);
         notification.setMessage(message);
-
         notification.setIsRead(false);
-        notification.setCreatedAt(
-                LocalDateTime.now()
-        );
+        notification.setCreatedAt(LocalDateTime.now());
 
         notificationRepository.save(notification);
 
-        pushNotificationService.sendPushNotification(
-                receiver,
-                title,
-                message
-        );
+        pushNotificationService.sendPushNotification(receiver, title, message);
     }
 
     @Override
-    public void notifyActivityGroup(
-            Activity activity,
-            User sender,
-            NotificationType notificationType,
-            ReferenceType referenceType,
-            String referenceId,
-            String title,
-            String message
-    ) {
-
-        ActivityGroup group =
-                groupRepository
-                        .findByActivity(activity)
-                        .orElse(null);
+    public void notifyActivityGroup(Activity activity, User sender, NotificationType notificationType, ReferenceType referenceType, String referenceId, String title, String message) {
+        ActivityGroup group = groupRepository.findByActivity(activity).orElse(null);
 
         if (group == null) {
             return;
         }
 
-        List<GroupMember> members =
-                groupMemberRepository.findByActivityGroup(group);
+        List<GroupMember> members = groupMemberRepository.findByActivityGroup(group);
 
         for (GroupMember member : members) {
-
             User receiver = member.getUser();
-
             if (receiver.getId().equals(sender.getId())) {
                 continue;
             }
-
-            createNotification(
-                    receiver,
-                    sender,
-                    notificationType,
-                    referenceType,
-                    referenceId,
-                    title,
-                    message
-            );
+            createNotification(receiver, sender, notificationType, referenceType, referenceId, title, message);
         }
     }
 }

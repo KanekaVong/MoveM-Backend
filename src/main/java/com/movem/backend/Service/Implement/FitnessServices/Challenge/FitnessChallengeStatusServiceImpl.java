@@ -33,8 +33,7 @@ import java.util.List;
         @Scheduled(fixedRate = 20000)
         public void updateChallengeStatuses() {
 
-            LocalDateTime now =
-                    LocalDateTime.now();
+            LocalDateTime now = LocalDateTime.now();
 
             updateUpcomingChallenges(now);
 

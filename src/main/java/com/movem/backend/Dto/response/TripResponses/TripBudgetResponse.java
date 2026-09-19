@@ -10,16 +10,10 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class TripBudgetResponse {
-
     private Integer id;
-
     private String category;
-
     private BigDecimal allocatedAmount;
-
     private BigDecimal spentAmount;
-
     private BigDecimal remaining;
-
     private BigDecimal perPersonShare;
 }

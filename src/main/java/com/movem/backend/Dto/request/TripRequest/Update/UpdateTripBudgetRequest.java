@@ -15,10 +15,9 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateTripBudgetRequest {
-
+    private Integer id;
     @NotBlank
     private String category;
-
     @NotNull
     @DecimalMin(value = "0.0", inclusive = true)
     private BigDecimal allocatedAmount;

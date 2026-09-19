@@ -8,7 +8,7 @@ import com.movem.backend.Repository.AttachmentRepository.AttachmentRepository;
 import com.movem.backend.Service.AttachmentService.AttachmentService;
 import com.movem.backend.Service.AuthServices.CurrentUserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,86 +17,60 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class AttachmentServiceImpl implements AttachmentService {
-
     private final AttachmentRepository attachmentRepository;
     private final CurrentUserService currentUserService;
-
-    private final Path uploadDirectory =
-            Paths.get("uploads/attachments");
+    private final GcsFileStorageService gcsFileStorageService;
 
     @Override
     public AttachmentResponse upload(MultipartFile file) {
 
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "File cannot be empty."
-            );
+            throw new IllegalArgumentException("File cannot be empty.");
         }
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         try {
+            String originalFileName = file.getOriginalFilename();
 
-            Files.createDirectories(uploadDirectory);
+            if (originalFileName == null || originalFileName.isBlank()) {
+                originalFileName = "file";
+            }
 
-            String originalFileName =
-                    file.getOriginalFilename();
+            String objectKey = gcsFileStorageService.upload("attachments", file);
+            String storedFileName = objectKey.substring(objectKey.lastIndexOf("/") + 1);
 
-            String storedFileName =
-                    UUID.randomUUID()
-                            + "_"
-                            + originalFileName;
-
-            Path target =
-                    uploadDirectory.resolve(storedFileName);
-
-            Files.copy(
-                    file.getInputStream(),
-                    target,
-                    StandardCopyOption.REPLACE_EXISTING
-            );
-
-            Attachment attachment =
-                    Attachment.builder()
+            Attachment attachment = Attachment.builder()
                             .originalFileName(originalFileName)
                             .storedFileName(storedFileName)
-                            .fileType(file.getContentType())
+                            .fileType(file.getContentType() != null ? file.getContentType() : "application/octet-stream")
                             .fileSize(file.getSize())
-                            .filePath(target.toString())
+                            /*
+                             * IMPORTANT:
+                             * Store the GCS object key,
+                             * NOT a local filesystem path.
+                             */
+                            .filePath(objectKey)
                             .uploadedBy(currentUser)
                             .createdAt(LocalDateTime.now())
                             .build();
 
-            return toResponse(
-                    attachmentRepository.save(attachment)
-            );
+            return toResponse(attachmentRepository.save(attachment));
 
         } catch (IOException e) {
-
-            throw new RuntimeException(
-                    "Failed to store file.",
-                    e
-            );
+            throw new RuntimeException("Failed to upload file to Google Cloud Storage.", e);
         }
     }
 
     @Override
     public List<AttachmentResponse> getMyAttachments() {
-
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         return attachmentRepository
                 .findByUploadedByAndDeletedAtIsNull(currentUser)
@@ -106,163 +80,92 @@ public class AttachmentServiceImpl implements AttachmentService {
     }
 
     @Override
-    public AttachmentResponse getAttachment(
-            Long attachmentId
-    ) {
+    public AttachmentResponse getAttachment(Long attachmentId) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        Attachment attachment =
-                attachmentRepository
-                        .findByIdAndUploadedByAndDeletedAtIsNull(
-                                attachmentId,
-                                currentUser
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Attachment not found."
-                                )
-                        );
+        Attachment attachment = attachmentRepository.findByIdAndUploadedByAndDeletedAtIsNull(attachmentId, currentUser)
+                .orElseThrow(() -> new ResourceNotFoundException("Attachment not found."));
 
         return toResponse(attachment);
     }
-
     @Override
     public void delete(Long attachmentId) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        Attachment attachment = attachmentRepository
+                        .findByIdAndUploadedByAndDeletedAtIsNull(attachmentId, currentUser)
+                        .orElseThrow(() -> new ResourceNotFoundException("Attachment not found."));
 
-        Attachment attachment =
-                attachmentRepository
-                        .findByIdAndUploadedByAndDeletedAtIsNull(
-                                attachmentId,
-                                currentUser
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Attachment not found."
-                                )
-                        );
 
-        attachment.setDeletedAt(
-                LocalDateTime.now()
-        );
+        gcsFileStorageService.delete(attachment.getFilePath());
+
+        attachment.setDeletedAt(LocalDateTime.now());
 
         attachmentRepository.save(attachment);
     }
 
-    private AttachmentResponse toResponse(
-            Attachment attachment
-    ) {
-
+    private AttachmentResponse toResponse(Attachment attachment) {
         return AttachmentResponse.builder()
                 .id(attachment.getId())
-                .originalFileName(
-                        attachment.getOriginalFileName()
-                )
-                .fileType(
-                        attachment.getFileType()
-                )
-                .fileSize(
-                        attachment.getFileSize()
-                )
-                .filePath(
-                        attachment.getFilePath()
-                )
-                .uploadedBy(
-                        attachment.getUploadedBy().getId()
-                )
-                .createdAt(
-                        attachment.getCreatedAt()
-                )
+                .originalFileName(attachment.getOriginalFileName())
+                .fileType(attachment.getFileType())
+                .fileSize(attachment.getFileSize())
+                .filePath(attachment.getFilePath())
+                .uploadedBy(attachment.getUploadedBy().getId())
+                .createdAt(attachment.getCreatedAt())
+                .url(gcsFileStorageService.signedUrl(attachment.getFilePath()).toString())
                 .build();
     }
 
     @Override
     public ResponseEntity<Resource> view(Long attachmentId) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        Attachment attachment =
-                attachmentRepository
-                        .findByIdAndUploadedByAndDeletedAtIsNull(
-                                attachmentId,
-                                currentUser
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Attachment not found."
-                                )
-                        );
-
-        Resource resource =
-                new FileSystemResource(
-                        attachment.getFilePath()
-                );
-
-        if (!resource.exists()) {
-            throw new ResourceNotFoundException(
-                    "Attachment file not found."
-            );
-        }
-
-        MediaType mediaType;
+        Attachment attachment = attachmentRepository
+                        .findByIdAndUploadedByAndDeletedAtIsNull(attachmentId, currentUser)
+                        .orElseThrow(() -> new ResourceNotFoundException("Attachment not found."));
 
         try {
-            mediaType = MediaType.parseMediaType(
-                    attachment.getFileType()
-            );
-        } catch (Exception e) {
-            mediaType = MediaType.APPLICATION_OCTET_STREAM;
-        }
+            byte[] fileBytes = gcsFileStorageService.download(attachment.getFilePath());
+            Resource resource = new ByteArrayResource(fileBytes);
+            MediaType mediaType;
+            try {
+                mediaType = MediaType.parseMediaType(attachment.getFileType());
 
-        return ResponseEntity.ok()
-                .contentType(mediaType)
-                .body(resource);
+            } catch (Exception e) {
+                mediaType = MediaType.APPLICATION_OCTET_STREAM;
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(mediaType)
+                    .contentLength(fileBytes.length)
+                    .body(resource);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve attachment from Google Cloud Storage.", e);
+        }
     }
 
     @Override
     public ResponseEntity<Resource> download(Long attachmentId) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        Attachment attachment = attachmentRepository
+                        .findByIdAndUploadedByAndDeletedAtIsNull(attachmentId, currentUser)
+                        .orElseThrow(() -> new ResourceNotFoundException("Attachment not found."));
 
-        Attachment attachment =
-                attachmentRepository
-                        .findByIdAndUploadedByAndDeletedAtIsNull(
-                                attachmentId,
-                                currentUser
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Attachment not found."
-                                )
-                        );
+        try {
+            byte[] fileBytes = gcsFileStorageService.download(attachment.getFilePath());
+            Resource resource = new ByteArrayResource(fileBytes);
 
-        Resource resource =
-                new FileSystemResource(
-                        attachment.getFilePath()
-                );
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .contentLength(fileBytes.length)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + attachment.getOriginalFileName() + "\"")
+                    .body(resource);
 
-        if (!resource.exists()) {
-            throw new ResourceNotFoundException(
-                    "Attachment file not found."
-            );
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to download attachment from Google Cloud Storage.", e);
         }
-
-        return ResponseEntity.ok()
-                .contentType(
-                        MediaType.APPLICATION_OCTET_STREAM
-                )
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" +
-                                attachment.getOriginalFileName() +
-                                "\""
-                )
-                .body(resource);
     }
 }

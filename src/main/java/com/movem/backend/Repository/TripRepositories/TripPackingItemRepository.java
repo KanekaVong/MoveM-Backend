@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TripPackingItemRepository extends JpaRepository<TripPackingItem, Integer> {
-
     List<TripPackingItem> findByTrip(Trip trip);
-
     Optional<TripPackingItem> findByIdAndTrip(Integer id, Trip trip);
 }

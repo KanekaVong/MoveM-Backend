@@ -1,5 +1,6 @@
 package com.movem.backend.Dto.request.TaskRequests.Update;
 
+import com.movem.backend.Dto.request.TaskRequests.Create.CreateTaskReminderRequest;
 import com.movem.backend.model.enums.Activity.ActivityStatus;
 import com.movem.backend.model.enums.Priority;
 import com.movem.backend.model.enums.RecurringType;
@@ -11,6 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import javax.annotation.Nullable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,28 +25,21 @@ public class UpdateTaskRequest implements BaseActivityUpdateSource {
 
     @NotBlank
     private String activityName;
-
     private String description;
-
     private LocalDateTime startActivity;
-
     private LocalDateTime deadline;
 
     @NotNull
     private Priority priority;
 
-    @NotNull
+    @Nullable
     private ActivityStatus status;
-
     private Boolean isRecurring = false;
-
     private RecurringType recurringType;
-
     private Integer recurringInterval = 1;
-
     private LocalDate recurringEndDate;
-
     private List<Integer> labelIds;
+    private List<CreateTaskReminderRequest> reminders;
 
 
 }
