@@ -1,0 +1,36 @@
+package com.movem.backend.shared.historyandlogs.activityfeed.controllers;
+
+import com.movem.backend.shared.historyandlogs.activityfeed.dtos.responses.ActivityFeedResponse;
+import com.movem.backend.shared.historyandlogs.activityfeed.services.ActivityFeedService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/activity-feed")
+@Tag(
+        name = "Social - Activity-Feed",
+        description = "Past Actions made by users and their members or friends"
+)
+@RequiredArgsConstructor
+public class ActivityFeedController {
+
+    private final ActivityFeedService activityFeedService;
+
+    @GetMapping("/{activityId}")
+    public Page<ActivityFeedResponse> getActivityFeed(
+            @PathVariable String activityId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+
+        return activityFeedService.getActivityFeed(
+                activityId,
+                page,
+                size
+        );
+
+    }
+
+}

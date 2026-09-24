@@ -8,35 +8,20 @@
 -- New Tables to create:
 
 CREATE TABLE user_invite (
-
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     token VARCHAR(100) NOT NULL UNIQUE,
     invited_by INT NOT NULL,
     created_at DATETIME(6) NOT NULL,
     expires_at DATETIME(6) NULL,
-
-    CONSTRAINT fk_invite_invited_by
-        FOREIGN KEY (invited_by)
-            REFERENCES user(id)
+    CONSTRAINT fk_invite_invited_by FOREIGN KEY (invited_by) REFERENCES user(id)
 );
 
-CREATE INDEX idx_invite_token
-    ON user_invite(token);
-
-CREATE INDEX idx_invite_invited_by
-    ON user_invite(invited_by);
-
-CREATE INDEX idx_invite_expires_at
-    ON user_invite(expires_at);
-
-CREATE INDEX idx_invite_token
-    ON user_invite(token);
-
-CREATE INDEX idx_invite_invited_by
-    ON user_invite(invited_by);
-
-CREATE INDEX idx_invite_expires_at
-    ON user_invite(expires_at);
+CREATE INDEX idx_invite_tokenON user_invite(token);
+CREATE INDEX idx_invite_invited_byON user_invite(invited_by);
+CREATE INDEX idx_invite_expires_at ON user_invite(expires_at);
+CREATE INDEX idx_invite_tokenON user_invite(token);
+CREATE INDEX idx_invite_invited_byON user_invite(invited_by);
+CREATE INDEX idx_invite_expires_atON user_invite(expires_at);
 
 CREATE TABLE attachment (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -50,47 +35,30 @@ CREATE TABLE attachment (
     deleted_at DATETIME(6) NULL,
     task_activity_id VARCHAR(255) NULL,
     trip_activity_id VARCHAR(255) NULL,
+    fitness_club_id INT NULL,
+    group_challenge_id INT NULL;
+    attachment_type VARCHAR(30) NULL;
     workout_session_id INT NULL,
+    CONSTRAINT fk_attachment_fitness_club FOREIGN KEY (fitness_club_id) REFERENCES fitness_clubs(id),
+    CONSTRAINT fk_attachment_group_challenge FOREIGN KEY (group_challenge_id) REFERENCES group_fitness_challenges(id);
+    CONSTRAINT fk_attachment_user FOREIGN KEY (uploaded_by) REFERENCES user(id),
+    CONSTRAINT fk_attachment_task FOREIGN KEY (task_activity_id) REFERENCES Task(activity_id),
+    CONSTRAINT fk_attachment_workout FOREIGN KEY (workout_session_id)Fitness_Workout_Session REFERENCES Fitness_Workout_Session(id);
 
-    CONSTRAINT fk_attachment_user
-        FOREIGN KEY (uploaded_by)
-            REFERENCES user(id),
-
-    CONSTRAINT fk_attachment_task
-        FOREIGN KEY (task_activity_id)
-            REFERENCES Task(activity_id),
-
-    CONSTRAINT fk_attachment_workout
-        FOREIGN KEY (workout_session_id)Fitness_Workout_Session
-            REFERENCES Fitness_Workout_Session(id);
-
-);
-CREATE INDEX idx_attachment_task
-    ON attachment(task_activity_id);
-
-CREATE INDEX idx_attachment_trip
-    ON attachment(trip_activity_id);
-
-CREATE INDEX idx_attachment_workout
-    ON attachment(workout_session_id);
-
+    INDEX idx_attachment_task ON attachment(task_activity_id);
+    INDEX idx_attachment_trip ON attachment(trip_activity_id);
+    INDEX idx_attachment_workout ON attachment(workout_session_id);
+    INDEX idx_attachment_fitness_club ON attachment (fitness_club_id);
+    INDEX idx_attachment_group_challenge ON attachment (group_challenge_id););
 
 CREATE TABLE fitness_workout_kudos (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     workout_session_id INT NOT NULL,
     user_id INT NOT NULL,
     created_at DATETIME(6) NOT NULL,
-    CONSTRAINT uk_workout_kudos_user
-        UNIQUE (workout_session_id, user_id),
-    CONSTRAINT fk_workout_kudos_session
-        FOREIGN KEY (workout_session_id)
-            REFERENCES fitness_workout_session(id)
-            ON DELETE CASCADE,
-
-    CONSTRAINT fk_workout_kudos_user
-        FOREIGN KEY (user_id)
-            REFERENCES user(id)
-            ON DELETE CASCADE,
+    CONSTRAINT uk_workout_kudos_user UNIQUE (workout_session_id, user_id),
+    CONSTRAINT fk_workout_kudos_session FOREIGN KEY (workout_session_id) REFERENCES fitness_workout_session(id) ON DELETE CASCADE,
+    CONSTRAINT fk_workout_kudos_userFOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
 
     INDEX idx_workout_kudos_session (workout_session_id),
     INDEX idx_workout_kudos_user (user_id)
@@ -782,7 +750,11 @@ CREATE INDEX idx_notification_reference ON Notification(reference_id);
 CREATE TABLE `Trip` (
   `activity_id` VARCHAR(10) PRIMARY KEY,
   `destination` VARCHAR(100),
-  FOREIGN KEY (`activity_id`) REFERENCES `Activity` (`id`)
+  `cover_photo_id` BIGINT NULL,
+  CONSTRAINT fk_trip_cover_photoFOREIGN KEY (cover_photo_id)REFERENCES attachment(id),
+  INDEX idx_trip_cover_photo ON Trip(cover_photo_id);
+
+FOREIGN KEY (`activity_id`) REFERENCES `Activity` (`id`)
 );
 
 CREATE TABLE `trip_stops` (
