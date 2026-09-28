@@ -23,5 +23,4 @@ public class NotificationMapper {
                 .readAt(notification.getReadAt())
                 .build();
     }
-
 }

@@ -1,4 +1,4 @@
-package com.movem.backend.shared.attachment.services;
+package com.movem.backend.shared.attachment.services.impl;
 
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
@@ -10,15 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 public class GcsFileStorageService {
     private final Storage storage;
-
     @Value("${gcs.bucket-name}")
     private String bucketName;
 
@@ -33,11 +30,12 @@ public class GcsFileStorageService {
         String objectName = folder + "/" + UUID.randomUUID() + "-" + safeFileName;
 
         BlobId blobId = BlobId.of(bucketName, objectName);
-        BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType(file.getContentType() != null ? file.getContentType() : "application/octet-stream").build();
+        BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
+                .setContentType(file.getContentType() != null ? file.getContentType() : "application/octet-stream")
+                .build();
 
         storage.create(blobInfo, file.getBytes());
-
-        return objectName;
+        return publicUrl(objectName);
     }
 
     public byte[] download(String objectName) {
@@ -47,11 +45,6 @@ public class GcsFileStorageService {
         }
 
         return blob.getContent();
-    }
-
-    public URL signedUrl(String objectName) {
-        BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(bucketName, objectName)).build();
-        return storage.signUrl(blobInfo, 15, TimeUnit.MINUTES);
     }
 
     public void delete(String objectName) {

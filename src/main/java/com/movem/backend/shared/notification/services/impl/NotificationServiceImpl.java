@@ -27,7 +27,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class NotificationServiceImpl implements NotificationService {
-
     private final NotificationRepository notificationRepository;
     private final NotificationMapper notificationMapper;
     private final CurrentUserService currentUserService;
@@ -39,11 +38,7 @@ public class NotificationServiceImpl implements NotificationService {
     public List<NotificationResponse> getNotifications() {
         User currentUser = currentUserService.getCurrentUser();
 
-        return notificationRepository
-                .findByUserOrderByCreatedAtDesc(currentUser)
-                .stream()
-                .map(notificationMapper::toResponse)
-                .toList();
+        return notificationRepository.findByUserOrderByCreatedAtDesc(currentUser).stream().map(notificationMapper::toResponse).toList();
     }
 
 
@@ -51,32 +46,21 @@ public class NotificationServiceImpl implements NotificationService {
     public List<NotificationResponse> getUnreadNotifications() {
         User currentUser = currentUserService.getCurrentUser();
 
-        return notificationRepository
-                .findByUserAndIsReadFalseOrderByCreatedAtDesc(
-                        currentUser
-                )
-                .stream()
-                .map(notificationMapper::toResponse)
-                .toList();
+        return notificationRepository.findByUserAndIsReadFalseOrderByCreatedAtDesc(currentUser).stream().map(notificationMapper::toResponse).toList();
     }
 
     @Override
     public List<NotificationResponse> getNotificationsByActivity(String activityId) {
         User currentUser = currentUserService.getCurrentUser();
 
-        return notificationRepository
-                .findByUserAndReferenceIdOrderByCreatedAtDesc(currentUser, activityId)
-                .stream()
-                .map(notificationMapper::toResponse)
-                .toList();
+        return notificationRepository.findByUserAndReferenceIdOrderByCreatedAtDesc(currentUser, activityId).stream().map(notificationMapper::toResponse).toList();
     }
 
     @Override
     public Long getUnreadCount() {
         User currentUser = currentUserService.getCurrentUser();
 
-        return notificationRepository
-                .countByUserAndIsReadFalse(currentUser);
+        return notificationRepository.countByUserAndIsReadFalse(currentUser);
     }
 
 
@@ -84,9 +68,7 @@ public class NotificationServiceImpl implements NotificationService {
     public void markAsRead(Long notificationId) {
         User currentUser = currentUserService.getCurrentUser();
 
-        Notification notification = notificationRepository
-                        .findByIdAndUser(notificationId, currentUser)
-                        .orElseThrow(() -> new ResourceNotFoundException("Notification not found."));
+        Notification notification = notificationRepository.findByIdAndUser(notificationId, currentUser).orElseThrow(() -> new ResourceNotFoundException("Notification not found."));
 
         if (Boolean.TRUE.equals(notification.getIsRead())) {
             return;
@@ -118,9 +100,7 @@ public class NotificationServiceImpl implements NotificationService {
     public void deleteNotification(Long notificationId) {
         User currentUser = currentUserService.getCurrentUser();
 
-        Notification notification = notificationRepository
-                        .findByIdAndUser(notificationId, currentUser)
-                        .orElseThrow(() -> new ResourceNotFoundException("Notification not found."));
+        Notification notification = notificationRepository.findByIdAndUser(notificationId, currentUser).orElseThrow(() -> new ResourceNotFoundException("Notification not found."));
 
         notificationRepository.delete(notification);
     }

@@ -6,10 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface FitnessWorkoutAnalysisRepository
-        extends JpaRepository<FitnessWorkoutAnalysis, Integer> {
-
-    Optional<FitnessWorkoutAnalysis> findByWorkoutSession(
-            FitnessWorkoutSession workoutSession
-    );
+public interface FitnessWorkoutAnalysisRepository extends JpaRepository<FitnessWorkoutAnalysis, Integer> {
+    Optional<FitnessWorkoutAnalysis> findByWorkoutSession(FitnessWorkoutSession workoutSession);
 }

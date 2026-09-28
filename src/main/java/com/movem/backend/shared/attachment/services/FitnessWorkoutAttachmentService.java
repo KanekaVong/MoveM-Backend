@@ -6,7 +6,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface FitnessWorkoutAttachmentService {
-
     AttachmentResponse upload(Integer sessionId, MultipartFile file);
     List<AttachmentResponse> getAttachments(Integer sessionId);
     AttachmentResponse uploadClubProfile(Integer clubId, MultipartFile file);

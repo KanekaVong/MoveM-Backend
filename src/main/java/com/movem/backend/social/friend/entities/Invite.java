@@ -3,6 +3,7 @@ package com.movem.backend.social.friend.entities;
 import com.movem.backend.authentication.entities.User;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
@@ -13,22 +14,20 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Invite {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Long id;
 
     @Column(nullable = false, unique = true, length = 100)
-    private String token;
+    String token;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "invited_by", nullable = false)
-    private User invitedBy;
+    User invitedBy;
 
     @Column(nullable = false)
-    private LocalDateTime createdAt;
-
-    private LocalDateTime expiresAt;
-
+    LocalDateTime createdAt;
+    LocalDateTime expiresAt;
 }

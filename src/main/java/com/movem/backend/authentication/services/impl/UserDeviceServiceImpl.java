@@ -18,16 +18,13 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class UserDeviceServiceImpl
-        implements UserDeviceService {
-
+public class UserDeviceServiceImpl implements UserDeviceService {
     private final UserDeviceRepository userDeviceRepository;
     private final CurrentUserService currentUserService;
 
 
     @Override
     public UserDeviceResponse registerDevice(RegisterDeviceRequest request) {
-
         User currentUser = currentUserService.getCurrentUser();
         UserDevice device = userDeviceRepository.findByDeviceToken(request.getDeviceToken()).orElse(null);
 
@@ -61,7 +58,6 @@ public class UserDeviceServiceImpl
     @Override
     @Transactional
     public List<UserDeviceResponse> getMyDevices() {
-
         User currentUser = currentUserService.getCurrentUser();
 
         return userDeviceRepository
@@ -73,48 +69,22 @@ public class UserDeviceServiceImpl
 
 
     @Override
-    public void deactivateDevice(
-            Long deviceId
-    ) {
-
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        UserDevice device =
-                userDeviceRepository
-                        .findById(deviceId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Device not found."
-                                )
-                        );
+    public void deactivateDevice(Long deviceId) {
+        User currentUser = currentUserService.getCurrentUser();
+        UserDevice device = userDeviceRepository.findById(deviceId).orElseThrow(() -> new ResourceNotFoundException("Device not found."));
 
 
-        if (
-                !device.getUser()
-                        .getId()
-                        .equals(currentUser.getId())
-        ) {
-
-            throw new IllegalArgumentException(
-                    "You can only deactivate your own device."
-            );
+        if (!device.getUser().getId().equals(currentUser.getId())) {
+            throw new IllegalArgumentException("You can only deactivate your own device.");
         }
-
-
         device.setIsActive(false);
-        device.setUpdatedAt(
-                LocalDateTime.now()
-        );
+        device.setUpdatedAt(LocalDateTime.now());
 
         userDeviceRepository.save(device);
     }
 
 
-    private UserDeviceResponse toResponse(
-            UserDevice device
-    ) {
-
+    private UserDeviceResponse toResponse(UserDevice device) {
         return UserDeviceResponse.builder()
                 .id(device.getId())
                 .userId(device.getUser().getId())

@@ -1,18 +1,17 @@
 package com.movem.backend.shared.checklist.dtos.responses;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ChecklistResponse {
-
-    private Integer id;
-
-    private String itemName;
-
-    private Boolean completed;
+    Integer id;
+    String itemName;
+    Boolean completed;
 
 }

@@ -2,6 +2,7 @@ package com.movem.backend.shared.historyandlogs.featureevents.services.impl;
 
 import com.movem.backend.authentication.entities.User;
 import com.movem.backend.commons.Event.FeatureEvent;
+import com.movem.backend.fitness.achievement.entities.UserAchievement;
 import com.movem.backend.fitness.achievement.services.AchievementService;
 import com.movem.backend.shared.historyandlogs.featureevents.services.FeatureEventTrackingService;
 import com.movem.backend.shared.notification.services.NotificationService;
@@ -14,56 +15,38 @@ import com.movem.backend.commons.enums.HistoryandLogs.FeatureEventAction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
-public class FeatureEventTrackingServiceImpl
-        implements FeatureEventTrackingService {
-
+public class FeatureEventTrackingServiceImpl implements FeatureEventTrackingService {
     private final AchievementService achievementService;
     private final ActivityFeedService activityFeedService;
     private final AuditLogService auditLogService;
     private final NotificationService notificationService;
 
     @Override
-    public void handle(FeatureEvent event) {
-
+    public List<UserAchievement> handle(FeatureEvent event) {
         handleActivityFeed(event);
         handleAuditLog(event);
         handleNotification(event);
 
-        achievementService.evaluate(
-                event.getActor(),
-                event
-        );
+        return achievementService.evaluate(event.getActor(), event);
     }
 
     private void handleActivityFeed(FeatureEvent event) {
-
-        if (!event.getActions().contains(
-                FeatureEventAction.ACTIVITY_FEED
-        )) {
+        if (!event.getActions().contains(FeatureEventAction.ACTIVITY_FEED)) {
             return;
         }
-
         String referenceId = event.getFeedReferenceId();
 
-        activityFeedService.createFeed(
-                event.getActivity(),
-                event.getActor(),
-                event.getFeedEvent(),
-                event.getFeedMessage(),
-                referenceId
-        );
+        activityFeedService.createFeed(event.getActivity(), event.getActor(), event.getFeedEvent(), event.getFeedMessage(), referenceId);
     }
 
     private void handleAuditLog(FeatureEvent event) {
-
-        if (!event.getActions().contains(
-                FeatureEventAction.AUDIT_LOG
-        )) {
+        if (!event.getActions().contains(FeatureEventAction.AUDIT_LOG)) {
             return;
         }
-
         auditLogService.createLog(
                 event.getActivity(),
                 event.getActor(),
@@ -72,23 +55,18 @@ public class FeatureEventTrackingServiceImpl
                 event.getAuditSeverity(),
                 event.getAuditEntity(),
                 event.getAuditMessage(),
-                event.getOldValue(),
-                event.getNewValue()
+                event.getOldValue(), event.getNewValue()
         );
     }
 
     private void handleNotification(FeatureEvent event) {
-
         if (!event.getActions().contains(
-                FeatureEventAction.NOTIFICATION
-        )) {
+                FeatureEventAction.NOTIFICATION)) {
             return;
         }
 
         if (event.isNotifyActivityGroup()) {
-
-            if (event.getActivity() == null
-                    || event.getNotificationType() == null) {
+            if (event.getActivity() == null || event.getNotificationType() == null) {
                 return;
             }
 
@@ -105,11 +83,9 @@ public class FeatureEventTrackingServiceImpl
             return;
         }
 
-        if (event.getNotificationReceiver() == null
-                || event.getNotificationType() == null) {
+        if (event.getNotificationReceiver() == null || event.getNotificationType() == null) {
             return;
         }
-
         notificationService.createNotification(
                 event.getNotificationReceiver(),
                 event.getActor(),
@@ -122,23 +98,8 @@ public class FeatureEventTrackingServiceImpl
     }
 
     @Override
-    public void handleDeletedActivity(
-            String activityId,
-            String activityName,
-            User actor
-    ) {
-
-        auditLogService.createDeletedActivityLog(
-                activityId,
-                activityName,
-                actor,
-                ActivityFeedEvent.ACTIVITY_HARD_DELETED,
-                AuditCategory.TASK,
-                AuditSeverity.WARNING,
-                "activity",
-                "Activity permanently deleted.",
-                activityName,
-                null
-        );
+    public void handleDeletedActivity(String activityId, String activityName, User actor) {
+        auditLogService.createDeletedActivityLog(activityId, activityName, actor, ActivityFeedEvent.ACTIVITY_HARD_DELETED,
+                AuditCategory.TASK, AuditSeverity.WARNING, "activity", "Activity permanently deleted.", activityName, null);
     }
 }

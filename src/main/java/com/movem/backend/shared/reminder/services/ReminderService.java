@@ -18,5 +18,4 @@ public interface ReminderService {
     void deleteReminder(Integer reminderId);
     void processDueReminders();
     void addCustomReminders(Task task, List<CreateReminderRequest> reminders);
-
 }

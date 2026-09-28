@@ -24,64 +24,30 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class AuditLogServiceImpl implements AuditLogService {
-
     private final AuditLogRepository auditLogRepository;
     private final ActivityRepository activityRepository;
     private final CurrentUserService currentUserService;
     private final AuditLogMapper auditLogMapper;
 
     @Override
-    public void createLog(
-            Activity activity,
-            User user,
-            ActivityFeedEvent eventType,
-            AuditCategory category,
-            AuditSeverity severity,
-            String fieldChanged,
-            String description,
-            String oldValue,
-            String newValue
-    ) {
-
+    public void createLog(Activity activity, User user, ActivityFeedEvent eventType, AuditCategory category, AuditSeverity severity, String fieldChanged, String description, String oldValue, String newValue) {
         AuditLog auditLog = new AuditLog();
 
         auditLog.setActivity(activity);
-
         auditLog.setUser(user);
-
         auditLog.setEventType(eventType);
-
         auditLog.setCategory(category);
-
         auditLog.setSeverity(severity);
-
         auditLog.setFieldChanged(fieldChanged);
-
         auditLog.setDescription(description);
-
         auditLog.setOldValue(oldValue);
-
         auditLog.setNewValue(newValue);
-
         auditLog.setCreatedAt(LocalDateTime.now());
 
         auditLogRepository.save(auditLog);
-
     }
 
-    public void createDeletedActivityLog(
-            String activityId,
-            String activityName,
-            User user,
-            ActivityFeedEvent eventType,
-            AuditCategory category,
-            AuditSeverity severity,
-            String fieldChanged,
-            String description,
-            String oldValue,
-            String newValue
-    ) {
-
+    public void createDeletedActivityLog(String activityId, String activityName, User user, ActivityFeedEvent eventType, AuditCategory category, AuditSeverity severity, String fieldChanged, String description, String oldValue, String newValue) {
         AuditLog auditLog = new AuditLog();
 
         auditLog.setActivity(null);
@@ -104,7 +70,6 @@ public class AuditLogServiceImpl implements AuditLogService {
     @Override
     @Transactional(readOnly = true)
     public List<AuditLogResponse> getMyAuditLogs() {
-
         User currentUser = currentUserService.getCurrentUser();
 
         return auditLogRepository
@@ -112,68 +77,39 @@ public class AuditLogServiceImpl implements AuditLogService {
                 .stream()
                 .map(auditLogMapper::toResponse)
                 .toList();
-
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<AuditLogResponse> getAuditLogs(
-            String activityId
-    ) {
-
-        Activity activity = activityRepository
-                .findById(activityId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Activity not found."
-                        )
-                );
+    public List<AuditLogResponse> getAuditLogs(String activityId) {
+        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ResourceNotFoundException("Activity not found."));
 
         return auditLogRepository
                 .findByActivityOrderByCreatedAtDesc(activity)
                 .stream()
                 .map(auditLogMapper::toResponse)
                 .toList();
-
     }
 
     @Override
     public List<AuditLogResponse> getFriendAuditLogs() {
-
         User currentUser = currentUserService.getCurrentUser();
 
         return auditLogRepository
-                .findByUserAndCategoryOrderByCreatedAtDesc(
-                        currentUser,
-                        AuditCategory.FRIEND
-                )
+                .findByUserAndCategoryOrderByCreatedAtDesc(currentUser, AuditCategory.FRIEND)
                 .stream()
                 .map(auditLogMapper::toResponse)
                 .toList();
     }
 
     @Override
-    public List<AuditLogResponse> getGroupAuditLogs(
-            String activityId
-    ) {
-
-        Activity activity = activityRepository
-                .findById(activityId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Activity not found."
-                        )
-                );
+    public List<AuditLogResponse> getGroupAuditLogs(String activityId) {
+        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ResourceNotFoundException("Activity not found."));
 
         return auditLogRepository
-                .findByActivityAndCategoryOrderByCreatedAtDesc(
-                        activity,
-                        AuditCategory.GROUP
-                )
+                .findByActivityAndCategoryOrderByCreatedAtDesc(activity, AuditCategory.GROUP)
                 .stream()
                 .map(auditLogMapper::toResponse)
                 .toList();
-
     }
-
 }

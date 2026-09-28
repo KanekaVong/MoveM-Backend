@@ -1,7 +1,6 @@
 package com.movem.backend.commons.enums.Fitness;
 
 public enum WorkoutType {
-
     RUNNING,
     WALKING,
     CYCLING,
@@ -17,5 +16,4 @@ public enum WorkoutType {
     CARDIO,
     BODYWEIGHT,
     SPORTS
-
 }

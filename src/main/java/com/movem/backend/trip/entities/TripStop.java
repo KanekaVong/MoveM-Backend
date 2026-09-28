@@ -1,10 +1,8 @@
 package com.movem.backend.trip.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,29 +13,30 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TripStop {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    Integer id;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trip_activity_id", nullable = false)
-    private Trip trip;
+    Trip trip;
     @Column(name = "location_name")
-    private String locationName;
+    String locationName;
     @Column(name = "sequence_order", nullable = false)
-    private Integer sequenceOrder;
+    Integer sequenceOrder;
     @Column(name = "arrival_time")
-    private LocalDateTime arrivalTime;
+    LocalDateTime arrivalTime;
     @Column(name = "departure_time")
-    private LocalDateTime departureTime;
+    LocalDateTime departureTime;
     @Column(name = "location_address")
-    private String locationAddress;
-    private BigDecimal lat;
-    private BigDecimal lng;
+    String locationAddress;
+    BigDecimal lat;
+    BigDecimal lng;
     @Column(name = "google_place_id")
-    private String googlePlaceId;
+    String googlePlaceId;
     @Column(name = "coordinates")
-    private String coordinates;
+    String coordinates;
     @Column(name = "is_completed")
-    private Boolean isCompleted = false;
+    Boolean isCompleted = false;
 }

@@ -14,22 +14,12 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface CommentRepository
-        extends JpaRepository<Comment, Long> {
+public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-    @EntityGraph(attributePaths = {
-            "user",
-            "activity"
-    })
-    Page<Comment> findByActivityOrderByCreatedAtAsc(
-            Activity activity,
-            Pageable pageable
-    );
+    @EntityGraph(attributePaths = {"user", "activity"})
+    Page<Comment> findByActivityOrderByCreatedAtAsc(Activity activity, Pageable pageable);
 
-    @EntityGraph(attributePaths = {
-            "user",
-            "activity"
-    })
+    @EntityGraph(attributePaths = {"user", "activity"})
     Optional<Comment> findWithUserAndActivityById(Long id);
 
     @Transactional
@@ -44,7 +34,5 @@ public interface CommentRepository
     WHERE c.activity.id IN :activityIds
     GROUP BY c.activity.id
 """)
-    List<Object[]> countCommentsByActivityIds(
-            @Param("activityIds") List<String> activityIds
-    );
+    List<Object[]> countCommentsByActivityIds(@Param("activityIds") List<String> activityIds);
 }

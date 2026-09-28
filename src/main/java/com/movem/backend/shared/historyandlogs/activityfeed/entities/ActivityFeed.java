@@ -5,69 +5,43 @@ import com.movem.backend.authentication.entities.User;
 import com.movem.backend.commons.enums.shared.ActivityFeedEvent;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-        name = "activity_feed",
-        indexes = {
-
-                @Index(
-                        name = "idx_activityfeed_activity",
-                        columnList = "activity_id"
-                ),
-
-                @Index(
-                        name = "idx_activityfeed_user",
-                        columnList = "user_id"
-                ),
-
-                @Index(
-                        name = "idx_activityfeed_created",
-                        columnList = "createdAt"
-                ),
-
-                @Index(
-                        name = "idx_activityfeed_event",
-                        columnList = "eventType"
-                )
-        }
-)
+@Table(name = "activity_feed", indexes = {@Index(name = "idx_activityfeed_activity", columnList = "activity_id"),
+                @Index(name = "idx_activityfeed_user", columnList = "user_id"),
+                @Index(name = "idx_activityfeed_created", columnList = "createdAt"),
+                @Index(name = "idx_activityfeed_event", columnList = "eventType")})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ActivityFeed {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-            name = "activity_id",
-            nullable = false
-    )
-    private Activity activity;
+    @JoinColumn(name = "activity_id", nullable = false)
+    Activity activity;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-            name = "user_id",
-            nullable = false
-    )
-    private User user;
+    @JoinColumn(name = "user_id", nullable = false)
+    User user;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ActivityFeedEvent eventType;
+    ActivityFeedEvent eventType;
 
     @Column(nullable = false, length = 500)
-    private String message;
+    String message;
 
-    private String referenceId;
+    String referenceId;
 
     @Column(nullable = false)
-    private LocalDateTime createdAt;
+    LocalDateTime createdAt;
 
 }

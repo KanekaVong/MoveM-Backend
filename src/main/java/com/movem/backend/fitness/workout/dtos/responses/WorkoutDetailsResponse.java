@@ -3,8 +3,10 @@ package com.movem.backend.fitness.workout.dtos.responses;
 import com.movem.backend.shared.attachment.dtos.responses.AttachmentResponse;
 import com.movem.backend.commons.enums.Fitness.FitnessWorkoutStatus;
 import com.movem.backend.commons.enums.Fitness.WorkoutType;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,33 +14,34 @@ import java.util.List;
 
 @Getter
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class WorkoutDetailsResponse {
-    private Integer sessionId;
+     Integer sessionId;
 
-    private WorkoutType workoutType;
+     WorkoutType workoutType;
 
-    private FitnessWorkoutStatus status;
+     FitnessWorkoutStatus status;
 
-    private LocalDateTime startedAt;
-    private LocalDateTime finishedAt;
+     LocalDateTime startedAt;
+     LocalDateTime finishedAt;
 
-    private Integer durationSeconds;
-    private Integer totalPausedSeconds;
+     Integer durationSeconds;
+     Integer totalPausedSeconds;
 
-    private Integer steps;
-    private BigDecimal distance;
-    private BigDecimal caloriesBurned;
-    private String averagePace;
-    private BigDecimal averageSpeed;
-    private BigDecimal caloriesPerMinute;
+     Integer steps;
+     BigDecimal distance;
+     BigDecimal caloriesBurned;
+     String averagePace;
+     BigDecimal averageSpeed;
+     BigDecimal caloriesPerMinute;
 
-    private WorkoutChallengeDetailsResponse challenge;
+     WorkoutChallengeDetailsResponse challenge;
 
-    private Integer totalCompletedWorkouts;
-    private BigDecimal totalDistance;
-    private BigDecimal totalCaloriesBurned;
-    private Long totalWorkoutSeconds;
+     Integer totalCompletedWorkouts;
+     BigDecimal totalDistance;
+     BigDecimal totalCaloriesBurned;
+     Long totalWorkoutSeconds;
 
-    private List<AttachmentResponse> attachments;
+     List<AttachmentResponse> attachments;
 
 }

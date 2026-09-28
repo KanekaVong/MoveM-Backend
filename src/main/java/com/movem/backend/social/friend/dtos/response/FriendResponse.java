@@ -1,20 +1,17 @@
 package com.movem.backend.social.friend.dtos.response;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class FriendResponse {
-
-    private Integer userId;
-
-    private String username;
-
-    private String firstname;
-
-    private String lastname;
-
-    private String profilePic;
-
+     Integer userId;
+     String username;
+     String firstname;
+     String lastname;
+     String profilePic;
 }

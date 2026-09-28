@@ -14,12 +14,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/task-labels")
-@Tag(
-        name = "Task - Labels"
-)
+@Tag(name = "Task - Labels")
 @RequiredArgsConstructor
 public class TaskLabelController {
-
     private final TaskLabelService taskLabelService;
 
     @PostMapping
@@ -34,10 +31,7 @@ public class TaskLabelController {
     }
 
     @PutMapping("/{id}")
-    public TaskLabelResponse update(
-            @PathVariable Integer id,
-            @Valid @RequestBody UpdateTaskLabelRequest request) {
-
+    public TaskLabelResponse update(@PathVariable Integer id, @Valid @RequestBody UpdateTaskLabelRequest request) {
         return taskLabelService.update(id, request);
     }
 

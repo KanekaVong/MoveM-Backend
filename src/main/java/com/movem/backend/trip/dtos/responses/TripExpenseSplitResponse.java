@@ -1,6 +1,7 @@
 package com.movem.backend.trip.dtos.responses;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -10,17 +11,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TripExpenseSplitResponse {
-
-    private Integer id;
-
-    private Integer userId;
-
-    private String username;
-
-    private BigDecimal amountOwed;
-
-    private Boolean isSettled;
-
-    private LocalDateTime settledAt;
+     Integer id;
+     Integer userId;
+     String username;
+     BigDecimal amountOwed;
+     Boolean isSettled;
+     LocalDateTime settledAt;
 }

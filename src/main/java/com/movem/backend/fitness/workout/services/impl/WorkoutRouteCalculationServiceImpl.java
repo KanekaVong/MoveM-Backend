@@ -42,11 +42,9 @@ public class WorkoutRouteCalculationServiceImpl implements WorkoutRouteCalculati
 
     @Override
     public BigDecimal calculateSpeed(BigDecimal distanceKm, Integer durationSeconds) {
-
         if (distanceKm == null || durationSeconds == null || distanceKm.compareTo(BigDecimal.ZERO) <= 0 || durationSeconds <= 0) {
             return BigDecimal.ZERO;
         }
-
         return distanceKm.divide(BigDecimal.valueOf(durationSeconds), 6, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(3600))
                 .setScale(2, RoundingMode.HALF_UP);
@@ -58,7 +56,6 @@ public class WorkoutRouteCalculationServiceImpl implements WorkoutRouteCalculati
         if (distanceKm == null || durationSeconds == null || distanceKm.compareTo(BigDecimal.ZERO) <= 0 || durationSeconds <= 0) {
             return BigDecimal.ZERO;
         }
-
         BigDecimal secondsPerKm = BigDecimal.valueOf(durationSeconds).divide(distanceKm, 6, RoundingMode.HALF_UP);
 
         return secondsPerKm.setScale(2, RoundingMode.HALF_UP);

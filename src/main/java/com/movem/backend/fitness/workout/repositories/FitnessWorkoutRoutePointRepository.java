@@ -6,11 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface FitnessWorkoutRoutePointRepository
-        extends JpaRepository<FitnessWorkoutRoutePoint, Long> {
-
+public interface FitnessWorkoutRoutePointRepository extends JpaRepository<FitnessWorkoutRoutePoint, Long> {
     List<FitnessWorkoutRoutePoint>
-    findByWorkoutSessionOrderByPointSequenceAsc(
-            FitnessWorkoutSession workoutSession
-    );
+    findByWorkoutSessionOrderByPointSequenceAsc(FitnessWorkoutSession workoutSession);
 }

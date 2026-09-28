@@ -71,7 +71,6 @@ public class FitnessWorkoutSessionMapper {
         if (secondsPerKm == null || secondsPerKm.compareTo(BigDecimal.ZERO) <= 0) {
             return null;
         }
-
         long totalSeconds = secondsPerKm.setScale(0, RoundingMode.HALF_UP).longValue();
         long minutes = totalSeconds / 60;
         long seconds = totalSeconds % 60;

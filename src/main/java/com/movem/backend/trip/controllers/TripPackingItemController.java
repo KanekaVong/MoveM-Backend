@@ -14,18 +14,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/trips/{activityId}/packing-items")
-@Tag( name = "Trip - Trip Packing Item",
-        description = "Create trip, add collaborators, plan trips seamlessly")
+@Tag( name = "Trip - Trip Packing Item", description = "Create trip, add collaborators, plan trips seamlessly")
 @RequiredArgsConstructor
 public class TripPackingItemController {
-
     private final TripPackingService tripPackingService;
 
     @PostMapping
-    public ResponseEntity<TripPackingItemResponse> addItem(
-            @PathVariable String activityId,
-            @Valid @RequestBody CreateTripPackingItemRequest request
-    ) {
+    public ResponseEntity<TripPackingItemResponse> addItem(@PathVariable String activityId, @Valid @RequestBody CreateTripPackingItemRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(tripPackingService.addItem(activityId, request));
     }
 
@@ -35,10 +30,7 @@ public class TripPackingItemController {
     }
 
     @PatchMapping("/{itemId}/toggle")
-    public ResponseEntity<TripPackingItemResponse> togglePacked(
-            @PathVariable String activityId,
-            @PathVariable Integer itemId
-    ) {
+    public ResponseEntity<TripPackingItemResponse> togglePacked(@PathVariable String activityId, @PathVariable Integer itemId) {
         return ResponseEntity.ok(tripPackingService.togglePacked(activityId, itemId));
     }
 

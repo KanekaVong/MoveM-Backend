@@ -15,7 +15,6 @@ import com.movem.backend.shared.attachment.services.AttachmentService;
 import com.movem.backend.authentication.services.CurrentUserService;
 import com.movem.backend.commons.enums.Fitness.FitnessAttachmentType;
 import com.movem.backend.commons.enums.Fitness.FitnessClubRole;
-import com.movem.backend.shared.attachment.services.GcsFileStorageService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
@@ -49,16 +48,11 @@ public class AttachmentServiceImpl implements AttachmentService {
 
         attachmentRepository.findByFitnessClubAndAttachmentTypeAndDeletedAtIsNull(club,FitnessAttachmentType.CLUB_PROFILE)
                 .forEach(existing -> {
-                    gcsFileStorageService.delete(existing.getFilePath());
-                    existing.setDeletedAt(LocalDateTime.now());
-                    attachmentRepository.save(existing);
+                    gcsFileStorageService.delete(existing.getFilePath());existing.setDeletedAt(LocalDateTime.now());attachmentRepository.save(existing);
                 });
 
         AttachmentResponse uploaded = upload(file);
-
-        Attachment attachment = attachmentRepository
-                .findById(uploaded.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Attachment not found."));
+        Attachment attachment = attachmentRepository.findById(uploaded.getId()).orElseThrow(() -> new ResourceNotFoundException("Attachment not found."));
 
         attachment.setFitnessClub(club);
         attachment.setAttachmentType(FitnessAttachmentType.CLUB_PROFILE);
@@ -75,11 +69,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         FitnessClub club = getClub(clubId);
         requireClubOwnerOrAdmin(club);
 
-        attachmentRepository
-                .findByFitnessClubAndAttachmentTypeAndDeletedAtIsNull(
-                        club,
-                        FitnessAttachmentType.CLUB_COVER
-                )
+        attachmentRepository.findByFitnessClubAndAttachmentTypeAndDeletedAtIsNull(club, FitnessAttachmentType.CLUB_COVER)
                 .forEach(existing -> {
                     gcsFileStorageService.delete(existing.getFilePath());
                     existing.setDeletedAt(LocalDateTime.now());
@@ -87,10 +77,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                 });
 
         AttachmentResponse uploaded = upload(file);
-
-        Attachment attachment = attachmentRepository
-                .findById(uploaded.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Attachment not found."));
+        Attachment attachment = attachmentRepository.findById(uploaded.getId()).orElseThrow(() -> new ResourceNotFoundException("Attachment not found."));
 
         attachment.setFitnessClub(club);
         attachment.setAttachmentType(FitnessAttachmentType.CLUB_COVER);

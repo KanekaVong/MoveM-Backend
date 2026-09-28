@@ -10,61 +10,29 @@ import org.springframework.stereotype.Component;
 @Setter
 @Builder
 @Component
-public class ActivityFeedMapper
-        extends AbstractBaseMapper<ActivityFeed, ActivityFeedResponse> {
-
+public class ActivityFeedMapper extends AbstractBaseMapper<ActivityFeed, ActivityFeedResponse> {
     @Override
     public ActivityFeedResponse toResponse(ActivityFeed feed) {
 
-        ActivityFeedResponse response =
-                new ActivityFeedResponse();
+        ActivityFeedResponse response = new ActivityFeedResponse();
 
         response.setId(feed.getId());
 
-        response.setActivityId(
-                feed.getActivity().getId()
-        );
-
-        response.setUserId(
-                feed.getUser().getId()
-        );
-
-        response.setUsername(
-                feed.getUser().getUsername()
-        );
-
-        response.setFirstname(
-                feed.getUser().getFirstname()
-        );
-
-        response.setLastname(
-                feed.getUser().getLastname()
-        );
+        response.setActivityId(feed.getActivity().getId());
+        response.setUserId(feed.getUser().getId());
+        response.setUsername(feed.getUser().getUsername());
+        response.setFirstname(feed.getUser().getFirstname());
+        response.setLastname(feed.getUser().getLastname());
 
         if (feed.getUser().getProfilePic() != null) {
-            response.setProfilePic(
-                    feed.getUser().getProfilePic()
-            );
+            response.setProfilePic(feed.getUser().getProfilePic());
         }
 
-        response.setEventType(
-                feed.getEventType()
-        );
-
-        response.setMessage(
-                feed.getMessage()
-        );
-
-        response.setReferenceId(
-                feed.getReferenceId()
-        );
-
-        response.setCreatedAt(
-                feed.getCreatedAt()
-        );
+        response.setEventType(feed.getEventType());
+        response.setMessage(feed.getMessage());
+        response.setReferenceId(feed.getReferenceId());
+        response.setCreatedAt(feed.getCreatedAt());
 
         return response;
-
     }
-
 }

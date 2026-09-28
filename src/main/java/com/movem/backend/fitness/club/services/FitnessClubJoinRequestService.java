@@ -5,28 +5,10 @@ import com.movem.backend.fitness.club.dtos.responses.FitnessClubJoinRequestRespo
 import java.util.List;
 
 public interface FitnessClubJoinRequestService {
-
-    FitnessClubJoinRequestResponse requestToJoin(
-            Integer clubId
-    );
-
-    List<FitnessClubJoinRequestResponse> getPendingRequests(
-            Integer clubId
-    );
-
-    FitnessClubJoinRequestResponse approveRequest(
-            Integer clubId,
-            Long requestId
-    );
-
-    FitnessClubJoinRequestResponse rejectRequest(
-            Integer clubId,
-            Long requestId
-    );
-
-    void cancelRequest(
-            Long requestId
-    );
-
+    FitnessClubJoinRequestResponse requestToJoin(Integer clubId);
+    List<FitnessClubJoinRequestResponse> getPendingRequests(Integer clubId);
+    FitnessClubJoinRequestResponse approveRequest(Integer clubId, Long requestId);
+    FitnessClubJoinRequestResponse rejectRequest(Integer clubId, Long requestId);
+    void cancelRequest(Long requestId);
     List<FitnessClubJoinRequestResponse> getMyRequests();
 }

@@ -14,68 +14,35 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/fitness/goals")
-@Tag(
-        name = "Fitness - Goal",
-        description = "Fitness Goal"
-)
+@Tag(name = "Fitness - Goal", description = "Fitness Goal")
 @RequiredArgsConstructor
 public class FitnessGoalController {
-
     private final FitnessGoalService fitnessGoalService;
 
     @PostMapping
-    public ResponseEntity<FitnessGoalResponse> createGoal(
-            @Valid @RequestBody CreateFitnessGoalRequest request
-    ) {
-
-        FitnessGoalResponse response =
-                fitnessGoalService.createGoal(request);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(response);
+    public ResponseEntity<FitnessGoalResponse> createGoal(@Valid @RequestBody CreateFitnessGoalRequest request) {
+        FitnessGoalResponse response = fitnessGoalService.createGoal(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
     public ResponseEntity<List<FitnessGoalResponse>> getMyGoals() {
-
-        return ResponseEntity.ok(
-                fitnessGoalService.getMyGoals()
-        );
+        return ResponseEntity.ok(fitnessGoalService.getMyGoals());
     }
 
     @GetMapping("/{goalId}")
-    public ResponseEntity<FitnessGoalResponse> getGoal(
-            @PathVariable Integer goalId
-    ) {
-
-        return ResponseEntity.ok(
-                fitnessGoalService.getGoal(goalId)
-        );
+    public ResponseEntity<FitnessGoalResponse> getGoal(@PathVariable Integer goalId) {
+        return ResponseEntity.ok(fitnessGoalService.getGoal(goalId));
     }
 
     @PutMapping("/{goalId}")
-    public ResponseEntity<FitnessGoalResponse> updateGoal(
-            @PathVariable Integer goalId,
-            @Valid @RequestBody CreateFitnessGoalRequest request
-    ) {
-
-        return ResponseEntity.ok(
-                fitnessGoalService.updateGoal(
-                        goalId,
-                        request
-                )
-        );
+    public ResponseEntity<FitnessGoalResponse> updateGoal(@PathVariable Integer goalId, @Valid @RequestBody CreateFitnessGoalRequest request) {
+        return ResponseEntity.ok(fitnessGoalService.updateGoal(goalId, request));
     }
 
     @DeleteMapping("/{goalId}")
-    public ResponseEntity<Void> deleteGoal(
-            @PathVariable Integer goalId
-    ) {
-
+    public ResponseEntity<Void> deleteGoal(@PathVariable Integer goalId) {
         fitnessGoalService.deleteGoal(goalId);
-
         return ResponseEntity.noContent().build();
     }
-
 }

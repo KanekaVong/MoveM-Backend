@@ -17,7 +17,7 @@ import com.movem.backend.authentication.services.CurrentUserService;
 import com.movem.backend.fitness.club.services.FitnessClubService;
 import com.movem.backend.commons.Event.Factory.Fitness.FitnessClubEventFactory;
 import com.movem.backend.shared.historyandlogs.featureevents.services.FeatureEventTrackingService;
-import com.movem.backend.shared.attachment.services.GcsFileStorageService;
+import com.movem.backend.shared.attachment.services.impl.GcsFileStorageService;
 import com.movem.backend.commons.enums.Fitness.ClubPrivacy;
 import com.movem.backend.commons.enums.Fitness.FitnessClubRole;
 import jakarta.transaction.Transactional;
@@ -183,12 +183,7 @@ public class FitnessClubServiceImpl implements FitnessClubService {
 
     private String generateUniqueJoinToken() {
         String token;
-        do {token = UUID.randomUUID()
-                    .toString()
-                    .replace("-", "")
-                    .substring(0, 12)
-                    .toUpperCase();
-
+        do {token = UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
         } while (fitnessClubRepository.existsByJoinToken(token));
         return token;
     }

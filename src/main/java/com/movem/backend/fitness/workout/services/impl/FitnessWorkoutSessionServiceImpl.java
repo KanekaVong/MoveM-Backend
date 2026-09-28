@@ -4,6 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.movem.backend.commons.enums.Fitness.*;
+import com.movem.backend.fitness.achievement.dtos.responses.UserAchievementResponse;
+import com.movem.backend.fitness.achievement.entities.UserAchievement;
+import com.movem.backend.fitness.achievement.repositories.UserAchievementRepository;
+import com.movem.backend.fitness.achievement.services.AchievementService;
 import com.movem.backend.shared.attachment.dtos.responses.AttachmentResponse;
 import com.movem.backend.fitness.workout.dtos.responses.SocialWorkoutResponse;
 import com.movem.backend.shared.activity.entities.Activity;
@@ -69,6 +73,8 @@ public class FitnessWorkoutSessionServiceImpl implements FitnessWorkoutSessionSe
     private final FitnessProfileRepository fitnessProfileRepository;
     private final SoloChallengeCatalogRepository soloChallengeRepository;
     private final FitnessChallengeParticipantRepository participantRepository;
+    private final AchievementService achievementService;
+    private final UserAchievementRepository userAchievementRepository;
     private final CalorieCalculationService calorieCalculationService;
     private final CurrentUserService currentUserService;
     private final ActivityService activityService;
@@ -300,15 +306,12 @@ public class FitnessWorkoutSessionServiceImpl implements FitnessWorkoutSessionSe
         session.setStatus(FitnessWorkoutStatus.COMPLETED);
 
         Activity activity = session.getActivity();
-
         if (activity != null) {
             activity.setStatus(ActivityStatus.COMPLETE);
             activity.setUpdatedAt(now);
             activityRepository.save(activity);
         }
-
         FitnessChallengeParticipant participant = session.getGroupChallengeParticipant();
-
         if (participant != null && participant.getStatus() == FitnessChallengeParticipantStatus.ACTIVE) {
 
             participant.setStatus(FitnessChallengeParticipantStatus.COMPLETED);
@@ -322,8 +325,16 @@ public class FitnessWorkoutSessionServiceImpl implements FitnessWorkoutSessionSe
 
         FitnessWorkoutSession saved = workoutSessionRepository.save(session);
 
-        featureEventTrackingService.handle(workoutEventFactory.completed(saved, currentUser));
-        return workoutSessionMapper.toResponse(saved);
+        List<UserAchievement> currentAchievements = featureEventTrackingService.handle(workoutEventFactory.completed(saved, currentUser));
+        FitnessWorkoutSessionResponse response = workoutSessionMapper.toResponse(saved);
+        List<UserAchievementResponse> achievementResponses = achievementService.toResponse(currentAchievements);
+        currentAchievements.forEach(userAchievement -> userAchievement.setNotified(true));
+
+        userAchievementRepository.saveAll(currentAchievements);
+
+        response.setCurrentAchievements(achievementResponses);
+
+        return response;
     }
 
     @Override
@@ -508,7 +519,6 @@ public class FitnessWorkoutSessionServiceImpl implements FitnessWorkoutSessionSe
     @Override
     @Transactional
     public List<WorkoutRoutePointResponse> getWorkoutRoute(Integer sessionId) {
-
         User currentUser = currentUserService.getCurrentUser();
 
         FitnessWorkoutSession session = workoutSessionRepository
@@ -534,7 +544,6 @@ public class FitnessWorkoutSessionServiceImpl implements FitnessWorkoutSessionSe
     @Override
     @Transactional
     public SocialWorkoutResponse getSocialWorkout(Integer sessionId) {
-
         FitnessWorkoutSession session = workoutSessionRepository.findById(sessionId).orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
         if (session.getStatus() != FitnessWorkoutStatus.COMPLETED) {
@@ -545,9 +554,7 @@ public class FitnessWorkoutSessionServiceImpl implements FitnessWorkoutSessionSe
         User owner = session.getUser();
 
         boolean isOwner = owner.getId().equals(currentUser.getId());
-
-        boolean isFriend =
-                areFriends(owner, currentUser);
+        boolean isFriend = areFriends(owner, currentUser);
         if (!isOwner && !isFriend) {
             throw new UnauthorizedActionException("You are not allowed to view this workout.");
         }
@@ -582,7 +589,6 @@ public class FitnessWorkoutSessionServiceImpl implements FitnessWorkoutSessionSe
     @Override
     @Transactional
     public FitnessWorkoutSummaryResponse getWorkoutSummary(Integer sessionId) {
-
         User currentUser = currentUserService.getCurrentUser();
 
         FitnessWorkoutSession session = workoutSessionRepository.findByIdAndUser(sessionId, currentUser).orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));

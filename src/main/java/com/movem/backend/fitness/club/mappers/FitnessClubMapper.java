@@ -5,7 +5,7 @@ import com.movem.backend.shared.attachment.entities.Attachment;
 import com.movem.backend.fitness.club.entities.FitnessClub;
 import com.movem.backend.shared.attachment.repositories.AttachmentRepository;
 import com.movem.backend.fitness.club.repositories.FitnessClubMemberRepository;
-import com.movem.backend.shared.attachment.services.GcsFileStorageService;
+import com.movem.backend.shared.attachment.services.impl.GcsFileStorageService;
 import com.movem.backend.commons.enums.Fitness.FitnessAttachmentType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -15,7 +15,6 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class FitnessClubMapper {
-
     private final AttachmentRepository attachmentRepository;
     private final GcsFileStorageService gcsFileStorageService;
     private final FitnessClubMemberRepository fitnessClubMemberRepository;

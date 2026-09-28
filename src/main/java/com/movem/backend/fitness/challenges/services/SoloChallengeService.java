@@ -7,27 +7,10 @@ import com.movem.backend.commons.enums.Fitness.WorkoutType;
 import java.util.List;
 
 public interface SoloChallengeService {
-
     List<SoloChallengeResponse> getAllChallenges();
-
-    SoloChallengeResponse getChallenge(
-            Integer challengeId
-    );
-
-    List<SoloChallengeResponse> getChallengesByWorkoutType(
-            WorkoutType workoutType
-    );
-
-    SoloChallengeResponse createChallenge(
-            CreateSoloChallengeRequest request
-    );
-
-    SoloChallengeResponse updateChallenge(
-            Integer challengeId,
-            UpdateSoloChallengeRequest request
-    );
-
-    void deleteChallenge(
-            Integer challengeId
-    );
+    SoloChallengeResponse getChallenge(Integer challengeId);
+    List<SoloChallengeResponse> getChallengesByWorkoutType(WorkoutType workoutType);
+    SoloChallengeResponse createChallenge(CreateSoloChallengeRequest request);
+    SoloChallengeResponse updateChallenge(Integer challengeId, UpdateSoloChallengeRequest request);
+    void deleteChallenge(Integer challengeId);
 }

@@ -17,7 +17,6 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class ActivityCleanupScheduler {
-
     @Value("${app.activity.retention-days}")
     private int retentionDays;
 
@@ -28,37 +27,24 @@ public class ActivityCleanupScheduler {
     @Scheduled(cron = "0 45 8 * * ?")
     @Transactional
     public void cleanupDeletedActivities() {
-
         LocalDateTime cutoff = LocalDateTime.now().minusMinutes(retentionDays);
-
-        List<Activity> expiredActivities =
-                activityRepository.findByDeletedAtIsNotNullAndDeletedAtBefore(cutoff);
+        List<Activity> expiredActivities = activityRepository.findByDeletedAtIsNotNullAndDeletedAtBefore(cutoff);
 
         if (expiredActivities.isEmpty()) {
-
             log.info("Activity cleanup finished. No expired activities found.");
-
             return;
         }
 
-        log.info("Activity cleanup started. {} expired activities found.",
-                expiredActivities.size());
+        log.info("Activity cleanup started. {} expired activities found.", expiredActivities.size());
 
         int success = 0;
         int failed = 0;
 
         for (Activity activity : expiredActivities) {
-
             try {
-
                 activityDeletionService.permanentlyDelete(activity);
-
                 success++;
-
-                log.info("Permanently deleted activity [{}] {}",
-                        activity.getId(),
-                        activity.getActivityName());
-
+                log.info("Permanently deleted activity [{}] {}", activity.getId(), activity.getActivityName());
             } catch (Exception ex) {
                 failed++;
                 ex.printStackTrace();
@@ -70,9 +56,6 @@ public class ActivityCleanupScheduler {
                 Activity cleanup completed.
                 Deleted: {}
                 Failed : {}
-                """,
-                success,
-                failed
-        );
+                """, success, failed);
     }
 }

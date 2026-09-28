@@ -7,33 +7,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface CommentService {
+    CommentResponse createComment(String activityId, CreateCommentRequest request);
 
-    CommentResponse createComment(
-            String activityId,
-            CreateCommentRequest request
-    );
+    Page<CommentResponse> getComments(String activityId, Pageable pageable);
 
-    Page<CommentResponse> getComments(
-            String activityId,
-            Pageable pageable
-    );
+    CommentResponse updateComment(Long commentId, UpdateCommentRequest request);
 
-    CommentResponse updateComment(
-            Long commentId,
-            UpdateCommentRequest request
-    );
+    void deleteComment(Long commentId);
 
-    void deleteComment(
-            Long commentId
-    );
+    CommentResponse createWorkoutComment(Integer sessionId, CreateCommentRequest request);
 
-    CommentResponse createWorkoutComment(
-            Integer sessionId,
-            CreateCommentRequest request
-    );
-
-    Page<CommentResponse> getWorkoutComments(
-            Integer sessionId,
-            Pageable pageable
-    );
+    Page<CommentResponse> getWorkoutComments(Integer sessionId, Pageable pageable);
 }

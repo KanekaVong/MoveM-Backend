@@ -9,12 +9,8 @@ import com.movem.backend.commons.Util.BaseUtil.BaseActivityUpdateSource;
 import java.util.List;
 
 public interface ActivityService {
-
     Activity createActivity(BaseActivityCreateSource source, User user, ActivityType activityType);
-
     Activity attachLabels(Activity activity, List<Integer> labelIds);
-
     Activity updateActivity(Activity activity, BaseActivityUpdateSource source);
-
     void permanentlyDeleteActivity(String activityId);
 }

@@ -17,7 +17,6 @@ import java.util.List;
 @Tag(name = "Fitness - Club", description = "Fitness Club")
 @RequiredArgsConstructor
 public class FitnessClubMemberController {
-
     private final FitnessClubMemberService fitnessClubMemberService;
 
     @PostMapping("/{clubId}/join")

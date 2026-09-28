@@ -2,43 +2,38 @@ package com.movem.backend.trip.entities;
 
 import com.movem.backend.authentication.entities.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "trip_expense_splits", indexes = {
-        @Index(name = "idx_trip_split_expense", columnList = "expense_id"),
-        @Index(name = "idx_trip_split_user", columnList = "user_id")
-})
+@Table(name = "trip_expense_splits", indexes = {@Index(name = "idx_trip_split_expense", columnList = "expense_id"), @Index(name = "idx_trip_split_user", columnList = "user_id")})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TripExpenseSplit {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "expense_id", nullable = false)
-    private TripExpense expense;
+    TripExpense expense;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    User user;
 
     @Column(name = "amount_owed", nullable = false)
-    private BigDecimal amountOwed;
+    BigDecimal amountOwed;
 
     @Column(name = "is_settled")
-    private Boolean isSettled = false;
+    Boolean isSettled = false;
 
     @Column(name = "settled_at")
-    private LocalDateTime settledAt;
+    LocalDateTime settledAt;
 }

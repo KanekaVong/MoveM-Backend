@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 public class CurrentUserMapper {
 
     public UserResponse toResponse(User user) {
-
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())

@@ -1,6 +1,7 @@
 package com.movem.backend.trip.dtos.responses;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,23 +12,15 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TripExpenseResponse {
-
-    private Integer id;
-
-    private Integer budgetId;
-
-    private String category;
-
-    private Integer payerId;
-
-    private String payerName;
-
-    private BigDecimal amount;
-
-    private String description;
-
-    private LocalDateTime expenseDate;
-
-    private List<TripExpenseSplitResponse> splits;
+     Integer id;
+     Integer budgetId;
+     String category;
+     Integer payerId;
+     String payerName;
+     BigDecimal amount;
+     String description;
+     LocalDateTime expenseDate;
+     List<TripExpenseSplitResponse> splits;
 }

@@ -11,14 +11,11 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RegisterRequest {
-
     @NotBlank
     String username;
-
     @Email
     @NotBlank
     String email;
-
     @NotBlank
     String password;
 }

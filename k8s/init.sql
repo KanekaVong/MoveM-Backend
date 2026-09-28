@@ -198,6 +198,8 @@ CREATE TABLE `user_achievements` (
   `user_id` INT NOT NULL,
   `achievement_id` INT NOT NULL,
   `earned_at` TIMESTAMP NULL,
+    @Column(nullable = false)
+    private boolean notified = false;
   PRIMARY KEY (`user_id`, `achievement_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
   FOREIGN KEY (`achievement_id`) REFERENCES `achievements` (`id`)

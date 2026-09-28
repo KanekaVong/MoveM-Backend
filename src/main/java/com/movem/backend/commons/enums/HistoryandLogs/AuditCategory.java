@@ -5,7 +5,6 @@ public enum AuditCategory {
     FITNESS,
     TRIP,
     FRIEND,
-
     GROUP,
     CHECKLIST,
     LABEL,

@@ -11,22 +11,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/activities")
-@Tag(
-        name = "Activity - Base"
-)
+@Tag(name = "Activity - Base")
 @RequiredArgsConstructor
 public class ActivityController {
-
     private final ActivityService activityService;
 
     @DeleteMapping("/{activityId}/permanent")
-    public ResponseEntity<Void> permanentlyDeleteActivity(
-            @PathVariable String activityId
-    ) {
-
+    public ResponseEntity<Void> permanentlyDeleteActivity(@PathVariable String activityId) {
         activityService.permanentlyDeleteActivity(activityId);
-
         return ResponseEntity.noContent().build();
     }
-
 }

@@ -7,13 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TrustedDeviceRepository extends JpaRepository<TrustedDevice, Integer> {
-
     Optional<TrustedDevice> findByJti(String jti);
-
-    Optional<TrustedDevice> findByUserIdAndDeviceIdAndRevokedAtIsNull(
-            Integer userId,
-            String deviceId
-    );
-
+    Optional<TrustedDevice> findByUserIdAndDeviceIdAndRevokedAtIsNull(Integer userId, String deviceId);
     List<TrustedDevice> findByUserIdAndRevokedAtIsNull(Integer userId);
 }

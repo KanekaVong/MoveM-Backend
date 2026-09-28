@@ -9,7 +9,6 @@ import com.movem.backend.shared.group.entities.ActivityGroup;
 import java.util.List;
 
 public interface GroupService {
-
     ActivityGroup getOrCreateGroup(Activity activity);
 
     GroupInviteResponse inviteMember(String activityId, InviteMemberRequest request);
@@ -34,5 +33,4 @@ public interface GroupService {
     List<MyGroupResponse> getMyGroups();
 
     void leaveGroup(String activityId);
-
 }

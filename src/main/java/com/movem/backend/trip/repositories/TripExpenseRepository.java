@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface TripExpenseRepository extends JpaRepository<TripExpense, Integer> {
-
     @EntityGraph(attributePaths = {"payer", "splits", "splits.user", "budget"})
     List<TripExpense> findByBudgetIn(List<TripBudget> budgets);
 

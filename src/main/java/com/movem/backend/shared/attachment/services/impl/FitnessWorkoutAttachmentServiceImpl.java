@@ -15,10 +15,10 @@ import com.movem.backend.fitness.club.repositories.FitnessClubMemberRepository;
 import com.movem.backend.fitness.club.repositories.FitnessClubRepository;
 import com.movem.backend.fitness.workout.repositories.FitnessWorkoutSessionRepository;
 import com.movem.backend.shared.attachment.services.AttachmentService;
-import com.movem.backend.shared.attachment.services.FitnessWorkoutAttachmentService;
 import com.movem.backend.authentication.services.CurrentUserService;
 import com.movem.backend.commons.enums.Fitness.FitnessClubRole;
 import com.movem.backend.commons.enums.Fitness.FitnessWorkoutStatus;
+import com.movem.backend.shared.attachment.services.FitnessWorkoutAttachmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,7 +29,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class FitnessWorkoutAttachmentServiceImpl implements FitnessWorkoutAttachmentService {
-
     private final AttachmentRepository attachmentRepository;
     private final FitnessWorkoutSessionRepository workoutSessionRepository;
     private final AttachmentService attachmentService;
@@ -37,8 +36,6 @@ public class FitnessWorkoutAttachmentServiceImpl implements FitnessWorkoutAttach
     private final FitnessClubRepository fitnessClubRepository;
     private final FitnessClubMemberRepository fitnessClubMemberRepository;
     private final GroupFitnessChallengeRepository groupFitnessChallengeRepository;
-
-
 
     @Override
     public AttachmentResponse upload(Integer sessionId, MultipartFile file) {
@@ -123,7 +120,6 @@ public class FitnessWorkoutAttachmentServiceImpl implements FitnessWorkoutAttach
                         .orElseThrow(() -> new UnauthorizedActionException("You are not a member of this fitness club."));
 
         boolean isOwnerOrAdmin = membership.getRole() == FitnessClubRole.OWNER || membership.getRole() == FitnessClubRole.ADMIN;
-
         boolean isCreator = challenge.getCreatedBy().getId().equals(currentUser.getId());
 
         if (!isOwnerOrAdmin && !isCreator) {
@@ -140,8 +136,7 @@ public class FitnessWorkoutAttachmentServiceImpl implements FitnessWorkoutAttach
 
     @Override
     public List<AttachmentResponse> getChallengeAttachments(Integer challengeId) {
-        GroupFitnessChallenge challenge =
-                groupFitnessChallengeRepository.findById(challengeId)
+        GroupFitnessChallenge challenge = groupFitnessChallengeRepository.findById(challengeId)
                         .orElseThrow(() -> new ResourceNotFoundException("Group fitness challenge not found."));
 
         return attachmentRepository
@@ -152,13 +147,11 @@ public class FitnessWorkoutAttachmentServiceImpl implements FitnessWorkoutAttach
     }
 
     private FitnessClub getClub(Integer clubId) {
-        return fitnessClubRepository.findById(clubId)
-                .orElseThrow(() -> new ResourceNotFoundException("Fitness club not found."));
+        return fitnessClubRepository.findById(clubId).orElseThrow(() -> new ResourceNotFoundException("Fitness club not found."));
     }
 
     private Attachment getAttachment(Long attachmentId) {
-        return attachmentRepository.findById(attachmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Uploaded attachment not found."));
+        return attachmentRepository.findById(attachmentId).orElseThrow(() -> new ResourceNotFoundException("Uploaded attachment not found."));
     }
 
     private void requireClubOwner(User currentUser, FitnessClub club) {

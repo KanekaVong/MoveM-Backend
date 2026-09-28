@@ -1,31 +1,33 @@
 package com.movem.backend.shared.analysis.statistics.dtos.responses;
 
 import com.movem.backend.fitness.profileandgoal.dtos.responses.FitnessMetricProgressResponse;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Data
-@Builder(toBuilder = true)public class FitnessStatisticsResponse {
+@Builder(toBuilder = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class FitnessStatisticsResponse {
+     long totalWorkouts;
+     long workoutsToday;
+     long workoutsThisWeek;
 
-    private long totalWorkouts;
-    private long workoutsToday;
-    private long workoutsThisWeek;
+     long totalSteps;
+     long stepsToday;
+     long stepsThisWeek;
 
-    private long totalSteps;
-    private long stepsToday;
-    private long stepsThisWeek;
+     BigDecimal totalDistance;
+     BigDecimal distanceToday;
+     BigDecimal distanceThisWeek;
 
-    private BigDecimal totalDistance;
-    private BigDecimal distanceToday;
-    private BigDecimal distanceThisWeek;
+     BigDecimal caloriesToday;
+     BigDecimal caloriesThisWeek;
+     BigDecimal totalCalories;
 
-    private BigDecimal caloriesToday;
-    private BigDecimal caloriesThisWeek;
-    private BigDecimal totalCalories;
-
-    private List<FitnessMetricProgressResponse> metricGoals;
-
+     List<FitnessMetricProgressResponse> metricGoals;
 }

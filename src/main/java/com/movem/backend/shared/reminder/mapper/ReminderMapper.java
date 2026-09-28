@@ -6,12 +6,9 @@ import com.movem.backend.commons.BaseMapper.AbstractBaseMapper;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ReminderMapper
-        extends AbstractBaseMapper<Reminder, ReminderResponse> {
-
+public class ReminderMapper extends AbstractBaseMapper<Reminder, ReminderResponse> {
     @Override
     public ReminderResponse toResponse(Reminder reminder) {
-
         if (reminder == null) {
             return null;
         }

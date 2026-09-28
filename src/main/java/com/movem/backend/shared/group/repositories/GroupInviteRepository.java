@@ -12,46 +12,17 @@ import org.springframework.data.jpa.repository.Modifying;
 import java.util.List;
 import java.util.Optional;
 
-public interface GroupInviteRepository
-        extends JpaRepository<GroupInvite, Long> {
+public interface GroupInviteRepository extends JpaRepository<GroupInvite, Long> {
+    Optional<GroupInvite> findByActivityGroupAndInviteeAndStatus(ActivityGroup activityGroup, User invitee, InviteStatus status);
 
-    Optional<GroupInvite> findByActivityGroupAndInviteeAndStatus(
-            ActivityGroup activityGroup,
-            User invitee,
-            InviteStatus status
-    );
+    @EntityGraph(attributePaths = {"inviter", "invitee", "activityGroup", "activityGroup.activity"})
+    List<GroupInvite> findByInviteeAndStatusOrderByInvitedAtDesc(User invitee, InviteStatus status);
 
-    @EntityGraph(attributePaths = {
-            "inviter",
-            "invitee",
-            "activityGroup",
-            "activityGroup.activity"
-    })
-    List<GroupInvite> findByInviteeAndStatusOrderByInvitedAtDesc(
-            User invitee,
-            InviteStatus status
-    );
+    @EntityGraph(attributePaths = {"inviter", "invitee", "activityGroup", "activityGroup.activity"})
+    List<GroupInvite> findByActivityGroup(ActivityGroup activityGroup);
 
-    @EntityGraph(attributePaths = {
-            "inviter",
-            "invitee",
-            "activityGroup",
-            "activityGroup.activity"
-    })
-    List<GroupInvite> findByActivityGroup(
-            ActivityGroup activityGroup
-    );
-
-    @EntityGraph(attributePaths = {
-            "inviter",
-            "invitee",
-            "activityGroup",
-            "activityGroup.activity"
-    })
-    List<GroupInvite> findByActivityGroupAndStatus(
-            ActivityGroup activityGroup,
-            InviteStatus status
-    );
+    @EntityGraph(attributePaths = {"inviter", "invitee", "activityGroup", "activityGroup.activity"})
+    List<GroupInvite> findByActivityGroupAndStatus(ActivityGroup activityGroup, InviteStatus status);
 
     @Transactional
     @Modifying

@@ -2,10 +2,8 @@ package com.movem.backend.shared.reminder.dtos.requests;
 
 import com.movem.backend.commons.enums.shared.ReminderType;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
@@ -13,12 +11,11 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UpdateReminderRequest {
+    @NotNull
+    ReminderType type;
 
     @NotNull
-    private ReminderType type;
-
-    @NotNull
-    private LocalDateTime remindAt;
-
+    LocalDateTime remindAt;
 }

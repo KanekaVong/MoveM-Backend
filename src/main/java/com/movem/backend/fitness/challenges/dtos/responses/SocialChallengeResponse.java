@@ -1,31 +1,34 @@
 package com.movem.backend.fitness.challenges.dtos.responses;
 
 import com.movem.backend.commons.enums.Fitness.FitnessChallengeStatus;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class SocialChallengeResponse {
-    private Integer challengeId;
-    private String name;
-    private String description;
-    private String workoutType;
-    private BigDecimal targetValue;
-    private String targetUnit;
-    private FitnessChallengeStatus status;
-    private LocalDateTime startAt;
-    private LocalDateTime endAt;
+     Integer challengeId;
+     String name;
+     String description;
+     String workoutType;
+     BigDecimal targetValue;
+     String targetUnit;
+     FitnessChallengeStatus status;
+     LocalDateTime startAt;
+     LocalDateTime endAt;
 
-    private Integer creatorId;
-    private String creatorUsername;
+     Integer creatorId;
+     String creatorUsername;
 
-    private long participantCount;
-    private long completedParticipants;
+     long participantCount;
+     long completedParticipants;
 
-    private BigDecimal myProgress;
-    private boolean myCompleted;
+     BigDecimal myProgress;
+     boolean myCompleted;
 }

@@ -1,10 +1,8 @@
 package com.movem.backend.trip.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
@@ -14,17 +12,18 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TripPackingItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    Integer id;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trip_activity_id", nullable = false)
-    private Trip trip;
+    Trip trip;
     @Column(name = "item_name", nullable = false)
-    private String itemName;
+    String itemName;
     @Column(name = "is_packed")
-    private Boolean isPacked = false;
+    Boolean isPacked = false;
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    LocalDateTime createdAt;
 }

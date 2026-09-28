@@ -36,20 +36,17 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.getUnreadCount());
     }
 
-
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<Void> markAsRead(@PathVariable Long notificationId) {
         notificationService.markAsRead(notificationId);
         return ResponseEntity.noContent().build();
     }
 
-
     @PatchMapping("/read-all")
     public ResponseEntity<Void> markAllAsRead() {
         notificationService.markAllAsRead();
         return ResponseEntity.noContent().build();
     }
-
 
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<Void> deleteNotification(@PathVariable Long notificationId) {

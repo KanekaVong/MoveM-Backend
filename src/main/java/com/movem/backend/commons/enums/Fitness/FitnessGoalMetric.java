@@ -1,7 +1,6 @@
 package com.movem.backend.commons.enums.Fitness;
 
 public enum FitnessGoalMetric {
-
     DAILY_STEPS,
     DAILY_DISTANCE,
 

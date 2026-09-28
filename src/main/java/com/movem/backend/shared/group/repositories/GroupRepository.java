@@ -8,9 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 
 import java.util.Optional;
 
-public interface GroupRepository
-        extends JpaRepository<ActivityGroup, Integer> {
-
+public interface GroupRepository extends JpaRepository<ActivityGroup, Integer> {
     Optional<ActivityGroup> findByActivity(Activity activity);
 
     Optional<ActivityGroup> findByActivityId(String activityId);

@@ -5,39 +5,43 @@ import com.movem.backend.trip.entities.Trip;
 import com.movem.backend.commons.enums.shared.ReminderType;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-        name = "reminders",
-        indexes = {
-                @Index(name = "idx_reminder_task", columnList = "task_activity_id"),
+@Table(name = "reminders", indexes = {
+        @Index(name = "idx_reminder_task", columnList = "task_activity_id"),
                 @Index(name = "idx_reminder_trip", columnList = "trip_activity_id"),
                 @Index(name = "idx_reminder_time", columnList = "remind_at"),
-                @Index(name = "idx_reminder_sent", columnList = "is_sent")
-        }
-)
+                @Index(name = "idx_reminder_sent", columnList = "is_sent")})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Reminder {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    Integer id;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_activity_id")
-    private Task task;
+    Task task;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trip_activity_id")
-    private Trip trip;
+    Trip trip;
+
     @Column(name = "remind_at")
-    private LocalDateTime remindAt;
+    LocalDateTime remindAt;
+
     @Enumerated(EnumType.STRING)
-    private ReminderType type;
+    ReminderType type;
+
     @Column(name = "is_sent")
-    private Boolean isSent = false;
+    Boolean isSent = false;
+
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    LocalDateTime createdAt;
 }

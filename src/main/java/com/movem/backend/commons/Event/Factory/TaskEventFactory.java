@@ -24,10 +24,7 @@ public class TaskEventFactory {
                 .auditCategory(AuditCategory.TASK)
                 .auditSeverity(AuditSeverity.INFO)
                 .auditMessage("Created task.")
-                .actions(Set.of(
-                        FeatureEventAction.ACTIVITY_FEED,
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 
@@ -43,10 +40,7 @@ public class TaskEventFactory {
                 .auditMessage("Moved task to recycle bin.")
                 .oldValue("ACTIVE")
                 .newValue("DELETED")
-                .actions(Set.of(
-                        FeatureEventAction.ACTIVITY_FEED,
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 
@@ -62,10 +56,7 @@ public class TaskEventFactory {
                 .auditMessage("Restored task.")
                 .oldValue("DELETED")
                 .newValue("PENDING")
-                .actions(Set.of(
-                        FeatureEventAction.ACTIVITY_FEED,
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 
@@ -81,19 +72,11 @@ public class TaskEventFactory {
                 .auditMessage("Completed task.")
                 .oldValue(ActivityStatus.PENDING.name())
                 .newValue(ActivityStatus.COMPLETE.name())
-                .actions(Set.of(
-                        FeatureEventAction.ACTIVITY_FEED,
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 
-    public FeatureEvent deadlineChanged(
-            Activity activity,
-            User actor,
-            LocalDateTime oldDeadline,
-            LocalDateTime newDeadline
-    ) {
+    public FeatureEvent deadlineChanged(Activity activity, User actor, LocalDateTime oldDeadline, LocalDateTime newDeadline) {
         return FeatureEvent.builder()
                 .activity(activity)
                 .actor(actor)
@@ -105,22 +88,11 @@ public class TaskEventFactory {
                 .auditMessage("Changed deadline.")
                 .oldValue(oldDeadline == null ? null : oldDeadline.toString())
                 .newValue(newDeadline == null ? null : newDeadline.toString())
-                .actions(Set.of(
-                        FeatureEventAction.ACTIVITY_FEED,
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 
-    public FeatureEvent taskUpdated(
-            Activity activity,
-            User actor,
-            String entity,
-            String auditMessage,
-            String oldValue,
-            String newValue,
-            boolean includeFeed
-    ) {
+    public FeatureEvent taskUpdated(Activity activity, User actor, String entity, String auditMessage, String oldValue, String newValue, boolean includeFeed) {
         return FeatureEvent.builder()
                 .activity(activity)
                 .actor(actor)
@@ -132,23 +104,11 @@ public class TaskEventFactory {
                 .auditMessage(auditMessage)
                 .oldValue(oldValue)
                 .newValue(newValue)
-                .actions(
-                        includeFeed
-                                ? Set.of(
-                                FeatureEventAction.ACTIVITY_FEED,
-                                FeatureEventAction.AUDIT_LOG
-                        )
-                                : Set.of(
-                                FeatureEventAction.AUDIT_LOG
-                        )
-                )
+                .actions(includeFeed ? Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG) : Set.of(FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 
-    public FeatureEvent taskRecurred(
-            Activity activity,
-            User actor
-    ) {
+    public FeatureEvent taskRecurred(Activity activity, User actor) {
         return FeatureEvent.builder()
                 .activity(activity)
                 .actor(actor)
@@ -157,18 +117,11 @@ public class TaskEventFactory {
                 .auditCategory(AuditCategory.TASK)
                 .auditSeverity(AuditSeverity.INFO)
                 .auditMessage("Generated next recurring task.")
-                .actions(Set.of(
-                        FeatureEventAction.ACTIVITY_FEED,
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 
-
-    public FeatureEvent labelAdded(
-            User actor,
-            String labelName
-    ) {
+    public FeatureEvent labelAdded(User actor, String labelName) {
         return FeatureEvent.builder()
                 .actor(actor)
                 .feedEvent(ActivityFeedEvent.LABEL_ADDED)
@@ -177,17 +130,11 @@ public class TaskEventFactory {
                 .auditEntity("label")
                 .auditMessage("Created label.")
                 .newValue(labelName)
-                .actions(Set.of(
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .actions(Set.of(FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 
-    public FeatureEvent labelUpdated(
-            User actor,
-            String oldName,
-            String newName
-    ) {
+    public FeatureEvent labelUpdated(User actor, String oldName, String newName) {
         return FeatureEvent.builder()
                 .actor(actor)
                 .feedEvent(ActivityFeedEvent.LABEL_ADDED)
@@ -197,16 +144,11 @@ public class TaskEventFactory {
                 .auditMessage("Updated label.")
                 .oldValue(oldName)
                 .newValue(newName)
-                .actions(Set.of(
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .actions(Set.of(FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 
-    public FeatureEvent labelRemoved(
-            User actor,
-            String oldName
-    ) {
+    public FeatureEvent labelRemoved(User actor, String oldName) {
         return FeatureEvent.builder()
                 .actor(actor)
                 .feedEvent(ActivityFeedEvent.LABEL_REMOVED)
@@ -215,9 +157,7 @@ public class TaskEventFactory {
                 .auditEntity("label")
                 .auditMessage("Deleted label.")
                 .oldValue(oldName)
-                .actions(Set.of(
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .actions(Set.of(FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 }

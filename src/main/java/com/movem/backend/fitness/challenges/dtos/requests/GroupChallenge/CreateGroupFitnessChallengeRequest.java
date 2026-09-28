@@ -6,35 +6,37 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateGroupFitnessChallengeRequest {
 
     @NotBlank(message = "Challenge name is required.")
     @Size(max = 150)
-    private String name;
+    String name;
 
     @NotNull(message = "Workout type is required.")
-    private WorkoutType workoutType;
+    WorkoutType workoutType;
 
     @NotNull(message = "Target value is required.")
     @DecimalMin(value = "0.01")
-    private BigDecimal targetValue;
+    BigDecimal targetValue;
 
     @NotNull(message = "Target unit is required.")
-    private ChallengeTargetUnit targetUnit;
-
-    private String description;
+    ChallengeTargetUnit targetUnit;
+    String description;
 
     @NotNull(message = "Start time is required.")
-    private LocalDateTime startAt;
+    LocalDateTime startAt;
 
     @NotNull(message = "End time is required.")
-    private LocalDateTime endAt;
+    LocalDateTime endAt;
 }

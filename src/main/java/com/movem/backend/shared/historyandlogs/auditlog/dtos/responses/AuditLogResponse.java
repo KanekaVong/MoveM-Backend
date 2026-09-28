@@ -4,6 +4,7 @@ import com.movem.backend.commons.enums.shared.ActivityFeedEvent;
 import com.movem.backend.commons.enums.HistoryandLogs.AuditCategory;
 import com.movem.backend.commons.enums.HistoryandLogs.AuditSeverity;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
@@ -12,28 +13,18 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class AuditLogResponse {
-
-    private Long id;
-
-    private Integer userId;
-
-    private String username;
-
-    private AuditCategory category;
-
-    private AuditSeverity severity;
-
-    private String fieldChanged;
-
-    private ActivityFeedEvent eventType;
-
-    private String description;
-
-    private String oldValue;
-
-    private String newValue;
-
-    private LocalDateTime createdAt;
+     Long id;
+     Integer userId;
+     String username;
+     AuditCategory category;
+     AuditSeverity severity;
+     String fieldChanged;
+     ActivityFeedEvent eventType;
+     String description;
+     String oldValue;
+     String newValue;
+     LocalDateTime createdAt;
 
 }

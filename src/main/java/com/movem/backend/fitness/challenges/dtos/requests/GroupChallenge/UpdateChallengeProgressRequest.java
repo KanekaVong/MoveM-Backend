@@ -12,9 +12,6 @@ import java.math.BigDecimal;
 public class UpdateChallengeProgressRequest {
 
     @NotNull(message = "Current value is required.")
-    @DecimalMin(
-            value = "0.0",
-            message = "Current value cannot be negative."
-    )
+    @DecimalMin(value = "0.0", message = "Current value cannot be negative.")
     private BigDecimal currentValue;
 }

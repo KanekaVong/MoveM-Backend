@@ -12,9 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/fitness/achievements")
-@Tag(
-        name = "Achievements"
-)
+@Tag(name = "Achievements")
 @RequiredArgsConstructor
 public class AchievementController {
 
@@ -22,24 +20,21 @@ public class AchievementController {
 
     @GetMapping("/me/count")
     public ResponseEntity<Long> getMyAchievementCount() {
-
-        return ResponseEntity.ok(
-                achievementService.getMyAchievementCount()
-        );
+        return ResponseEntity.ok(achievementService.getMyAchievementCount());
     }
 
     @GetMapping("/me")
     public ResponseEntity<List<UserAchievementResponse>> getMyAchievements() {
+        return ResponseEntity.ok(achievementService.getMyAchievements());
+    }
 
-        return ResponseEntity.ok(
-                achievementService.getMyAchievements()
-        );
+    @GetMapping("/current")
+    public ResponseEntity<List<UserAchievementResponse>> getCurrentAchievement() {
+        return ResponseEntity.ok(achievementService.getCurrentAchievement());
     }
 
     @GetMapping
     public ResponseEntity<List<AchievementResponse>> getAllAchievements() {
-        return ResponseEntity.ok(
-                achievementService.getAllAchievements()
-        );
+        return ResponseEntity.ok(achievementService.getAllAchievements());
     }
 }

@@ -1,10 +1,8 @@
 package com.movem.backend.trip.dtos.requests.Update;
 
 import jakarta.validation.constraints.NotEmpty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
@@ -12,9 +10,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReorderTripStopsRequest {
-
-    // Stop IDs in the new visiting order — every existing stop must appear exactly once
     @NotEmpty
-    private List<Integer> stopIds;
+    List<Integer> stopIds;
 }

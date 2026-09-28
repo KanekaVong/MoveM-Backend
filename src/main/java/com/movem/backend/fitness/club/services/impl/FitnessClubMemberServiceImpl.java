@@ -28,7 +28,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class FitnessClubMemberServiceImpl implements FitnessClubMemberService {
-
     private final FeatureEventTrackingService featureEventTrackingService;
     private final FitnessClubEventFactory fitnessClubEventFactory;
     private final FitnessClubMemberRepository fitnessClubMemberRepository;
@@ -111,7 +110,6 @@ public class FitnessClubMemberServiceImpl implements FitnessClubMemberService {
 
     @Override
     public FitnessClubMemberResponse updateMemberRole(Integer clubId, Integer userId, UpdateFitnessClubMemberRoleRequest request) {
-
         User currentUser = currentUserService.getCurrentUser();
 
         FitnessClub club = getClub(clubId);
@@ -146,7 +144,6 @@ public class FitnessClubMemberServiceImpl implements FitnessClubMemberService {
 
     @Override
     public void removeMember(Integer clubId, Integer userId) {
-
         User currentUser = currentUserService.getCurrentUser();
 
         FitnessClub club = getClub(clubId);
@@ -197,7 +194,6 @@ public class FitnessClubMemberServiceImpl implements FitnessClubMemberService {
     }
 
     private FitnessClubMember createMember(FitnessClub club, User user, FitnessClubRole role) {
-
         FitnessClubMemberId id = new FitnessClubMemberId();
 
         id.setClubId(club.getId());

@@ -8,8 +8,10 @@ import com.movem.backend.commons.enums.Fitness.ChallengeTargetUnit;
 import com.movem.backend.commons.enums.Fitness.FitnessChallengeStatus;
 import com.movem.backend.commons.enums.Fitness.WorkoutType;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -18,61 +20,62 @@ import java.time.LocalDateTime;
 @Table(name = "group_fitness_challenge")
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class GroupFitnessChallenge {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    Integer id;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_id", nullable = false, unique = true)
-    private Activity activity;
+    Activity activity;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id", nullable = false)
-    private FitnessClub fitnessClub;
+    FitnessClub fitnessClub;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "catalog_id")
-    private GroupChallengeCatalog catalog;
+    GroupChallengeCatalog catalog;
 
     @Column(nullable = false, length = 150)
-    private String name;
+    String name;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "workout_type", nullable = false)
-    private WorkoutType workoutType;
+    WorkoutType workoutType;
 
     @Column(name = "target_value", nullable = false, precision = 10, scale = 2)
-    private BigDecimal targetValue;
+    BigDecimal targetValue;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "target_unit", nullable = false)
-    private ChallengeTargetUnit targetUnit;
+    ChallengeTargetUnit targetUnit;
 
     @Column(columnDefinition = "TEXT")
-    private String description;
+    String description;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "challenge_source", nullable = false)
-    private ChallengeSource challengeSource;
+    ChallengeSource challengeSource;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
-    private User createdBy;
+    User createdBy;
 
     @Column(name = "start_at", nullable = false)
-    private LocalDateTime startAt;
+    LocalDateTime startAt;
 
     @Column(name = "end_at", nullable = false)
-    private LocalDateTime endAt;
+    LocalDateTime endAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private FitnessChallengeStatus status;
+    FitnessChallengeStatus status;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    LocalDateTime updatedAt;
 }

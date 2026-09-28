@@ -36,7 +36,6 @@ public class TaskAttachmentServiceImpl implements TaskAttachmentService {
         }
 
         AttachmentResponse uploaded = attachmentService.upload(file);
-
         Attachment attachment = attachmentRepository.findById(uploaded.getId()).orElseThrow(() -> new ResourceNotFoundException("Uploaded attachment not found."));
 
         attachment.setTask(task);

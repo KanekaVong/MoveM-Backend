@@ -24,30 +24,17 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 @Component
-public class ActivityFeedServiceImpl
-        implements ActivityFeedService {
+public class ActivityFeedServiceImpl implements ActivityFeedService {
 
     private final ActivityFeedRepository activityFeedRepository;
-
     private final ActivityRepository activityRepository;
-
     private final ActivityFeedMapper activityFeedMapper;
-
     private final CurrentUserService currentUserService;
-
     private final ActivityPermissionService activityPermissionService;
 
     @Override
-    public void createFeed(
-            Activity activity,
-            User user,
-            ActivityFeedEvent eventType,
-            String message,
-            String referenceId
-    ) {
-
-        ActivityFeed feed =
-                new ActivityFeed();
+    public void createFeed(Activity activity, User user, ActivityFeedEvent eventType, String message, String referenceId) {
+        ActivityFeed feed = new ActivityFeed();
 
         feed.setActivity(activity);
         feed.setUser(user);
@@ -57,41 +44,17 @@ public class ActivityFeedServiceImpl
         feed.setCreatedAt(LocalDateTime.now());
 
         activityFeedRepository.save(feed);
-
     }
 
     @Override
-    public Page<ActivityFeedResponse> getActivityFeed(
-            String activityId,
-            int page,
-            int size
-    ) {
+    public Page<ActivityFeedResponse> getActivityFeed(String activityId, int page, int size) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ResourceNotFoundException("Activity not found."));
+        activityPermissionService.validateActivityAccess(activity, currentUser);
 
-        Activity activity =
-                activityRepository.findById(activityId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Activity not found."
-                                ));
+        Pageable pageable = PageRequest.of(page, size);
 
-        activityPermissionService.validateActivityAccess(
-                activity,
-                currentUser
-        );
-
-        Pageable pageable =
-                PageRequest.of(page, size);
-
-        return activityFeedRepository
-                .findByActivityOrderByCreatedAtDesc(
-                        activity,
-                        pageable
-                )
-                .map(activityFeedMapper::toResponse);
-
+        return activityFeedRepository.findByActivityOrderByCreatedAtDesc(activity, pageable).map(activityFeedMapper::toResponse);
     }
-
 }

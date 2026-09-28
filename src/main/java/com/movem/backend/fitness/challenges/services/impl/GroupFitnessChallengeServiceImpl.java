@@ -45,7 +45,6 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @Transactional
 public class GroupFitnessChallengeServiceImpl implements GroupFitnessChallengeService {
-
     private final GroupFitnessChallengeRepository groupFitnessChallengeRepository;
     private final GroupChallengeCatalogRepository groupChallengeCatalogRepository;
     private final FitnessClubRepository fitnessClubRepository;

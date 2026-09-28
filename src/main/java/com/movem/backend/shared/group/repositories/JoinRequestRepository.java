@@ -12,48 +12,18 @@ import org.springframework.data.jpa.repository.Modifying;
 import java.util.List;
 import java.util.Optional;
 
-public interface JoinRequestRepository
-        extends JpaRepository<JoinRequest, Long> {
+public interface JoinRequestRepository extends JpaRepository<JoinRequest, Long> {
+    @EntityGraph(attributePaths = {"requester", "activityGroup", "activityGroup.activity"})
+    Optional<JoinRequest> findByActivityGroupAndRequesterAndStatus(ActivityGroup activityGroup, User requester, JoinRequestStatus status);
 
-    @EntityGraph(attributePaths = {
-            "requester",
-            "activityGroup",
-            "activityGroup.activity"
-    })
-    Optional<JoinRequest> findByActivityGroupAndRequesterAndStatus(
-            ActivityGroup activityGroup,
-            User requester,
-            JoinRequestStatus status
-    );
+    @EntityGraph(attributePaths = {"requester", "activityGroup", "activityGroup.activity"})
+    List<JoinRequest> findByActivityGroupAndStatus(ActivityGroup activityGroup, JoinRequestStatus status);
 
-    @EntityGraph(attributePaths = {
-            "requester",
-            "activityGroup",
-            "activityGroup.activity"
-    })
-    List<JoinRequest> findByActivityGroupAndStatus(
-            ActivityGroup activityGroup,
-            JoinRequestStatus status
-    );
+    @EntityGraph(attributePaths = {"activityGroup", "activityGroup.activity"})
+    List<JoinRequest> findByRequester(User requester);
 
-    @EntityGraph(attributePaths = {
-            "activityGroup",
-            "activityGroup.activity"
-    })
-    List<JoinRequest> findByRequester(
-            User requester
-    );
-
-    @EntityGraph(attributePaths = {
-            "requester",
-            "activityGroup",
-            "activityGroup.activity"
-    })
-    Optional<JoinRequest>
-    findByActivityGroupAndRequester(
-            ActivityGroup activityGroup,
-            User requester
-    );
+    @EntityGraph(attributePaths = {"requester", "activityGroup", "activityGroup.activity"})
+    Optional<JoinRequest> findByActivityGroupAndRequester(ActivityGroup activityGroup, User requester);
 
     @Transactional
     @Modifying

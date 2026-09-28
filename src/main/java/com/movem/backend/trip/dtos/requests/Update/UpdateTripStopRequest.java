@@ -1,10 +1,8 @@
 package com.movem.backend.trip.dtos.requests.Update;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,16 +11,17 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UpdateTripStopRequest {
-    private Integer id;
+    Integer id;
     @NotBlank
-    private String locationName;
-    private LocalDateTime arrivalTime;
-    private LocalDateTime departureTime;
-    private String locationAddress;
-    private BigDecimal lat;
-    private BigDecimal lng;
-    private String googlePlaceId;
-    private String coordinates;
-    private Boolean isCompleted;
+    String locationName;
+    LocalDateTime arrivalTime;
+    LocalDateTime departureTime;
+    String locationAddress;
+    BigDecimal lat;
+    BigDecimal lng;
+    String googlePlaceId;
+    String coordinates;
+    Boolean isCompleted;
 }

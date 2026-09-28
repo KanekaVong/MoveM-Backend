@@ -25,7 +25,6 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class TaskMapperImpl extends AbstractBaseMapper<Task, TaskResponse> implements TaskMapper {
-
     private final ChecklistMapper checklistMapper;
     private final ReminderMapper reminderMapper;
     private final TaskLabelMapper labelMapper;
@@ -46,9 +45,7 @@ public class TaskMapperImpl extends AbstractBaseMapper<Task, TaskResponse> imple
         }
 
         int totalChecklistItems = task.getChecklists() != null ? task.getChecklists().size() : 0;
-
         int completedChecklistItems = task.getChecklists() != null ? (int) task.getChecklists().stream().filter(c -> Boolean.TRUE.equals(c.getIsCompleted())).count() : 0;
-
         int checklistProgress = totalChecklistItems == 0 ? 0 : (completedChecklistItems * 100) / totalChecklistItems;
 
         List<AttachmentResponse> attachmentResponses =
@@ -112,7 +109,6 @@ public class TaskMapperImpl extends AbstractBaseMapper<Task, TaskResponse> imple
         if (entities == null || entities.isEmpty()) {
             return Collections.emptyList();
         }
-
         return entities
                 .stream()
                 .map(this::toResponse)

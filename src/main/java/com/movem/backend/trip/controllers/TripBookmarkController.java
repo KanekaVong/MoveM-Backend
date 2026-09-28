@@ -14,11 +14,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/trip-bookmarks")
-@Tag( name = "Trip - Trip Bookmark",
-        description = "Create trip, add collaborators, plan trips seamlessly")
+@Tag( name = "Trip - Trip Bookmark", description = "Create trip, add collaborators, plan trips seamlessly")
 @RequiredArgsConstructor
 public class TripBookmarkController {
-
     private final TripBookmarkService tripBookmarkService;
 
     @PostMapping

@@ -7,8 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SendFriendRequestRequest {
-
     @NotBlank
     private String username;
-
 }

@@ -9,28 +9,13 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/activity-feed")
-@Tag(
-        name = "Social - Activity-Feed",
-        description = "Past Actions made by users and their members or friends"
-)
+@Tag(name = "Social - Activity-Feed", description = "Past Actions made by users and their members or friends")
 @RequiredArgsConstructor
 public class ActivityFeedController {
-
     private final ActivityFeedService activityFeedService;
 
     @GetMapping("/{activityId}")
-    public Page<ActivityFeedResponse> getActivityFeed(
-            @PathVariable String activityId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
-
-        return activityFeedService.getActivityFeed(
-                activityId,
-                page,
-                size
-        );
-
+    public Page<ActivityFeedResponse> getActivityFeed(@PathVariable String activityId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        return activityFeedService.getActivityFeed(activityId, page, size);
     }
-
 }

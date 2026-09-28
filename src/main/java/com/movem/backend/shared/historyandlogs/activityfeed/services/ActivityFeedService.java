@@ -7,19 +7,7 @@ import com.movem.backend.commons.enums.shared.ActivityFeedEvent;
 import org.springframework.data.domain.Page;
 
 public interface ActivityFeedService {
+    void createFeed(Activity activity, User user, ActivityFeedEvent eventType, String message, String referenceId);
 
-    void createFeed(
-            Activity activity,
-            User user,
-            ActivityFeedEvent eventType,
-            String message,
-            String referenceId
-    );
-
-    Page<ActivityFeedResponse> getActivityFeed(
-            String activityId,
-            int page,
-            int size
-    );
-
+    Page<ActivityFeedResponse> getActivityFeed(String activityId, int page, int size);
 }

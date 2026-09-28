@@ -5,6 +5,7 @@ import com.movem.backend.shared.checklist.dtos.responses.ChecklistResponse;
 import com.movem.backend.shared.reminder.dtos.responses.ReminderResponse;
 import com.movem.backend.commons.enums.shared.ActivityStatus;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,32 +16,32 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TripResponse {
+     String activityId;
+     String activityName;
+     String description;
+     ActivityStatus status;
+     LocalDateTime startActivity;
+     LocalDateTime deadline;
 
-    private String activityId;
-    private String activityName;
-    private String description;
-    private ActivityStatus status;
-    private LocalDateTime startActivity;
-    private LocalDateTime deadline;
+     String locationName;
+     String locationAddress;
+     BigDecimal lat;
+     BigDecimal lng;
+     String googlePlaceId;
 
-    private String locationName;
-    private String locationAddress;
-    private BigDecimal lat;
-    private BigDecimal lng;
-    private String googlePlaceId;
+     String destination;
 
-    private String destination;
+     Integer memberCount;
 
-    private Integer memberCount;
+     BigDecimal totalBudget;
 
-    private BigDecimal totalBudget;
-
-    private List<TripStopResponse> stops;
-    private List<AttachmentResponse> attachments;
-    private AttachmentResponse coverPhoto;
-    private List<ChecklistResponse> checklists;
-    private List<ReminderResponse> reminders;
-    private List<TripBudgetResponse> budgets;
-    private List<TripPackingItemResponse> packingItems;
+     List<TripStopResponse> stops;
+     List<AttachmentResponse> attachments;
+     AttachmentResponse coverPhoto;
+     List<ChecklistResponse> checklists;
+     List<ReminderResponse> reminders;
+     List<TripBudgetResponse> budgets;
+     List<TripPackingItemResponse> packingItems;
 }

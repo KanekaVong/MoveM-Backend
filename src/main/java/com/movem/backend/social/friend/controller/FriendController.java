@@ -18,7 +18,6 @@ import java.util.List;
 @Tag(name = "Social - Friends", description = "Add, Confirm/Reject Friends")
 @RequiredArgsConstructor
 public class FriendController {
-
     private final FriendService friendService;
 
     @PostMapping("/request")

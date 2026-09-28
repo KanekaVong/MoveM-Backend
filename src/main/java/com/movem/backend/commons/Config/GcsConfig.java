@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Configuration;
 public class GcsConfig {
     @Bean
     public Storage storage() {
-
         return StorageOptions.getDefaultInstance().getService();
     }
 }

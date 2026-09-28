@@ -3,10 +3,8 @@ package com.movem.backend.trip.dtos.requests.Create;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 
@@ -14,12 +12,11 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateTripBudgetRequest {
-
     @NotBlank
-    private String category;
-
+    String category;
     @NotNull
     @DecimalMin(value = "0.0", inclusive = true)
-    private BigDecimal allocatedAmount;
+    BigDecimal allocatedAmount;
 }

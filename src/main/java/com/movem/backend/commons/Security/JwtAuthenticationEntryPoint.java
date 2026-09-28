@@ -19,12 +19,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public void commence(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            AuthenticationException authException
-    ) throws IOException, ServletException {
-
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
         String reason = (String) request.getAttribute("auth_error");
         String message;
 
@@ -35,7 +30,6 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         } else {
             message = "Authentication required.";
         }
-
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 

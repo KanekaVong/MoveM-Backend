@@ -2,9 +2,11 @@ package com.movem.backend.fitness.club.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
 
@@ -12,11 +14,10 @@ import java.io.Serializable;
 @Setter
 @EqualsAndHashCode
 @Embeddable
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class FitnessClubMemberId implements Serializable {
-
     @Column(name = "club_id")
-    private Integer clubId;
-
+    Integer clubId;
     @Column(name = "user_id")
-    private Integer userId;
+    Integer userId;
 }

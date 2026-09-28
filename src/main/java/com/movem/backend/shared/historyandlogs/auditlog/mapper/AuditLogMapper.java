@@ -10,16 +10,12 @@ import org.springframework.stereotype.Component;
 @Setter
 @Builder
 @Component
-public class AuditLogMapper
-        extends AbstractBaseMapper<AuditLog, AuditLogResponse> {
-
+public class AuditLogMapper extends AbstractBaseMapper<AuditLog, AuditLogResponse> {
     @Override
     public AuditLogResponse toResponse(AuditLog log) {
-
         if (log == null) {
             return null;
         }
-
         return AuditLogResponse.builder()
                 .id(log.getId())
                 .userId(log.getUser().getId())
@@ -34,5 +30,4 @@ public class AuditLogMapper
                 .createdAt(log.getCreatedAt())
                 .build();
     }
-
 }

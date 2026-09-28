@@ -14,7 +14,6 @@ import java.util.Set;
 
 @Component
 public class ChecklistEventFactory {
-
     public FeatureEvent added(Activity activity, User actor, int count) {
         return FeatureEvent.builder()
                 .activity(activity)

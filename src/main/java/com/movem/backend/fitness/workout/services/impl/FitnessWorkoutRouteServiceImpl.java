@@ -58,7 +58,6 @@ public class FitnessWorkoutRouteServiceImpl implements FitnessWorkoutRouteServic
     @Override
     @Transactional(readOnly = true)
     public List<FitnessWorkoutRoutePointResponse> getRoute(Integer sessionId) {
-
         User currentUser = currentUserService.getCurrentUser();
 
         FitnessWorkoutSession session = workoutSessionRepository

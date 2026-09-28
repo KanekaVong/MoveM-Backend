@@ -36,7 +36,6 @@ import static com.movem.backend.commons.enums.Notification.ReferenceType.TRIP;
 @Service
 @RequiredArgsConstructor
 public class ReminderServiceImpl implements ReminderService {
-
     private final TaskRepository taskRepository;
     private final ReminderMapper reminderMapper;
     private final NotificationService notificationService;
@@ -96,15 +95,10 @@ public class ReminderServiceImpl implements ReminderService {
 
             for (CreateReminderRequest request : reminders) {
                 if (request.getType() != ReminderType.CUSTOM) {
-                    throw new IllegalArgumentException(
-                            "Only CUSTOM reminders can be manually created for tasks."
-                    );
+                    throw new IllegalArgumentException("Only CUSTOM reminders can be manually created for tasks.");
                 }
-
                 if (request.getRemindAt() == null) {
-                    throw new IllegalArgumentException(
-                            "Custom reminder time is required."
-                    );
+                    throw new IllegalArgumentException("Custom reminder time is required.");
                 }
 
                 Reminder customReminder = new Reminder();
@@ -117,7 +111,6 @@ public class ReminderServiceImpl implements ReminderService {
 
                 customReminders.add(customReminder);
             }
-
             reminderRepository.saveAll(customReminders);
         }
     }
@@ -141,8 +134,7 @@ public class ReminderServiceImpl implements ReminderService {
     }
 
     @Override
-    public List<ReminderResponse> getTaskReminders(
-            String activityId) {
+    public List<ReminderResponse> getTaskReminders(String activityId) {
 
         Task task = taskRepository.findByActivityId(activityId).orElseThrow(() -> new ResourceNotFoundException("Task not found."));
 
@@ -155,7 +147,6 @@ public class ReminderServiceImpl implements ReminderService {
 
     @Override
     public void addReminder(String activityId, CreateReminderRequest request) {
-
         Task task = taskRepository.findByActivityId(activityId).orElseThrow(() -> new ResourceNotFoundException("Task not found."));
 
         if (request.getType() != ReminderType.CUSTOM) {
@@ -179,7 +170,6 @@ public class ReminderServiceImpl implements ReminderService {
 
     @Override
     public void updateReminder(Integer reminderId, UpdateReminderRequest request) {
-
         Reminder reminder = reminderRepository.findById(reminderId).orElseThrow(() -> new ResourceNotFoundException("Reminder not found."));
 
 
@@ -196,16 +186,13 @@ public class ReminderServiceImpl implements ReminderService {
 
     @Override
     public void deleteReminder(Integer reminderId) {
-
-        Reminder reminder = reminderRepository.findById(reminderId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Reminder not found."));
+        Reminder reminder = reminderRepository.findById(reminderId).orElseThrow(() -> new ResourceNotFoundException("Reminder not found."));
 
         reminderRepository.delete(reminder);
     }
 
     @Override
     public void syncTaskReminders(Task task) {
-
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startDate = task.getActivity().getStartActivity();
         LocalDateTime deadline = task.getActivity().getDeadline();
@@ -265,28 +252,21 @@ public class ReminderServiceImpl implements ReminderService {
             oneWeekReminder.ifPresent(reminderRepository::delete);
         }
 
-        Optional<Reminder> dueReminder = reminders.stream()
-                        .filter(r -> r.getType() == ReminderType.DUE_DATE)
-                        .findFirst();
+        Optional<Reminder> dueReminder = reminders.stream().filter(r -> r.getType() == ReminderType.DUE_DATE).findFirst();
 
         if (deadline != null && !deadline.isBefore(now)) {
             Reminder reminder = dueReminder.orElseGet(() -> {
+                Reminder newReminder = new Reminder();
 
-                        Reminder newReminder = new Reminder();
-
-                        newReminder.setTask(task);
-                        newReminder.setType(ReminderType.DUE_DATE);
-                        newReminder.setCreatedAt(now);
-                        return newReminder;
-                    });
+                newReminder.setTask(task);
+                newReminder.setType(ReminderType.DUE_DATE);
+                newReminder.setCreatedAt(now);
+                return newReminder;});
 
             reminder.setRemindAt(deadline);
             reminder.setIsSent(false);
-
             reminderRepository.save(reminder);
-
         } else {
-
             dueReminder.ifPresent(reminderRepository::delete);
         }
     }
@@ -312,28 +292,18 @@ public class ReminderServiceImpl implements ReminderService {
 
 
                 if (reminder.getType() == ReminderType.START_DATE) {
-
                     title = "Task Starting";
                     message = "Your task \"" + task.getActivity().getActivityName() + "\" is starting now.";
-
-
                 } else if (reminder.getType() == ReminderType.ONE_WEEK_BEFORE) {
-
                     title = "Upcoming Task";
                     message = "Your task \"" + task.getActivity().getActivityName() + "\" is due in one week.";
-
-
                 } else if (reminder.getType() == ReminderType.DUE_DATE) {
-
                     title = "Task Due";
                     message = "Your task \"" + task.getActivity().getActivityName() + "\" is due.";
-
-
                 } else {
                     title = "Task Reminder";
                     message = "Reminder for your task \"" + task.getActivity().getActivityName() + "\".";
                 }
-
                 notificationService.createNotification(user, user, TASK_REMINDER, TASK, task.getActivity().getId(), title, message);
             }
             else if (reminder.getTrip() != null) {
@@ -390,7 +360,6 @@ public class ReminderServiceImpl implements ReminderService {
 
             reminderList.add(reminder);
         }
-
         reminderRepository.saveAll(reminderList);
     }
 }

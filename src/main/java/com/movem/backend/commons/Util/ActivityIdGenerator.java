@@ -6,13 +6,7 @@ import java.util.UUID;
 
 @Component
 public class ActivityIdGenerator {
-
     public String generate() {
-
-        return "ACT" + UUID.randomUUID()
-                .toString()
-                .replace("-", "")
-                .substring(0, 7)
-                .toUpperCase();
+        return "ACT" + UUID.randomUUID().toString().replace("-", "").substring(0, 7).toUpperCase();
     }
 }

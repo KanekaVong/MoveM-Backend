@@ -23,11 +23,9 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class KudosServiceImpl
-        implements KudosService {
-
+public class KudosServiceImpl implements KudosService {
     private final KudosRepository kudosRepository;
-    private final CommentRepository commentRepository;    private final FitnessWorkoutSessionRepository workoutSessionRepository;
+    private final FitnessWorkoutSessionRepository workoutSessionRepository;
     private final FriendRepository friendRepository;
     private final CurrentUserService currentUserService;
     private final FeatureEventTrackingService featureEventTrackingService;
@@ -35,28 +33,17 @@ public class KudosServiceImpl
 
     @Override
     public void giveKudos(Integer sessionId) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        FitnessWorkoutSession session =
-                getSession(sessionId);
+        FitnessWorkoutSession session = getSession(sessionId);
 
         validateCanInteract(session, currentUser);
 
-        if (kudosRepository
-                .existsByWorkoutSessionAndUser(
-                        session,
-                        currentUser
-                )) {
-
-            throw new IllegalArgumentException(
-                    "You have already given kudos to this workout."
-            );
+        if (kudosRepository.existsByWorkoutSessionAndUser(session, currentUser)) {
+            throw new IllegalArgumentException("You have already given kudos to this workout.");
         }
 
-        Kudos kudos =
-                new Kudos();
+        Kudos kudos = new Kudos();
 
         kudos.setWorkoutSession(session);
         kudos.setUser(currentUser);
@@ -64,125 +51,58 @@ public class KudosServiceImpl
 
         kudosRepository.save(kudos);
 
-        featureEventTrackingService.handle(
-                workoutSocialEventFactory.kudosGiven(
-                        session,
-                        currentUser
-                )
-        );
+        featureEventTrackingService.handle(workoutSocialEventFactory.kudosGiven(session, currentUser));
     }
 
     @Override
     public void removeKudos(Integer sessionId) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        FitnessWorkoutSession session = getSession(sessionId);
 
-        FitnessWorkoutSession session =
-                getSession(sessionId);
-
-        Kudos kudos =
-                kudosRepository
-                        .findByWorkoutSessionAndUser(
-                                session,
-                                currentUser
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Kudos not found."
-                                )
-                        );
+        Kudos kudos = kudosRepository.findByWorkoutSessionAndUser(session, currentUser).orElseThrow(() -> new ResourceNotFoundException("Kudos not found."));
 
         kudosRepository.delete(kudos);
 
-        featureEventTrackingService.handle(
-                workoutSocialEventFactory.kudosRemoved(
-                        session,
-                        currentUser
-                )
-        );
+        featureEventTrackingService.handle(workoutSocialEventFactory.kudosRemoved(session, currentUser));
     }
 
     @Override
     @Transactional(readOnly = true)
     public long getKudosCount(Integer sessionId) {
+        FitnessWorkoutSession session = getSession(sessionId);
 
-        FitnessWorkoutSession session =
-                getSession(sessionId);
-
-        return kudosRepository
-                .countByWorkoutSession(session);
+        return kudosRepository.countByWorkoutSession(session);
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean hasGivenKudos(Integer sessionId) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        FitnessWorkoutSession session = getSession(sessionId);
 
-        FitnessWorkoutSession session =
-                getSession(sessionId);
-
-        return kudosRepository
-                .existsByWorkoutSessionAndUser(
-                        session,
-                        currentUser
-                );
+        return kudosRepository.existsByWorkoutSessionAndUser(session, currentUser);
     }
 
-    private FitnessWorkoutSession getSession(
-            Integer sessionId
-    ) {
-
-        return workoutSessionRepository
-                .findById(sessionId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Workout session not found."
-                        )
-                );
+    private FitnessWorkoutSession getSession(Integer sessionId) {
+        return workoutSessionRepository.findById(sessionId).orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
     }
 
-    private void validateCanInteract(
-            FitnessWorkoutSession session,
-            User currentUser
-    ) {
-
+    private void validateCanInteract(FitnessWorkoutSession session, User currentUser) {
         if (session.getStatus() != FitnessWorkoutStatus.COMPLETED) {
-
-            throw new IllegalArgumentException(
-                    "Only completed workouts can receive kudos."
-            );
+            throw new IllegalArgumentException("Only completed workouts can receive kudos.");
         }
 
         if (session.getUser().getId().equals(currentUser.getId())) {
-
-            throw new IllegalArgumentException(
-                    "You cannot give kudos to your own workout."
-            );
+            throw new IllegalArgumentException("You cannot give kudos to your own workout.");
         }
-
         User owner = session.getUser();
+        User first = owner.getId() < currentUser.getId() ? owner : currentUser;
+        User second = owner.getId() < currentUser.getId() ? currentUser : owner;
 
-        User first =
-                owner.getId() < currentUser.getId()
-                        ? owner
-                        : currentUser;
-
-        User second =
-                owner.getId() < currentUser.getId()
-                        ? currentUser
-                        : owner;
-
-        if (!friendRepository.existsByUserOneAndUserTwo(
-                first,
-                second
-        )) {
-
-            throw new UnauthorizedActionException(
-                    "You can only give kudos to a friend's workout."
-            );
+        if (!friendRepository.existsByUserOneAndUserTwo(first, second)) {
+            throw new UnauthorizedActionException("You can only give kudos to a friend's workout.");
         }
     }
 }

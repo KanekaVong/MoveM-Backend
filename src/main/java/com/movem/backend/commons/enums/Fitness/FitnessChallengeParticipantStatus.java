@@ -1,8 +1,5 @@
 package com.movem.backend.commons.enums.Fitness;
 
 public enum FitnessChallengeParticipantStatus {
-    ACTIVE,
-    COMPLETED,
-    LEFT,
-    REMOVED
+    ACTIVE, COMPLETED, LEFT, REMOVED
 }

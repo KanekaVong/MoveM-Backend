@@ -14,9 +14,6 @@ import com.movem.backend.shared.reminder.dtos.responses.ReminderResponse;
 import com.movem.backend.trip.dtos.responses.*;
 import com.movem.backend.trip.dtos.responses.TripProgress.TripProgressResponse;
 import com.movem.backend.trip.dtos.responses.TripProgress.TripProgressStopResponse;
-import com.movem.backend.trip.dtos.responses.TripRoute.NearByPlaces.ExternalRouteResponse;
-import com.movem.backend.trip.dtos.responses.TripRoute.NearByPlaces.GoogleRouteResponse;
-import com.movem.backend.trip.dtos.responses.TripRoute.NearByPlaces.NearbyPlaceResponse;
 import com.movem.backend.trip.dtos.responses.TripRoute.*;
 import com.movem.backend.shared.activity.entities.Activity;
 import com.movem.backend.authentication.entities.User;
@@ -43,7 +40,6 @@ import com.movem.backend.shared.historyandlogs.featureevents.services.FeatureEve
 import com.movem.backend.shared.activity.services.ActivityPermissionService;
 import com.movem.backend.shared.activity.services.ActivityService;
 import com.movem.backend.shared.checklist.services.ChecklistService;
-import com.movem.backend.trip.services.NearByPlaces.NearbyPlacesService;
 import com.movem.backend.trip.services.TripBudgetService;
 import com.movem.backend.trip.services.TripPackingService;
 import com.movem.backend.trip.services.TripRouteServices.TripDistanceService;
@@ -64,10 +60,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -92,7 +85,6 @@ public class TripServiceImpl implements TripService {
     private final TripEventFactory tripEventFactory;
     private final ActivityService activityService;
     private final ActivityPermissionService activityPermissionService;
-    private final NearbyPlacesService nearbyPlacesService;
     private final CurrentUserService currentUserService;
     private final TripMapper tripMapper;
 
@@ -103,10 +95,12 @@ public class TripServiceImpl implements TripService {
         Activity activity = activityService.createActivity(request, user, ActivityType.TRIP);
 
         Trip trip = new Trip();
+
         trip.setActivity(activity);
         trip.setDestination(request.getDestination() != null ? request.getDestination() : request.getLocationName());
-
         Trip saved = tripRepository.save(trip);
+
+        tripBudgetService.createDefaultBudgetCategories(saved);
 
         createTripReminders(saved);
 
@@ -120,6 +114,7 @@ public class TripServiceImpl implements TripService {
 
         if (request.getTotalBudget() != null) {
             CreateTripBudgetRequest totalBudgetRequest = new CreateTripBudgetRequest();
+
             totalBudgetRequest.setCategory("TOTAL");
             totalBudgetRequest.setAllocatedAmount(request.getTotalBudget());
 
@@ -128,23 +123,16 @@ public class TripServiceImpl implements TripService {
 
         if (request.getPackingItems() != null) {
             for (CreateTripPackingItemRequest packingItemRequest : request.getPackingItems()) {
-                tripPackingService.addItem(
-                        saved.getActivityId(),
-                        packingItemRequest
-                );
+                tripPackingService.addItem(saved.getActivityId(), packingItemRequest);
             }
         }
-
-        featureEventTrackingService.handle(
-                tripEventFactory.created(saved, user)
-        );
+        featureEventTrackingService.handle(tripEventFactory.created(saved, user));
 
         return enrich(tripMapper.toResponse(saved), saved);
     }
 
     @Override
     public TripResponse getTrip(String activityId) {
-
         User user = currentUserService.getCurrentUser();
         Trip trip = findActiveTripOrThrow(activityId);
 
@@ -157,36 +145,42 @@ public class TripServiceImpl implements TripService {
     public List<TripSummaryResponse> searchTrips(String search, ActivityStatus status, String sortBy, String direction, Boolean upcoming, Boolean active) {
         User user = currentUserService.getCurrentUser();
 
-        Specification<Trip> spec = Specification.where(TripSpecification.forUser(user)).and(TripSpecification.notDeleted()).and(TripSpecification.hasStatus(status)).and(TripSpecification.matchesSearch(search));
+        Specification<Trip> spec = Specification
+                .where(TripSpecification.forUser(user))
+                .and(TripSpecification.notDeleted())
+                .and(TripSpecification.hasStatus(status))
+                .and(TripSpecification.matchesSearch(search));
 
         if (Boolean.TRUE.equals(upcoming)) {
             spec = spec.and(TripSpecification.isUpcoming());
         }
+
         if (Boolean.TRUE.equals(active)) {
             spec = spec.and(TripSpecification.isActive());
         }
 
         List<Trip> trips = tripRepository.findAll(spec, buildSort(sortBy, direction));
 
-        return trips.stream()
-                .map(tripMapper::toSummaryResponse)
-                .toList();
+        return trips.stream().map(tripMapper::toSummaryResponse).toList();
     }
 
     @Override
-    public TripRouteResponse getTripRoute(String activityId, String travelMode) {
+    public TripRouteResponse getTripRoute(String activityId, String travelMode, Double currentLat, Double currentLng) {
         Trip trip = findTripOrThrow(activityId);
+
+        if (currentLat == null || currentLng == null) {
+            throw new IllegalArgumentException("Current latitude and longitude are required.");
+        }
 
         List<TripStop> stops = new ArrayList<>(trip.getStops());
 
         stops.sort(Comparator.comparing(TripStop::getSequenceOrder));
 
-        if (stops.size() < 2) {
-            throw new IllegalArgumentException("At least two stops are required.");
+        if (stops.isEmpty()) {
+            throw new IllegalArgumentException("At least one trip stop is required.");
         }
 
-        GoogleRouteResponse googleResponse = tripRoutingService.calculateMultiStopRoute(stops, travelMode);
-
+        GoogleRouteResponse googleResponse = tripRoutingService.calculateMultiStopRoute(stops, travelMode, currentLat, currentLng);
         GoogleRouteResponse.GoogleRoute googleRoute = null;
 
         if (googleResponse != null && googleResponse.getRoutes() != null && !googleResponse.getRoutes().isEmpty()) {
@@ -199,16 +193,14 @@ public class TripServiceImpl implements TripService {
             encodedPolyline = googleRoute.getPolyline().getEncodedPolyline();
         }
 
-        List<GoogleRouteResponse.GoogleLeg> legs = googleRoute != null && googleRoute.getLegs() != null ? googleRoute.getLegs() : java.util.Collections.emptyList();
+        List<GoogleRouteResponse.GoogleLeg> legs = googleRoute != null && googleRoute.getLegs() != null ? googleRoute.getLegs() : Collections.emptyList();
         List<TripRouteStopResponse> routeStops = new ArrayList<>();
         List<RouteSegmentResponse> segments = new ArrayList<>();
 
         double totalDistance = 0.0;
         double totalMinutes = 0.0;
 
-
         for (int i = 0; i < stops.size(); i++) {
-
             TripStop currentStop = stops.get(i);
 
             double distanceFromPrevious = 0.0;
@@ -216,20 +208,19 @@ public class TripServiceImpl implements TripService {
 
             if (i > 0) {
                 TripStop previousStop = stops.get(i - 1);
-                int legIndex = i - 1;
+
+                int legIndex = i;
 
                 if (legIndex < legs.size()) {
                     GoogleRouteResponse.GoogleLeg leg = legs.get(legIndex);
-
                     if (leg.getDistanceMeters() != null) {
                         distanceFromPrevious = leg.getDistanceMeters() / 1000.0;
                     }
-
                     if (leg.getDuration() != null) {
                         estimatedMinutes = (int) Math.ceil(parseDurationToSeconds(leg.getDuration()) / 60.0);
                     }
-                } else {
 
+                } else {
                     distanceFromPrevious = tripDistanceService.calculateDistanceKm(previousStop, currentStop);
 
                     double fallbackMinutes = tripTravelTimeService.calculateTravelTimeMinutes(distanceFromPrevious, travelMode);
@@ -237,29 +228,36 @@ public class TripServiceImpl implements TripService {
                     estimatedMinutes = (int) Math.ceil(fallbackMinutes);
                 }
 
-
                 totalDistance += distanceFromPrevious;
-
                 totalMinutes += estimatedMinutes;
 
+                segments.add(RouteSegmentResponse.builder().sequenceOrder(currentStop.getSequenceOrder()).from(previousStop.getLocationName())
+                                .to(currentStop.getLocationName())
+                                .distanceKm(BigDecimal.valueOf(Math.round(distanceFromPrevious * 100.0) / 100.0))
+                                .estimatedTravelTimeMinutes(estimatedMinutes)
+                                .build());
 
-                segments.add(RouteSegmentResponse.builder()
-                        .sequenceOrder(currentStop.getSequenceOrder())
-                        .from(previousStop.getLocationName())
-                        .to(currentStop.getLocationName())
-                        .distanceKm(BigDecimal.valueOf(Math.round(distanceFromPrevious * 100.0) / 100.0))
-                        .estimatedTravelTimeMinutes(estimatedMinutes)
-                        .build());
+            } else {
+            if (!legs.isEmpty()) {
+                GoogleRouteResponse.GoogleLeg leg = legs.get(0);
+                if (leg.getDistanceMeters() != null) {
+                    distanceFromPrevious = leg.getDistanceMeters() / 1000.0;
+                }
+                if (leg.getDuration() != null) {
+                    estimatedMinutes = (int) Math.ceil(parseDurationToSeconds(leg.getDuration()) / 60.0);
+                }
+                totalDistance += distanceFromPrevious;
+                totalMinutes += estimatedMinutes;
             }
-
+        }
             routeStops.add(TripRouteStopResponse.builder()
-                    .sequenceOrder(currentStop.getSequenceOrder())
-                    .locationName(currentStop.getLocationName())
-                    .lat(currentStop.getLat())
-                    .lng(currentStop.getLng())
-                    .distanceFromPreviousKm(BigDecimal.valueOf(Math.round(distanceFromPrevious * 100.0) / 100.0))
-                    .estimatedTravelTimeMinutes(estimatedMinutes)
-                    .build());
+                            .sequenceOrder(currentStop.getSequenceOrder())
+                            .locationName(currentStop.getLocationName())
+                            .lat(currentStop.getLat())
+                            .lng(currentStop.getLng())
+                            .distanceFromPreviousKm(BigDecimal.valueOf(Math.round(distanceFromPrevious * 100.0) / 100.0))
+                            .estimatedTravelTimeMinutes(estimatedMinutes)
+                            .build());
         }
 
         return TripRouteResponse.builder()
@@ -283,7 +281,6 @@ public class TripServiceImpl implements TripService {
         int totalStops = stops.size();
 
         if (totalStops == 0) {
-
             return TripProgressResponse.builder()
                     .tripActivityId(trip.getActivityId())
                     .destination(trip.getDestination())
@@ -325,19 +322,6 @@ public class TripServiceImpl implements TripService {
                 .currentStop(currentStop == null ? null : toProgressStopResponse(currentStop))
                 .completedStops(completedStops.stream().map(this::toProgressStopResponse).toList())
                 .upcomingStops(upcomingStops.stream().map(this::toProgressStopResponse).toList())
-                .build();
-    }
-
-    private TripProgressStopResponse toProgressStopResponse(TripStop stop) {
-
-        return TripProgressStopResponse.builder()
-                .id(stop.getId())
-                .sequenceOrder(stop.getSequenceOrder())
-                .locationName(stop.getLocationName())
-                .locationAddress(stop.getLocationAddress())
-                .lat(stop.getLat())
-                .lng(stop.getLng())
-                .isCompleted(stop.getIsCompleted())
                 .build();
     }
 
@@ -454,7 +438,6 @@ public class TripServiceImpl implements TripService {
 
     @Override
     public TripResponse completeTrip(String activityId) {
-
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(activityId);
@@ -473,7 +456,6 @@ public class TripServiceImpl implements TripService {
 
     @Override
     public TripDistanceResponse calculateTripDistance(String activityId) {
-
         Trip trip = findTripOrThrow(activityId);
 
         List<TripStop> stops = trip.getStops();
@@ -484,7 +466,6 @@ public class TripServiceImpl implements TripService {
 
         if (stops.size() >= 2) {
             for (int i = 0; i < stops.size() - 1; i++) {
-
                 TripStop from = stops.get(i);
                 TripStop to = stops.get(i + 1);
 
@@ -494,8 +475,7 @@ public class TripServiceImpl implements TripService {
                                 .from(from.getLocationName())
                                 .to(to.getLocationName())
                                 .distanceKm(Math.round(distance * 100.0) / 100.0)
-                                .build()
-                );
+                                .build());
             }
         }
         return TripDistanceResponse.builder()
@@ -535,11 +515,9 @@ public class TripServiceImpl implements TripService {
                                 .distanceKm(Math.round(distance * 100.0) / 100.0)
                                 .estimatedMinutes(roundedMinutes)
                                 .estimatedTime(formatDuration(roundedMinutes))
-                                .build()
-                );
+                                .build());
             }
         }
-
         int roundedTotalMinutes = (int) Math.ceil(totalMinutes);
 
         return TripTravelTimeResponse.builder()
@@ -554,7 +532,6 @@ public class TripServiceImpl implements TripService {
 
     @Override
     public TripOptimizedRouteResponse optimizeTripRoute(String activityId, String travelMode) {
-
         Trip trip = findTripOrThrow(activityId);
 
         List<TripStop> stops = new ArrayList<>(trip.getStops());
@@ -600,7 +577,6 @@ public class TripServiceImpl implements TripService {
 
         TripStop current = stops.get(0);
 
-        // Keep the first stop fixed
         optimizedStops.add(current);
 
         List<TripStop> remaining = new ArrayList<>(stops.subList(1, stops.size()));
@@ -611,15 +587,12 @@ public class TripServiceImpl implements TripService {
             double shortestDistance = Double.MAX_VALUE;
 
             for (TripStop candidate : remaining) {
-
                 double distance = tripDistanceService.calculateDistanceKm(current, candidate);
-
                 if (distance < shortestDistance) {
                     shortestDistance = distance;
                     nearest = candidate;
                 }
             }
-
             if (nearest == null) {
                 break;
             }
@@ -642,7 +615,6 @@ public class TripServiceImpl implements TripService {
             int estimatedTravelTimeMinutes = 0;
 
             if (i > 0) {
-
                 TripStop previousStop = optimizedStops.get(i - 1);
 
                 distanceFromPrevious = tripDistanceService.calculateDistanceKm(previousStop, currentStop);
@@ -661,101 +633,37 @@ public class TripServiceImpl implements TripService {
                             .lng(currentStop.getLng())
                             .distanceFromPreviousKm(BigDecimal.valueOf(Math.round(distanceFromPrevious * 100) / 100.0))
                             .estimatedTravelTimeMinutes(estimatedTravelTimeMinutes)
-                            .build()
-            );
+                            .build());
         }
 
         return TripOptimizedRouteResponse.builder()
                 .tripActivityId(trip.getActivityId())
                 .destination(trip.getDestination())
                 .originalDistanceKm(BigDecimal.valueOf(Math.round(originalDistance * 100) / 100.0))
-                .optimizedDistanceKm(BigDecimal.valueOf(
-                                Math.round(
-                                        optimizedDistance * 100
-                                ) / 100.0
-                        )
-                )
-                .originalTravelTimeMinutes(
-                        (int) Math.ceil(
-                                originalTravelTime
-                        )
-                )
-                .optimizedTravelTimeMinutes(
-                        (int) Math.ceil(
-                                optimizedTravelTime
-                        )
-                )
-                .optimizedStops(
-                        responseStops
-                )
+                .optimizedDistanceKm(BigDecimal.valueOf(Math.round(optimizedDistance * 100) / 100.0))
+                .originalTravelTimeMinutes((int) Math.ceil(originalTravelTime))
+                .optimizedTravelTimeMinutes((int) Math.ceil(optimizedTravelTime))
+                .optimizedStops(responseStops)
                 .build();
     }
 
-    @Override
-    public ExternalRouteResponse getExternalRoute(String activityId, String travelMode) {
-
-        Trip trip = findTripOrThrow(activityId);
-
-        List<TripStop> stops = new ArrayList<>(trip.getStops());
-
-        stops.sort(Comparator.comparing(TripStop::getSequenceOrder));
-
-        if (stops.size() < 2) {
-            throw new IllegalArgumentException("At least two stops are required.");
-        }
-
-        TripStop origin = stops.get(0);
-        TripStop destination = stops.get(1);
-
-        String mode = travelMode.trim().toUpperCase();
-
-        GoogleRouteResponse googleResponse = tripRoutingService.calculateRoute(origin, destination, mode);
-
-        if (googleResponse == null || googleResponse.getRoutes() == null || googleResponse.getRoutes().isEmpty()) {
-            return ExternalRouteResponse.builder().tripActivityId(trip.getActivityId())
-                    .travelMode(mode)
-                    .available(false)
-                    .message("No " + mode.toLowerCase() + " route is available " + "for this location.")
-                    .distanceKm(null)
-                    .estimatedTravelTimeMinutes(null)
-                    .encodedPolyline(null)
-                    .build();
-        }
-
-        GoogleRouteResponse.GoogleRoute route = googleResponse.getRoutes().get(0);
-
-        double distanceKm = route.getDistanceMeters() / 1000.0;
-
-        int travelTimeMinutes = (int) Math.ceil(parseDurationToSeconds(route.getDuration()) / 60.0);
-        return ExternalRouteResponse.builder()
-                .tripActivityId(trip.getActivityId())
-                .travelMode(mode)
-                .available(true)
-                .message("Route found successfully.")
-                .distanceKm(BigDecimal.valueOf(Math.round(distanceKm * 100.0) / 100.0))
-                .estimatedTravelTimeMinutes(travelTimeMinutes)
-                .encodedPolyline(route.getPolyline().getEncodedPolyline())
+    private TripProgressStopResponse toProgressStopResponse(TripStop stop) {
+        return TripProgressStopResponse.builder()
+                .id(stop.getId())
+                .sequenceOrder(stop.getSequenceOrder())
+                .locationName(stop.getLocationName())
+                .locationAddress(stop.getLocationAddress())
+                .lat(stop.getLat())
+                .lng(stop.getLng())
+                .isCompleted(stop.getIsCompleted())
                 .build();
-    }
-
-    @Override
-    public List<NearbyPlaceResponse> getNearbyPlaces(String activityId, Integer stopId, String type, Double radiusKm) {
-        Trip trip = findTripOrThrow(activityId);
-        TripStop stop = trip.getStops()
-                .stream()
-                .filter(s -> s.getId().equals(stopId))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Trip stop not found"));
-
-        return nearbyPlacesService.findNearbyPlaces(stop.getLat(), stop.getLng(), type, radiusKm != null ? radiusKm : 5.0);
     }
 
     private Trip findTripOrThrow(String activityId) {
-        return tripRepository.findByActivityId(activityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Trip not found: " + activityId));
+        return tripRepository.findByActivityId(activityId).orElseThrow(() -> new ResourceNotFoundException("Trip not found: " + activityId));
     }
 
-    private Trip findActiveTripOrThrow(String activityId) {
+    private Trip findActiveTripOrThrow(String activityId){
         Trip trip = findTripOrThrow(activityId);
 
         if (trip.getActivity().getStatus() == ActivityStatus.DELETED) {
@@ -776,10 +684,8 @@ public class TripServiceImpl implements TripService {
     }
 
     private String formatDuration(int minutes) {
-
         int hours = minutes / 60;
         int remainingMinutes = minutes % 60;
-
         if (hours == 0) {
             return remainingMinutes + " min";
         }
@@ -787,12 +693,10 @@ public class TripServiceImpl implements TripService {
         if (remainingMinutes == 0) {
             return hours + " hr";
         }
-
         return hours + " hr " + remainingMinutes + " min";
     }
 
     private String mapToGoogleTravelMode(String travelMode) {
-
         if (travelMode == null || travelMode.isBlank()) {
             throw new IllegalArgumentException("Travel mode is required.");
         }
@@ -811,103 +715,6 @@ public class TripServiceImpl implements TripService {
         }
         String value = duration.replace("s", "");
         return Math.round(Double.parseDouble(value));
-    }
-
-    private TripResponse enrich(TripResponse response, Trip trip) {
-        Optional<ActivityGroup> group = groupRepository.findByActivity(trip.getActivity());
-
-        int memberCount = group
-                .map(groupMemberRepository::countByActivityGroup)
-                .map(Long::intValue)
-                .orElse(1);
-
-        response.setMemberCount(memberCount);
-
-        List<TripBudget> budgets = tripBudgetRepository.findByTrip(trip);
-
-        TripBudget totalBudgetRecord = budgets.stream()
-                .filter(budget -> "TOTAL".equalsIgnoreCase(budget.getCategory()))
-                .findFirst()
-                .orElse(null);
-
-        BigDecimal totalBudget = totalBudgetRecord != null ? totalBudgetRecord.getAllocatedAmount() : BigDecimal.ZERO;
-
-        response.setTotalBudget(totalBudget);
-
-        List<TripBudget> categoryBudgets = budgets.stream().filter(budget -> !"TOTAL".equalsIgnoreCase(budget.getCategory())).toList();
-
-        BigDecimal totalSpent = categoryBudgets.stream().map(budget -> budget.getSpentAmount() == null ? BigDecimal.ZERO : budget.getSpentAmount()).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        List<Checklist> checklists = checklistRepository.findByTripOrderByIdAsc(trip);
-
-        response.setChecklists(checklists.stream()
-                        .map(checklist -> ChecklistResponse.builder()
-                                .id(checklist.getId())
-                                .itemName(checklist.getItemName())
-                                .completed(checklist.getIsCompleted())
-                                .build())
-                        .toList());
-
-        List<Reminder> reminders = reminderRepository.findByTrip(trip);
-
-        response.setReminders(
-                reminders.stream()
-                        .map(reminder -> ReminderResponse.builder()
-                                .id(reminder.getId())
-                                .type(reminder.getType())
-                                .remindAt(reminder.getRemindAt())
-                                .sent(reminder.getIsSent())
-                                .build())
-                        .toList());
-
-        List<TripStop> stops = tripStopRepository.findByTripOrderBySequenceOrderAsc(trip);
-
-        response.setStops(stops.stream()
-                        .map(stop -> TripStopResponse.builder()
-                                .id(stop.getId())
-                                .locationName(stop.getLocationName())
-                                .sequenceOrder(stop.getSequenceOrder())
-                                .arrivalTime(stop.getArrivalTime())
-                                .departureTime(stop.getDepartureTime())
-                                .locationAddress(stop.getLocationAddress())
-                                .lat(stop.getLat())
-                                .lng(stop.getLng())
-                                .googlePlaceId(stop.getGooglePlaceId())
-                                .isCompleted(stop.getIsCompleted())
-                                .build())
-                        .toList()
-        );
-
-        response.setBudgets(categoryBudgets.stream()
-                        .map(budget -> {
-                            BigDecimal spent = budget.getSpentAmount() == null ? BigDecimal.ZERO : budget.getSpentAmount();
-                            BigDecimal remaining = budget.getAllocatedAmount().subtract(spent);
-                            BigDecimal perPerson = memberCount > 0 ? budget.getAllocatedAmount().divide(BigDecimal.valueOf(memberCount), 2, RoundingMode.HALF_UP) : budget.getAllocatedAmount();
-
-                            return TripBudgetResponse.builder()
-                                    .id(budget.getId())
-                                    .category(budget.getCategory())
-                                    .allocatedAmount(budget.getAllocatedAmount())
-                                    .spentAmount(spent)
-                                    .remaining(remaining)
-                                    .perPersonShare(perPerson)
-                                    .build();
-                        }).toList());
-
-        List<TripPackingItem> packingItems = tripPackingItemRepository.findByTrip(trip);
-
-        response.setPackingItems(
-                packingItems.stream()
-                        .map(item -> TripPackingItemResponse.builder()
-                                .id(item.getId())
-                                .itemName(item.getItemName())
-                                .isPacked(item.getIsPacked())
-                                .createdAt(item.getCreatedAt())
-                                .build())
-                        .toList()
-        );
-
-        return response;
     }
 
     private void createTripReminders(Trip trip) {
@@ -1005,5 +812,90 @@ public class TripServiceImpl implements TripService {
         } else {
             tripDayReminder.ifPresent(reminderRepository::delete);
         }
+    }
+
+    private TripResponse enrich(TripResponse response, Trip trip) {
+        Optional<ActivityGroup> group = groupRepository.findByActivity(trip.getActivity());
+
+        int memberCount = group
+                .map(groupMemberRepository::countByActivityGroup)
+                .map(Long::intValue)
+                .orElse(1);
+
+        response.setMemberCount(memberCount);
+
+        List<TripBudget> budgets = tripBudgetRepository.findByTrip(trip);
+
+        TripBudget totalBudgetRecord = budgets.stream()
+                .filter(budget -> "TOTAL".equalsIgnoreCase(budget.getCategory()))
+                .findFirst()
+                .orElse(null);
+
+        BigDecimal totalBudget = totalBudgetRecord != null ? totalBudgetRecord.getAllocatedAmount() : BigDecimal.ZERO;
+
+        response.setTotalBudget(totalBudget);
+
+        List<TripBudget> categoryBudgets = budgets.stream().filter(budget -> !"TOTAL".equalsIgnoreCase(budget.getCategory())).toList();
+
+        BigDecimal totalSpent = categoryBudgets.stream().map(budget -> budget.getSpentAmount() == null ? BigDecimal.ZERO : budget.getSpentAmount()).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<Checklist> checklists = checklistRepository.findByTripOrderByIdAsc(trip);
+
+        response.setChecklists(checklists.stream()
+                        .map(checklist -> ChecklistResponse.builder().id(checklist.getId()).itemName(checklist.getItemName()).completed(checklist.getIsCompleted()).build())
+                        .toList());
+
+        List<Reminder> reminders = reminderRepository.findByTrip(trip);
+
+        response.setReminders(reminders.stream()
+                        .map(reminder -> ReminderResponse.builder()
+                                .id(reminder.getId())
+                                .type(reminder.getType())
+                                .remindAt(reminder.getRemindAt())
+                                .sent(reminder.getIsSent())
+                                .build())
+                        .toList());
+
+        List<TripStop> stops = tripStopRepository.findByTripOrderBySequenceOrderAsc(trip);
+
+        response.setStops(stops.stream().map(stop -> TripStopResponse.builder()
+                                .id(stop.getId())
+                                .locationName(stop.getLocationName())
+                                .sequenceOrder(stop.getSequenceOrder())
+                                .arrivalTime(stop.getArrivalTime())
+                                .departureTime(stop.getDepartureTime())
+                                .locationAddress(stop.getLocationAddress())
+                                .lat(stop.getLat())
+                                .lng(stop.getLng())
+                                .googlePlaceId(stop.getGooglePlaceId())
+                                .isCompleted(stop.getIsCompleted())
+                                .build()).toList());
+
+        response.setBudgets(categoryBudgets.stream()
+                        .map(budget -> {
+                            BigDecimal spent = budget.getSpentAmount() == null ? BigDecimal.ZERO : budget.getSpentAmount();
+                            BigDecimal remaining = budget.getAllocatedAmount().subtract(spent);
+                            BigDecimal perPerson = memberCount > 0 ? budget.getAllocatedAmount().divide(BigDecimal.valueOf(memberCount), 2, RoundingMode.HALF_UP) : budget.getAllocatedAmount();
+
+                            return TripBudgetResponse.builder()
+                                    .id(budget.getId())
+                                    .category(budget.getCategory())
+                                    .allocatedAmount(budget.getAllocatedAmount())
+                                    .spentAmount(spent)
+                                    .remaining(remaining)
+                                    .perPersonShare(perPerson)
+                                    .build();}).toList());
+
+        List<TripPackingItem> packingItems = tripPackingItemRepository.findByTrip(trip);
+
+        response.setPackingItems(packingItems.stream()
+                        .map(item -> TripPackingItemResponse.builder()
+                                .id(item.getId())
+                                .itemName(item.getItemName())
+                                .isPacked(item.getIsPacked())
+                                .createdAt(item.getCreatedAt())
+                                .build()).toList());
+
+        return response;
     }
 }

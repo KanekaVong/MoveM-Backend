@@ -1,10 +1,8 @@
 package com.movem.backend.trip.dtos.requests.Create;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 
@@ -12,16 +10,12 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateTripBookmarkRequest {
-
     @NotBlank
-    private String locationName;
-
-    private String locationAddress;
-
-    private BigDecimal lat;
-
-    private BigDecimal lng;
-
-    private String googlePlaceId;
+    String locationName;
+    String locationAddress;
+    BigDecimal lat;
+    BigDecimal lng;
+    String googlePlaceId;
 }

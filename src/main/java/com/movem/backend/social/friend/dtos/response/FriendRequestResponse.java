@@ -1,29 +1,23 @@
 package com.movem.backend.social.friend.dtos.response;
 
 import com.movem.backend.commons.enums.Friend.FriendRequestStatus;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class FriendRequestResponse {
-
-    private Long requestId;
-
-    private Integer senderId;
-
-    private String senderUsername;
-
-    private String senderProfilePic;
-
-    private Integer receiverId;
-
-    private String receiverUsername;
-
-    private FriendRequestStatus status;
-
-    private LocalDateTime createdAt;
-
+     Long requestId;
+     Integer senderId;
+     String senderUsername;
+     String senderProfilePic;
+     Integer receiverId;
+     String receiverUsername;
+     FriendRequestStatus status;
+     LocalDateTime createdAt;
 }

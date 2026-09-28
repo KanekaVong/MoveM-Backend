@@ -5,6 +5,7 @@ import com.movem.backend.shared.analysis.statistics.dtos.responses.FitnessStatis
 import com.movem.backend.shared.analysis.statistics.dtos.responses.TaskStatisticsResponse;
 import com.movem.backend.shared.reminder.dtos.responses.ReminderResponse;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
@@ -13,21 +14,13 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class DashboardResponse {
-
-    private TaskStatisticsResponse statistics;
-    private FitnessStatisticsResponse fitnessStatistics;
-
-    private List<DashboardTaskResponse> dueToday;
-
-    private List<DashboardTaskResponse> overdueTasks;
-
-    private List<DashboardTaskResponse> upcomingTasks;
-
-    private List<ActivityFeedResponse> recentActivities;
-
-    private List<ReminderResponse> upcomingReminders;
-
-
-
+     TaskStatisticsResponse statistics;
+     FitnessStatisticsResponse fitnessStatistics;
+     List<DashboardTaskResponse> dueToday;
+     List<DashboardTaskResponse> overdueTasks;
+     List<DashboardTaskResponse> upcomingTasks;
+     List<ActivityFeedResponse> recentActivities;
+     List<ReminderResponse> upcomingReminders;
 }

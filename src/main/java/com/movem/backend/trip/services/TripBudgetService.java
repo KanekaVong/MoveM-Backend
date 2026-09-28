@@ -1,11 +1,11 @@
 package com.movem.backend.trip.services;
 
-
 import com.movem.backend.trip.dtos.requests.Create.CreateTripBudgetRequest;
 import com.movem.backend.trip.dtos.requests.Create.CreateTripExpenseRequest;
 import com.movem.backend.trip.dtos.requests.Update.UpdateTripBudgetRequest;
 import com.movem.backend.trip.dtos.responses.TripBudgetResponse;
 import com.movem.backend.trip.dtos.responses.TripExpenseResponse;
+import com.movem.backend.trip.entities.Trip;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -18,6 +18,7 @@ public interface TripBudgetService {
     TripExpenseResponse logExpense(String tripActivityId, CreateTripExpenseRequest request);
     List<TripExpenseResponse> getExpenses(String tripActivityId, Integer budgetId);
     void deleteExpense(String tripActivityId, Integer expenseId);
+    void createDefaultBudgetCategories(Trip trip);
     TripExpenseResponse settleSplit(String tripActivityId, Integer expenseId, Integer splitId);
     void updateTotalBudget(String tripActivityId, BigDecimal totalBudget);
 }

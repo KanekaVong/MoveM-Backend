@@ -18,28 +18,17 @@ import java.util.Set;
 @Component
 public class GroupEventFactory {
 
-    public FeatureEvent groupCreated(
-            Activity activity,
-            User actor
-    ) {
+    public FeatureEvent groupCreated(Activity activity, User actor) {
         return FeatureEvent.builder()
                 .activity(activity)
                 .actor(actor)
                 .feedEvent(ActivityFeedEvent.GROUP_CREATED)
                 .feedMessage("created the group.")
-                .actions(Set.of(
-                        FeatureEventAction.AUDIT_LOG,
-                        FeatureEventAction.ACTIVITY_FEED
-                ))
+                .actions(Set.of(FeatureEventAction.AUDIT_LOG, FeatureEventAction.ACTIVITY_FEED))
                 .build();
     }
 
-    public FeatureEvent memberInvited(
-            Activity activity,
-            User actor,
-            User invitee,
-            Long inviteId
-    ) {
+    public FeatureEvent memberInvited(Activity activity, User actor, User invitee, Long inviteId) {
         return FeatureEvent.builder()
                 .activity(activity)
                 .actor(actor)
@@ -54,24 +43,12 @@ public class GroupEventFactory {
                 .notificationType(NotificationType.GROUP_INVITE)
                 .referenceType(ReferenceType.GROUP)
                 .notificationTitle("Group Invitation")
-                .notificationMessage(
-                        actor.getUsername()
-                                + " invited you to join "
-                                + activity.getActivityName()
-                                + "."
-                )
-                .actions(Set.of(
-                        FeatureEventAction.ACTIVITY_FEED,
-                        FeatureEventAction.AUDIT_LOG,
-                        FeatureEventAction.NOTIFICATION
-                ))
+                .notificationMessage(actor.getUsername() + " invited you to join " + activity.getActivityName() + ".")
+                .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG, FeatureEventAction.NOTIFICATION))
                 .build();
     }
 
-    public FeatureEvent memberJoined(
-            Activity activity,
-            User actor
-    ) {
+    public FeatureEvent memberJoined(Activity activity, User actor) {
         return FeatureEvent.builder()
                 .activity(activity)
                 .actor(actor)
@@ -83,10 +60,7 @@ public class GroupEventFactory {
                 .auditMessage("Joined group.")
                 .newValue(actor.getUsername())
                 .notificationReceiver(null)
-                .actions(Set.of(
-                        FeatureEventAction.ACTIVITY_FEED,
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 

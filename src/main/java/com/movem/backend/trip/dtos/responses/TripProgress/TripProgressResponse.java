@@ -1,29 +1,23 @@
 package com.movem.backend.trip.dtos.responses.TripProgress;
 
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
 @Getter
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TripProgressResponse {
-
-    private String tripActivityId;
-
-    private String destination;
-
-    private String tripStatus;
-
-    private Integer progressPercentage;
-
-    private Integer totalStops;
-
-    private Integer completedStopsCount;
-
-    private TripProgressStopResponse currentStop;
-
-    private List<TripProgressStopResponse> completedStops;
-
-    private List<TripProgressStopResponse> upcomingStops;
+    String tripActivityId;
+    String destination;
+    String tripStatus;
+    Integer progressPercentage;
+    Integer totalStops;
+    Integer completedStopsCount;
+    TripProgressStopResponse currentStop;
+    List<TripProgressStopResponse> completedStops;
+    List<TripProgressStopResponse> upcomingStops;
 }

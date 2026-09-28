@@ -1,8 +1,10 @@
 package com.movem.backend.fitness.workout.dtos.responses;
 
 import com.movem.backend.shared.attachment.dtos.responses.AttachmentResponse;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -10,34 +12,31 @@ import java.util.List;
 
 @Getter
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class SharedWorkoutPostResponse {
 
-    private Integer sessionId;
+     Integer sessionId;
+     Integer userId;
+     String username;
+     String profilePicture;
+     String workoutType;
+     String trackingMode;
 
-    private Integer userId;
-    private String username;
-    private String profilePicture;
+     String shareDescription;
 
-    private String workoutType;
-    private String trackingMode;
+     BigDecimal distance;
+     Integer steps;
+     Integer durationSeconds;
+     BigDecimal caloriesBurned;
 
-    private String shareDescription;
+     LocalDateTime finishedAt;
 
-    private BigDecimal distance;
-    private Integer steps;
-    private Integer durationSeconds;
-    private BigDecimal caloriesBurned;
+     long kudosCount;
+     boolean myKudos;
+     long commentCount;
+     boolean myPost;
 
-    private LocalDateTime finishedAt;
-
-    private long kudosCount;
-    private boolean myKudos;
-    private long commentCount;
-
-    private boolean myPost;
-
-    private List<AttachmentResponse> attachments;
-
-    private List<FitnessWorkoutRoutePointResponse> points;
+     List<AttachmentResponse> attachments;
+     List<FitnessWorkoutRoutePointResponse> points;
 
 }

@@ -23,10 +23,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class TripPackingServiceImpl implements TripPackingService {
-
     private final TripRepository tripRepository;
     private final TripPackingItemRepository tripPackingItemRepository;
-
     private final ActivityPermissionService activityPermissionService;
     private final CurrentUserService currentUserService;
 
@@ -49,7 +47,6 @@ public class TripPackingServiceImpl implements TripPackingService {
 
     @Override
     public List<TripPackingItemResponse> getItems(String tripActivityId) {
-
         User user = currentUserService.getCurrentUser();
         Trip trip = findTripOrThrow(tripActivityId);
         activityPermissionService.validateCanEditActivity(trip.getActivity(), user);
@@ -61,7 +58,6 @@ public class TripPackingServiceImpl implements TripPackingService {
 
     @Override
     public TripPackingItemResponse togglePacked(String tripActivityId, Integer itemId) {
-
         User user = currentUserService.getCurrentUser();
         Trip trip = findTripOrThrow(tripActivityId);
         activityPermissionService.validateCanEditActivity(trip.getActivity(), user);
@@ -74,7 +70,6 @@ public class TripPackingServiceImpl implements TripPackingService {
 
     @Override
     public void removeItem(String tripActivityId, Integer itemId) {
-
         User user = currentUserService.getCurrentUser();
         Trip trip = findTripOrThrow(tripActivityId);
         activityPermissionService.validateCanEditActivity(trip.getActivity(), user);
@@ -93,12 +88,10 @@ public class TripPackingServiceImpl implements TripPackingService {
     }
 
     private Trip findTripOrThrow(String tripActivityId) {
-        return tripRepository.findByActivityId(tripActivityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Trip not found: " + tripActivityId));
+        return tripRepository.findByActivityId(tripActivityId).orElseThrow(() -> new ResourceNotFoundException("Trip not found: " + tripActivityId));
     }
 
     private TripPackingItem findItemOrThrow(Trip trip, Integer itemId) {
-        return tripPackingItemRepository.findByIdAndTrip(itemId, trip)
-                .orElseThrow(() -> new ResourceNotFoundException("Packing item not found: " + itemId));
+        return tripPackingItemRepository.findByIdAndTrip(itemId, trip).orElseThrow(() -> new ResourceNotFoundException("Packing item not found: " + itemId));
     }
 }

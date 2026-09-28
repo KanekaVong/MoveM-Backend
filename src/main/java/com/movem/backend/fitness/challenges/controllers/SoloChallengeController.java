@@ -16,10 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/fitness/solo-challenges")
-@Tag(
-        name = "Fitness - Challenges",
-        description = "Solo Challenges"
-)
+@Tag(name = "Fitness - Challenges", description = "Solo Challenges")
 @RequiredArgsConstructor
 public class SoloChallengeController {
 
@@ -28,82 +25,37 @@ public class SoloChallengeController {
     @GetMapping
     public ResponseEntity<List<SoloChallengeResponse>>
     getAllChallenges() {
-
-        return ResponseEntity.ok(
-                soloChallengeService.getAllChallenges()
-        );
+        return ResponseEntity.ok(soloChallengeService.getAllChallenges());
     }
 
     @GetMapping("/{challengeId}")
     public ResponseEntity<SoloChallengeResponse>
-    getChallenge(
-            @PathVariable Integer challengeId
-    ) {
-
-        return ResponseEntity.ok(
-                soloChallengeService.getChallenge(
-                        challengeId
-                )
-        );
+    getChallenge(@PathVariable Integer challengeId) {
+        return ResponseEntity.ok(soloChallengeService.getChallenge(challengeId));
     }
 
     @GetMapping("/type/{workoutType}")
     public ResponseEntity<List<SoloChallengeResponse>>
-    getChallengesByType(
-            @PathVariable WorkoutType workoutType
-    ) {
-
-        return ResponseEntity.ok(
-                soloChallengeService.getChallengesByWorkoutType(
-                        workoutType
-                )
-        );
+    getChallengesByType(@PathVariable WorkoutType workoutType) {
+        return ResponseEntity.ok(soloChallengeService.getChallengesByWorkoutType(workoutType));
     }
 
     @PostMapping
     public ResponseEntity<SoloChallengeResponse>
-    createChallenge(
-            @Valid @RequestBody
-            CreateSoloChallengeRequest request
-    ) {
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(
-                        soloChallengeService
-                                .createChallenge(request)
-                );
+    createChallenge(@Valid @RequestBody CreateSoloChallengeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(soloChallengeService.createChallenge(request));
     }
 
     @PutMapping("/{challengeId}")
     public ResponseEntity<SoloChallengeResponse>
-    updateChallenge(
-            @PathVariable Integer challengeId,
-
-            @Valid @RequestBody
-            UpdateSoloChallengeRequest request
-    ) {
-
-        return ResponseEntity.ok(
-                soloChallengeService.updateChallenge(
-                        challengeId,
-                        request
-                )
-        );
+    updateChallenge(@PathVariable Integer challengeId, @Valid @RequestBody UpdateSoloChallengeRequest request) {
+        return ResponseEntity.ok(soloChallengeService.updateChallenge(challengeId, request));
     }
 
     @DeleteMapping("/{challengeId}")
     public ResponseEntity<Void>
-    deleteChallenge(
-            @PathVariable Integer challengeId
-    ) {
-
-        soloChallengeService.deleteChallenge(
-                challengeId
-        );
-
-        return ResponseEntity
-                .noContent()
-                .build();
+    deleteChallenge(@PathVariable Integer challengeId) {
+        soloChallengeService.deleteChallenge(challengeId);
+        return ResponseEntity.noContent().build();
     }
 }

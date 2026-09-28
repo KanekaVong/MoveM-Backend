@@ -16,27 +16,16 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/fitness/group-challenge/catalog")
-@Tag(
-        name = "Fitness - Group Challenge Catalog",
-        description = "Catalogs of Group Challenges"
-)
+@Tag(name = "Fitness - Group Challenge Catalog", description = "Catalogs of Group Challenges")
 @RequiredArgsConstructor
 public class GroupChallengeCatalogController {
 
-    private final GroupChallengeCatalogService
-            groupChallengeCatalogService;
+    private final GroupChallengeCatalogService groupChallengeCatalogService;
 
     @PostMapping
     public ResponseEntity<GroupChallengeCatalogResponse>
-    createCatalogChallenge(
-            @Valid
-            @RequestBody
-            CreateGroupChallengeCatalogRequest request
-    ) {
-
-        GroupChallengeCatalogResponse response =
-                groupChallengeCatalogService
-                        .createCatalogChallenge(request);
+    createCatalogChallenge(@Valid @RequestBody CreateGroupChallengeCatalogRequest request) {
+        GroupChallengeCatalogResponse response = groupChallengeCatalogService.createCatalogChallenge(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -46,67 +35,31 @@ public class GroupChallengeCatalogController {
     @GetMapping
     public ResponseEntity<List<GroupChallengeCatalogResponse>>
     getAllCatalogChallenges() {
-
-        return ResponseEntity.ok(
-                groupChallengeCatalogService
-                        .getAllCatalogChallenges()
-        );
+        return ResponseEntity.ok(groupChallengeCatalogService.getAllCatalogChallenges());
     }
 
     @GetMapping("/{catalogId}")
     public ResponseEntity<GroupChallengeCatalogResponse>
-    getCatalogChallenge(
-            @PathVariable Integer catalogId
-    ) {
-
-        return ResponseEntity.ok(
-                groupChallengeCatalogService
-                        .getCatalogChallenge(catalogId)
-        );
+    getCatalogChallenge(@PathVariable Integer catalogId) {
+        return ResponseEntity.ok(groupChallengeCatalogService.getCatalogChallenge(catalogId));
     }
 
     @GetMapping("/workout-type/{workoutType}")
     public ResponseEntity<List<GroupChallengeCatalogResponse>>
-    getCatalogChallengesByWorkoutType(
-            @PathVariable WorkoutType workoutType
-    ) {
-
-        return ResponseEntity.ok(
-                groupChallengeCatalogService
-                        .getCatalogChallengesByWorkoutType(
-                                workoutType
-                        )
-        );
+    getCatalogChallengesByWorkoutType(@PathVariable WorkoutType workoutType) {
+        return ResponseEntity.ok(groupChallengeCatalogService.getCatalogChallengesByWorkoutType(workoutType));
     }
 
     @PutMapping("/{catalogId}")
     public ResponseEntity<GroupChallengeCatalogResponse>
-    updateCatalogChallenge(
-            @PathVariable Integer catalogId,
-
-            @Valid
-            @RequestBody
-            UpdateGroupChallengeCatalogRequest request
-    ) {
-
-        return ResponseEntity.ok(
-                groupChallengeCatalogService
-                        .updateCatalogChallenge(
-                                catalogId,
-                                request
-                        )
-        );
+    updateCatalogChallenge(@PathVariable Integer catalogId, @Valid @RequestBody UpdateGroupChallengeCatalogRequest request) {
+        return ResponseEntity.ok(groupChallengeCatalogService.updateCatalogChallenge(catalogId, request));
     }
 
     @DeleteMapping("/{catalogId}")
     public ResponseEntity<Void>
-    deleteCatalogChallenge(
-            @PathVariable Integer catalogId
-    ) {
-
-        groupChallengeCatalogService
-                .deleteCatalogChallenge(catalogId);
-
+    deleteCatalogChallenge(@PathVariable Integer catalogId) {
+        groupChallengeCatalogService.deleteCatalogChallenge(catalogId);
         return ResponseEntity.noContent().build();
     }
 }

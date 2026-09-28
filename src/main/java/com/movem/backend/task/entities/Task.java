@@ -8,6 +8,7 @@ import com.movem.backend.shared.checklist.entities.Checklist;
 import com.movem.backend.shared.reminder.entities.Reminder;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -19,28 +20,37 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Task {
     @Id
-    private String activityId;
+    String activityId;
     @OneToOne
     @MapsId
     @JoinColumn(name = "activity_id")
-    private Activity activity;
+    Activity activity;
+
     @Enumerated(EnumType.STRING)
-    private Priority priority;
+    Priority priority;
+
     @Column(name = "is_recurring")
-    private Boolean isRecurring = false;
+    Boolean isRecurring = false;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "recurring_type")
-    private RecurringType recurringType;
+    RecurringType recurringType;
+
     @Column(name = "recurring_interval")
-    private Integer recurringInterval = 1;
+    Integer recurringInterval = 1;
+
     @Column(name = "recurring_end_date")
-    private LocalDate recurringEndDate;
+    LocalDate recurringEndDate;
+
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Checklist> checklists = new ArrayList<>();
+    List<Checklist> checklists = new ArrayList<>();
+
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL , orphanRemoval = true)
-    private List<Reminder> reminders = new ArrayList<>();
+    List<Reminder> reminders = new ArrayList<>();
+
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Attachment> attachments = new ArrayList<>();
+    List<Attachment> attachments = new ArrayList<>();
 }

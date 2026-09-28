@@ -8,10 +8,8 @@ import com.movem.backend.commons.enums.Task.RecurringType;
 import com.movem.backend.commons.Util.BaseUtil.BaseActivityUpdateSource;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import javax.annotation.Nullable;
 import java.time.LocalDate;
@@ -22,23 +20,24 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UpdateTaskRequest implements BaseActivityUpdateSource {
     @NotBlank
-    private String activityName;
-    private String description;
-    private LocalDateTime startActivity;
-    private LocalDateTime deadline;
+    String activityName;
+    String description;
+    LocalDateTime startActivity;
+    LocalDateTime deadline;
 
     @NotNull
-    private Priority priority;
+    Priority priority;
 
     @Nullable
-    private ActivityStatus status;
-    private Boolean isRecurring = false;
-    private RecurringType recurringType;
-    private Integer recurringInterval = 1;
-    private LocalDate recurringEndDate;
-    private List<Integer> labelIds;
-    private List<UpdateChecklistItemRequest> checklists;
-    private List<CreateReminderRequest> reminders;
+    ActivityStatus status;
+    Boolean isRecurring = false;
+    RecurringType recurringType;
+    Integer recurringInterval = 1;
+    LocalDate recurringEndDate;
+    List<Integer> labelIds;
+    List<UpdateChecklistItemRequest> checklists;
+    List<CreateReminderRequest> reminders;
 }

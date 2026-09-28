@@ -22,20 +22,15 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class GroupChallengeCatalogServiceImpl
-        implements GroupChallengeCatalogService {
-
+public class GroupChallengeCatalogServiceImpl implements GroupChallengeCatalogService {
     private final CurrentUserService currentUserService;
     private final FeatureEventTrackingService featureEventTrackingService;
     private final FitnessChallengeEventFactory fitnessChallengeEventFactory;
     private final GroupChallengeCatalogRepository groupChallengeCatalogRepository;
     private final GroupChallengeCatalogMapper groupChallengeCatalogMapper;
 
-
     @Override
-    public GroupChallengeCatalogResponse createCatalogChallenge(
-            CreateGroupChallengeCatalogRequest request
-    ) {
+    public GroupChallengeCatalogResponse createCatalogChallenge(CreateGroupChallengeCatalogRequest request) {
 
         GroupChallengeCatalog challenge = new GroupChallengeCatalog();
 
@@ -49,31 +44,15 @@ public class GroupChallengeCatalogServiceImpl
 
         GroupChallengeCatalog saved = groupChallengeCatalogRepository.save(challenge);
 
-        featureEventTrackingService.handle(
-                fitnessChallengeEventFactory.created(
-                        saved,
-                        currentUserService.getCurrentUser()
-                )
-        );
+        featureEventTrackingService.handle(fitnessChallengeEventFactory.created(saved, currentUserService.getCurrentUser()));
 
         return groupChallengeCatalogMapper.toResponse(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public GroupChallengeCatalogResponse getCatalogChallenge(
-            Integer catalogId
-    ) {
-
-        GroupChallengeCatalog challenge =
-                groupChallengeCatalogRepository
-                        .findById(catalogId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Group challenge catalog not found."
-                                )
-                        );
-
+    public GroupChallengeCatalogResponse getCatalogChallenge(Integer catalogId) {
+        GroupChallengeCatalog challenge = groupChallengeCatalogRepository.findById(catalogId).orElseThrow(() -> new ResourceNotFoundException("Group challenge catalog not found."));
         return groupChallengeCatalogMapper.toResponse(challenge);
     }
 
@@ -81,44 +60,20 @@ public class GroupChallengeCatalogServiceImpl
     @Transactional
     public List<GroupChallengeCatalogResponse>
     getAllCatalogChallenges() {
-
-        return groupChallengeCatalogRepository
-                .findAll()
-                .stream()
-                .map(groupChallengeCatalogMapper::toResponse)
-                .toList();
+        return groupChallengeCatalogRepository.findAll().stream().map(groupChallengeCatalogMapper::toResponse).toList();
     }
 
     @Override
     @Transactional
     public List<GroupChallengeCatalogResponse>
-    getCatalogChallengesByWorkoutType(
-            WorkoutType workoutType
-    ) {
-
-        return groupChallengeCatalogRepository
-                .findByWorkoutType(
-                        workoutType
-                )
-                .stream()
-                .map(groupChallengeCatalogMapper::toResponse)
-                .toList();
+    getCatalogChallengesByWorkoutType(WorkoutType workoutType) {
+        return groupChallengeCatalogRepository.findByWorkoutType(workoutType).stream().map(groupChallengeCatalogMapper::toResponse).toList();
     }
 
     @Override
-    public GroupChallengeCatalogResponse updateCatalogChallenge(
-            Integer catalogId,
-            UpdateGroupChallengeCatalogRequest request
-    ) {
-
-        GroupChallengeCatalog challenge =
-                groupChallengeCatalogRepository
-                        .findById(catalogId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Group challenge catalog not found."
-                                )
-                        );
+    public GroupChallengeCatalogResponse updateCatalogChallenge(Integer catalogId, UpdateGroupChallengeCatalogRequest request) {
+        GroupChallengeCatalog challenge = groupChallengeCatalogRepository.findById(catalogId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Group challenge catalog not found."));
         String oldName = challenge.getName();
 
         challenge.setName(request.getName());
@@ -130,39 +85,20 @@ public class GroupChallengeCatalogServiceImpl
 
         GroupChallengeCatalog saved =groupChallengeCatalogRepository.save(challenge);
 
-        featureEventTrackingService.handle(
-                fitnessChallengeEventFactory.updated(
-                        saved,
-                        currentUserService.getCurrentUser(),
-                        oldName
-                )
-        );
+        featureEventTrackingService.handle(fitnessChallengeEventFactory.updated(saved, currentUserService.getCurrentUser(), oldName));
 
         return groupChallengeCatalogMapper.toResponse(saved);}
 
     @Override
-    public void deleteCatalogChallenge(
-            Integer catalogId
-    ) {
+    public void deleteCatalogChallenge(Integer catalogId) {
 
-        GroupChallengeCatalog challenge =
-                groupChallengeCatalogRepository
+        GroupChallengeCatalog challenge = groupChallengeCatalogRepository
                         .findById(catalogId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Group challenge catalog not found."
-                                )
-                        );
-
+                        .orElseThrow(() -> new ResourceNotFoundException("Group challenge catalog not found."));
         String oldName = challenge.getName();
 
         groupChallengeCatalogRepository.delete(challenge);
 
-        featureEventTrackingService.handle(
-                fitnessChallengeEventFactory.deleted(
-                        challenge,
-                        currentUserService.getCurrentUser()
-                )
-        );
+        featureEventTrackingService.handle(fitnessChallengeEventFactory.deleted(challenge, currentUserService.getCurrentUser()));
     }
 }

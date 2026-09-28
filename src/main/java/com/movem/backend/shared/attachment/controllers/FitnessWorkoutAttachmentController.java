@@ -3,6 +3,7 @@ package com.movem.backend.shared.attachment.controllers;
 import com.movem.backend.shared.attachment.dtos.responses.AttachmentResponse;
 import com.movem.backend.shared.attachment.services.AttachmentService;
 import com.movem.backend.shared.attachment.services.FitnessWorkoutAttachmentService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -14,13 +15,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/workouts")
+@Tag(name = "Fitness Attachments", description = "Upload, Fetch Picture URLs, Download, etc.")
 @RequiredArgsConstructor
 public class FitnessWorkoutAttachmentController {
     private final FitnessWorkoutAttachmentService workoutAttachmentService;
     private final AttachmentService attachmentService;
 
     @PostMapping(value = "/{sessionId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<AttachmentResponse> uploadAttachment(@PathVariable Integer sessionId, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<AttachmentResponse> uploadWorkoutAttachment(@PathVariable Integer sessionId, @RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(workoutAttachmentService.upload(sessionId, file));
     }
     @GetMapping("/{sessionId}/attachments")
@@ -28,11 +30,11 @@ public class FitnessWorkoutAttachmentController {
         return ResponseEntity.ok(workoutAttachmentService.getAttachments(sessionId));
     }
     @PostMapping(value = "/clubs/{clubId}/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<AttachmentResponse> uploadClubProfile(@PathVariable Integer clubId, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<AttachmentResponse> uploadFitnessClubProfile(@PathVariable Integer clubId, @RequestParam("file") MultipartFile file) {
         return ResponseEntity.status(HttpStatus.CREATED).body(attachmentService.uploadClubProfile(clubId, file));
     }
     @PostMapping(value = "/clubs/{clubId}/cover", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<AttachmentResponse> uploadClubCover(@PathVariable Integer clubId, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<AttachmentResponse> uploadFitnessClubCover(@PathVariable Integer clubId, @RequestParam("file") MultipartFile file) {
         return ResponseEntity.status(HttpStatus.CREATED).body(attachmentService.uploadClubCover(clubId, file));
     }
     @GetMapping("/clubs/{clubId}")

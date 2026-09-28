@@ -11,11 +11,9 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class GroupPermissionService {
-
     private final GroupMemberRepository groupMemberRepository;
 
     public void validateGroupMember(ActivityGroup group, User currentUser) {
-
         boolean isMember = groupMemberRepository.existsByActivityGroupAndUser(group, currentUser);
 
         if (!isMember) {
@@ -23,32 +21,14 @@ public class GroupPermissionService {
         }
     }
     public void validateGroupLeader(ActivityGroup group, User currentUser) {
-
-        boolean isLeader =
-                groupMemberRepository
-                        .existsByActivityGroupAndUserAndRole(
-                                group,
-                                currentUser,
-                                GroupRole.LEADER
-                        );
+        boolean isLeader = groupMemberRepository.existsByActivityGroupAndUserAndRole(group, currentUser, GroupRole.LEADER);
 
         if (!isLeader) {
-
-            throw new UnauthorizedActionException(
-                    "Only the group leader can perform this action."
-            );
+            throw new UnauthorizedActionException("Only the group leader can perform this action.");
         }
     }
 
-
-    public void validateCanManageGroup(
-            ActivityGroup group,
-            User currentUser
-    ) {
-
-        validateGroupLeader(
-                group,
-                currentUser
-        );
+    public void validateCanManageGroup(ActivityGroup group, User currentUser) {
+        validateGroupLeader(group, currentUser);
     }
 }

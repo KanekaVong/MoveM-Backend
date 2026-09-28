@@ -8,6 +8,7 @@ import com.movem.backend.commons.enums.shared.ActivityStatus;
 import com.movem.backend.commons.enums.shared.ActivityType;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,8 +16,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "Activity", indexes = {
-        @Index(name = "idx_activity_user", columnList = "user_id"),
+@Table(name = "Activity", indexes = {@Index(name = "idx_activity_user", columnList = "user_id"),
         @Index(name = "idx_activity_status", columnList = "status"),
         @Index(name = "idx_activity_type", columnList = "activity_type"),
         @Index(name = "idx_activity_deadline", columnList = "deadline"),
@@ -27,82 +27,73 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Activity {
-
     @Id
     @Column(length = 10)
-    private String id;
+    String id;
 
     @Column(name = "activity_name", nullable = false)
-    private String activityName;
+    String activityName;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "activity_type")
-    private ActivityType activityType;
+    ActivityType activityType;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user;
+    User user;
 
     @Enumerated(EnumType.STRING)
-    private ActivityStatus status;
+    ActivityStatus status;
 
     @Column(name = "start_activity")
-    private LocalDateTime startActivity;
-
-    private LocalDateTime deadline;
+    LocalDateTime startActivity;
+    LocalDateTime deadline;
 
     @Column(columnDefinition = "TEXT")
-    private String description;
+    String description;
 
     @Column(name = "location_name")
-    private String locationName;
+    String locationName;
 
     @Column(name = "location_address")
-    private String locationAddress;
+    String locationAddress;
 
-    private BigDecimal lat;
-
-    private BigDecimal lng;
+    BigDecimal lat;
+    BigDecimal lng;
 
     @Column(name = "google_place_id")
-    private String googlePlaceId;
+    String googlePlaceId;
 
     @Column(name = "coordinates")
-    private String coordinates;
+    String coordinates;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_activity")
-    private Activity parentActivity;
+    Activity parentActivity;
 
     @OneToMany(mappedBy = "parentActivity")
-    private Set<Activity> childActivities = new HashSet<>();
+    Set<Activity> childActivities = new HashSet<>();
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    LocalDateTime updatedAt;
 
     @ManyToMany
     @JoinTable(name = "activity_labels", joinColumns = @JoinColumn(name = "activity_id"), inverseJoinColumns = @JoinColumn(name = "label_id"))
-    private Set<TaskLabel> labels = new HashSet<>();
+    Set<TaskLabel> labels = new HashSet<>();
 
     @OneToOne(mappedBy = "activity", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Task task;
+    Task task;
 
-    private Boolean isCollaborative = false;
+    Boolean isCollaborative = false;
 
     @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    LocalDateTime deletedAt;
 
-    @OneToOne(
-            mappedBy = "activity",
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    private Trip trip;
-
-
+    @OneToOne(mappedBy = "activity", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    Trip trip;
 }

@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TaskLabelRepository extends JpaRepository<TaskLabel, Integer> {
-
     List<TaskLabel> findByUser(User user);
 
     List<TaskLabel> findByIdInAndUser(List<Integer> ids, User user);

@@ -3,33 +3,35 @@ package com.movem.backend.fitness.workout.dtos.requests;
 import com.movem.backend.commons.enums.Fitness.FitnessWorkoutStatus;
 import com.movem.backend.commons.enums.Fitness.TrackingMode;
 import com.movem.backend.commons.enums.Fitness.WorkoutType;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class FitnessWorkoutSearchRequest {
+    String search;
 
-    private String search;
+    WorkoutType workoutType;
 
-    private WorkoutType workoutType;
+    FitnessWorkoutStatus status;
 
-    private FitnessWorkoutStatus status;
+    TrackingMode trackingMode;
 
-    private TrackingMode trackingMode;
+    BigDecimal minDistance;
+    BigDecimal maxDistance;
 
-    private BigDecimal minDistance;
-    private BigDecimal maxDistance;
+    BigDecimal minCalories;
+    BigDecimal maxCalories;
 
-    private BigDecimal minCalories;
-    private BigDecimal maxCalories;
+    LocalDate startDate;
+    LocalDate endDate;
 
-    private LocalDate startDate;
-    private LocalDate endDate;
-
-    private String sortBy;
-    private String direction;
+    String sortBy;
+    String direction;
 }

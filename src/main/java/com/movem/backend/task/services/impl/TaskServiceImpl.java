@@ -33,12 +33,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
-
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
-
     private final TaskRepository taskRepository;
     private final ActivityService activityService;
     private final CurrentUserService currentUserService;
@@ -122,10 +120,7 @@ public class TaskServiceImpl implements TaskService {
         activity.getLabels().clear();
 
         activityService.attachLabels(activity, request.getLabelIds());
-        checklistService.updateChecklistItems(
-                task,
-                request.getChecklists()
-        );
+        checklistService.updateChecklistItems(task, request.getChecklists());
 
         reminderService.syncTaskReminders(task);
         reminderService.addCustomReminders(task, request.getReminders());
@@ -269,5 +264,4 @@ public class TaskServiceImpl implements TaskService {
         }
         return taskMapper.toResponse(task);
     }
-
 }

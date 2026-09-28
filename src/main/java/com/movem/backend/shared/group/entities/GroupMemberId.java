@@ -2,9 +2,11 @@ package com.movem.backend.shared.group.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
 
@@ -12,12 +14,10 @@ import java.io.Serializable;
 @Setter
 @EqualsAndHashCode
 @Embeddable
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class GroupMemberId implements Serializable {
-
     @Column(name = "group_id")
-    private Integer groupId;
-
+    Integer groupId;
     @Column(name = "user_id")
-    private Integer userId;
-
+    Integer userId;
 }

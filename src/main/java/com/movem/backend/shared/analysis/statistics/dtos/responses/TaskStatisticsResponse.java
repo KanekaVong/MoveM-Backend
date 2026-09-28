@@ -1,38 +1,30 @@
 package com.movem.backend.shared.analysis.statistics.dtos.responses;
 
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 
 @Data
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TaskStatisticsResponse {
+     long activeTasks;
+     long completedTasks;
+     long pendingTasks;
+     long inProgressTasks;
+     long overdueTasks;
 
-    private long activeTasks;
+     double completionRate;
 
-    private long completedTasks;
+     long tasksDueToday;
+     long tasksDueThisWeek;
+     long completedThisWeek;
 
-    private long pendingTasks;
-
-    private long inProgressTasks;
-
-    private long overdueTasks;
-
-    private double completionRate;
-
-    private long tasksDueToday;
-
-    private long tasksDueThisWeek;
-
-    private long completedThisWeek;
-
-    private long highPriorityTasks;
-
-    private long mediumPriorityTasks;
-
-    private long lowPriorityTasks;
-
-    private long personalTasks;
-
-    private long collaborativeTasks;
+     long highPriorityTasks;
+     long mediumPriorityTasks;
+     long lowPriorityTasks;
+     long personalTasks;
+     long collaborativeTasks;
 
 }

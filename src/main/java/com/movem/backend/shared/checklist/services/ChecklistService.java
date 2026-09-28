@@ -9,7 +9,6 @@ import com.movem.backend.trip.entities.Trip;
 import java.util.List;
 
 public interface ChecklistService {
-
     void createChecklistItems(Task task, List<CreateChecklistItemRequest> items);
     void createTripChecklistItems(Trip trip, List<CreateChecklistItemRequest> items);
 

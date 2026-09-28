@@ -1,30 +1,24 @@
 package com.movem.backend.social.comment.dtos.response;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class CommentResponse {
-    private Long id;
-
-    private Integer userId;
-
-    private String username;
-
-    private String firstname;
-
-    private String lastname;
-
-    private String profilePic;
-
-    private String content;
-
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
-    private boolean edited;
+     Long id;
+     Integer userId;
+     String username;
+     String firstname;
+     String lastname;
+     String profilePic;
+     String content;
+     LocalDateTime createdAt;
+     LocalDateTime updatedAt;
+     boolean edited;
 }

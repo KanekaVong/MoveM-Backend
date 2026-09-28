@@ -9,19 +9,11 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class MyGroupResponse {
-
-    private Integer groupId;
-
-    private String activityId;
-
-    private String activityName;
-
-    private String activityDescription;
-
-    private LocalDateTime createdAt;
-
-    private Integer memberCount;
-
-    private GroupRole role;
-
+     Integer groupId;
+     String activityId;
+     String activityName;
+     String activityDescription;
+     LocalDateTime createdAt;
+     Integer memberCount;
+     GroupRole role;
 }

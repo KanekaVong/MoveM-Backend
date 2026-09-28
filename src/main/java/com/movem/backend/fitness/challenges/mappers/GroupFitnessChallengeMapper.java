@@ -3,7 +3,7 @@ package com.movem.backend.fitness.challenges.mappers;
 import com.movem.backend.fitness.challenges.dtos.responses.GroupFitnessChallengeResponse;
 import com.movem.backend.fitness.challenges.entities.GroupFitnessChallenge;
 import com.movem.backend.shared.attachment.repositories.AttachmentRepository;
-import com.movem.backend.shared.attachment.services.GcsFileStorageService;
+import com.movem.backend.shared.attachment.services.impl.GcsFileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

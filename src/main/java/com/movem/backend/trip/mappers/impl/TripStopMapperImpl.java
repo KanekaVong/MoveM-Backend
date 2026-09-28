@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 
 @Component
 public class TripStopMapperImpl implements TripStopMapper {
-
     @Override
     public TripStopResponse toResponse(TripStop stop) {
         if (stop == null) {

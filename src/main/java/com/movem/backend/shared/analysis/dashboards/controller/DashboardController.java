@@ -10,18 +10,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/dashboard")
-@Tag(
-        name = "Social - Dashboard"
-)
+@Tag(name = "Social - Dashboard")
 @RequiredArgsConstructor
 public class DashboardController {
-
     private final DashboardService dashboardService;
 
     @GetMapping("/me")
     public DashboardResponse getMyDashboard() {
-
         return dashboardService.getMyDashboard();
-
     }
 }

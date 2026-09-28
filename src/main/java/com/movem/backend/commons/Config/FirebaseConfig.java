@@ -11,14 +11,10 @@ import java.io.IOException;
 
 @Configuration
 public class FirebaseConfig {
-
     @PostConstruct
     public void initializeFirebase() throws IOException {
         if (FirebaseApp.getApps().isEmpty()) {
-            FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.getApplicationDefault())
-                    .build();
-
+            FirebaseOptions options = FirebaseOptions.builder().setCredentials(GoogleCredentials.getApplicationDefault()).build();
             FirebaseApp.initializeApp(options);
         }
     }

@@ -13,7 +13,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 
 public interface TaskRepository extends JpaRepository<Task, String>, JpaSpecificationExecutor<Task> {
-
     @EntityGraph(attributePaths = {"activity", "checklists", "reminders", "activity.labels"})
     List<Task> findAll(Specification<Task> specification);
 

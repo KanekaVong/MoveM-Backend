@@ -14,9 +14,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class ActivityDeletionServiceImpl
-        implements ActivityDeletionService {
-
+public class ActivityDeletionServiceImpl implements ActivityDeletionService {
     private final CommentRepository commentRepository;
     private final ActivityFeedRepository activityFeedRepository;
     private final GroupRepository groupRepository;
@@ -25,7 +23,6 @@ public class ActivityDeletionServiceImpl
 
     @Override
     public void permanentlyDelete(Activity activity) {
-
         activity.getLabels().clear();
         activityRepository.save(activity);
 

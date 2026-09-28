@@ -17,12 +17,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-    @Service
-    @RequiredArgsConstructor
-    @Transactional
-    public class FitnessChallengeStatusServiceImpl
-            implements FitnessChallengeStatusService {
-
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class FitnessChallengeStatusServiceImpl implements FitnessChallengeStatusService {
         private final FeatureEventTrackingService featureEventTrackingService;
         private final FitnessChallengeEventFactory fitnessChallengeEventFactory;
         private final GroupFitnessChallengeRepository groupFitnessChallengeRepository;
@@ -32,133 +30,72 @@ import java.util.List;
         @Override
         @Scheduled(fixedRate = 20000)
         public void updateChallengeStatuses() {
-
             LocalDateTime now = LocalDateTime.now();
 
             updateUpcomingChallenges(now);
-
             updateInProgressChallenges(now);
         }
 
+        private void updateUpcomingChallenges(LocalDateTime now) {
 
-        private void updateUpcomingChallenges(
-                LocalDateTime now
-        ) {
-
-            List<GroupFitnessChallenge> challenges =
-                    groupFitnessChallengeRepository
+            List<GroupFitnessChallenge> challenges = groupFitnessChallengeRepository
                             .findAll()
                             .stream()
-                            .filter(challenge ->
-                                    challenge.getStatus()
-                                            == FitnessChallengeStatus.UPCOMING
-                            )
-                            .filter(challenge ->
-                                    !now.isBefore(
-                                            challenge.getStartAt()
-                                    )
-                            )
+                            .filter(challenge -> challenge.getStatus() == FitnessChallengeStatus.UPCOMING)
+                            .filter(challenge -> !now.isBefore(challenge.getStartAt()))
                             .toList();
 
 
             for (GroupFitnessChallenge challenge : challenges) {
-
-                challenge.setStatus(
-                        FitnessChallengeStatus.IN_PROGRESS
-                );
-
-                updateActivityStatus(
-                        challenge.getActivity(),
-                        ActivityStatus.IN_PROGRESS
-                );
-
+                challenge.setStatus(FitnessChallengeStatus.IN_PROGRESS);
+                updateActivityStatus(challenge.getActivity(), ActivityStatus.IN_PROGRESS);
                 challenge.setUpdatedAt(now);
 
-
-                featureEventTrackingService.handle(
-                        fitnessChallengeEventFactory.challengeStarted(
-                                challenge
-                        )
-                );
+                featureEventTrackingService.handle(fitnessChallengeEventFactory.challengeStarted(challenge));
             }
 
 
             if (!challenges.isEmpty()) {
-
-                groupFitnessChallengeRepository.saveAll(
-                        challenges
-                );
+                groupFitnessChallengeRepository.saveAll(challenges);
             }
         }
 
+        private void updateInProgressChallenges(LocalDateTime now) {
 
-        private void updateInProgressChallenges(
-                LocalDateTime now
-        ) {
-
-            List<GroupFitnessChallenge> challenges =
-                    groupFitnessChallengeRepository
+            List<GroupFitnessChallenge> challenges = groupFitnessChallengeRepository
                             .findAll()
                             .stream()
-                            .filter(challenge ->
-                                    challenge.getStatus()
-                                            == FitnessChallengeStatus.IN_PROGRESS
-                            )
-                            .filter(challenge ->
-                                    !now.isBefore(
-                                            challenge.getEndAt()
-                                    )
-                            )
+                            .filter(challenge -> challenge.getStatus() == FitnessChallengeStatus.IN_PROGRESS)
+                            .filter(challenge -> !now.isBefore(challenge.getEndAt()))
                             .toList();
 
 
             for (GroupFitnessChallenge challenge : challenges) {
-
-                challenge.setStatus(
-                        FitnessChallengeStatus.COMPLETE
-                );
-
-                updateActivityStatus(
-                        challenge.getActivity(),
-                        ActivityStatus.COMPLETE
-                );
+                challenge.setStatus(FitnessChallengeStatus.COMPLETE);
+                updateActivityStatus(challenge.getActivity(), ActivityStatus.COMPLETE);
 
                 challenge.setUpdatedAt(now);
 
-                featureEventTrackingService.handle(
-                        fitnessChallengeEventFactory.challengeCompleted(
-                                challenge
-                        )
-                );
+                featureEventTrackingService.handle(fitnessChallengeEventFactory.challengeCompleted(challenge));
             }
 
 
             if (!challenges.isEmpty()) {
-
-                groupFitnessChallengeRepository.saveAll(
-                        challenges
-                );
+                groupFitnessChallengeRepository.saveAll(challenges);
             }
         }
 
-
-        private void updateActivityStatus(
-                Activity activity,
-                ActivityStatus status
-        ) {
+        private void updateActivityStatus(Activity activity, ActivityStatus status) {
 
             if (activity == null) {
                 return;
             }
 
             activity.setStatus(status);
-
-            activity.setUpdatedAt(
-                    LocalDateTime.now()
-            );
+            activity.setUpdatedAt(LocalDateTime.now());
 
             activityRepository.save(activity);
         }
-    }
+}
 
 

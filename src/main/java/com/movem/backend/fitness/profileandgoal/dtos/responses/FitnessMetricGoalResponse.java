@@ -1,30 +1,24 @@
 package com.movem.backend.fitness.profileandgoal.dtos.responses;
 
 import com.movem.backend.commons.enums.Fitness.FitnessGoalMetric;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 
 @Data
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class FitnessMetricGoalResponse {
-
-    private Integer id;
-
-    private FitnessGoalMetric metricType;
-
-    private BigDecimal target;
-
-    private String unit;
-
-    private String period;
-
-    private BigDecimal current;
-
-    private BigDecimal remaining;
-
-    private BigDecimal progressPercent;
-
-    private String status;
+    Integer id;
+    FitnessGoalMetric metricType;
+    BigDecimal target;
+    String unit;
+    String period;
+    BigDecimal current;
+    BigDecimal remaining;
+    BigDecimal progressPercent;
+    String status;
 }

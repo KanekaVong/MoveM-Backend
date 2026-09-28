@@ -13,18 +13,18 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
-@Tag(name = "Task - Attachments", description = "Add Attachment to tasks")
+@Tag(name = "Task Attachments", description = "Upload, Fetch Picture URLs, Download, etc.")
 @RequiredArgsConstructor
 public class TaskAttachmentController {
     private final TaskAttachmentService taskAttachmentService;
 
     @PostMapping(value = "/{activityId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<AttachmentResponse> uploadAttachment(@PathVariable String activityId, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<AttachmentResponse> uploadTaskAttachment(@PathVariable String activityId, @RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(taskAttachmentService.upload(activityId, file));
     }
 
     @GetMapping("/{activityId}/attachments")
-    public ResponseEntity<List<AttachmentResponse>> getAttachments(@PathVariable String activityId) {
+    public ResponseEntity<List<AttachmentResponse>> getTaskAttachments(@PathVariable String activityId) {
         return ResponseEntity.ok(taskAttachmentService.getAttachments(activityId));
     }
 }

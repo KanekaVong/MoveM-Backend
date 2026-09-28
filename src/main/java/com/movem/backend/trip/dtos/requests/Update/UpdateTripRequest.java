@@ -8,10 +8,8 @@ import com.movem.backend.trip.dtos.requests.Create.CreateTripStopRequest;
 import com.movem.backend.commons.Util.TripUtil.TripUpdateSource;
 import com.movem.backend.commons.enums.shared.ActivityStatus;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,43 +19,43 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UpdateTripRequest implements TripUpdateSource {
-
-    private Integer id;
+    Integer id;
 
     @NotBlank
-    private String activityName;
+    String activityName;
 
-    private String description;
+    String description;
 
-    private LocalDateTime startActivity;
-    private LocalDateTime deadline;
+    LocalDateTime startActivity;
+    LocalDateTime deadline;
 
-    private String locationName;
-    private String locationAddress;
+    String locationName;
+    String locationAddress;
 
-    private BigDecimal lat;
-    private BigDecimal lng;
+    BigDecimal lat;
+    BigDecimal lng;
 
-    private String googlePlaceId;
-    private String coordinates;
-    private String destination;
-    private ActivityStatus status;
+    String googlePlaceId;
+    String coordinates;
+    String destination;
+    ActivityStatus status;
 
-    private BigDecimal totalBudget;
+    BigDecimal totalBudget;
 
-    private List<CreateTripStopRequest> addStops;
-    private List<UpdateTripStopRequest> updateStops;
-    private List<Integer> removeStopIds;
+    List<CreateTripStopRequest> addStops;
+    List<UpdateTripStopRequest> updateStops;
+    List<Integer> removeStopIds;
 
-    private List<CreateTripBudgetRequest> addBudgets;
-    private List<UpdateTripBudgetRequest> updateBudgets;
-    private List<Integer> removeBudgetIds;
+    List<CreateTripBudgetRequest> addBudgets;
+    List<UpdateTripBudgetRequest> updateBudgets;
+    List<Integer> removeBudgetIds;
 
-    private List<CreateTripPackingItemRequest> addPackingItems;
-    private List<Integer> removePackingItemIds;
+    List<CreateTripPackingItemRequest> addPackingItems;
+    List<Integer> removePackingItemIds;
 
-    private List<CreateChecklistItemRequest> addChecklistItems;
-    private List<UpdateChecklistItemRequest> updateChecklistItems;
+    List<CreateChecklistItemRequest> addChecklistItems;
+    List<UpdateChecklistItemRequest> updateChecklistItems;
 }
 

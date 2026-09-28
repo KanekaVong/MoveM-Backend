@@ -6,9 +6,5 @@ import com.movem.backend.authentication.entities.User;
 import java.math.BigDecimal;
 
 public interface CalorieCalculationService {
-
-    BigDecimal calculateCalories(
-            User user,
-            FitnessWorkoutSession session
-    );
+    BigDecimal calculateCalories(User user, FitnessWorkoutSession session);
 }

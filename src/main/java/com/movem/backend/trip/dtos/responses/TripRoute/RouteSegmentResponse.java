@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 @Getter
 @Builder
 public class RouteSegmentResponse {
-
     private Integer sequenceOrder;
 
     private String from;

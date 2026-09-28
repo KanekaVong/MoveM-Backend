@@ -7,9 +7,5 @@ import com.movem.backend.shared.analysis.statistics.dtos.responses.FitnessStatis
 import java.util.List;
 
 public interface FitnessMetricProgressService {
-
-    List<FitnessMetricProgressResponse> getMetricProgress(
-            FitnessStatisticsResponse statistics
-    );
-
+    List<FitnessMetricProgressResponse> getMetricProgress(FitnessStatisticsResponse statistics);
 }

@@ -13,26 +13,17 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class CurrentUserServiceImpl implements CurrentUserService {
-
     private final UserRepository userRepository;
 
     @Override
     public User getCurrentUser() {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null
-                || !authentication.isAuthenticated()
-                || authentication instanceof AnonymousAuthenticationToken) {
-
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
             throw new ResourceNotFoundException("No authenticated user found.");
         }
-
         String username = authentication.getName();
-
-        return userRepository.findByUsername(username)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found."));
+        return userRepository.findByUsername(username).orElseThrow(() -> new ResourceNotFoundException("User not found."));
     }
 }

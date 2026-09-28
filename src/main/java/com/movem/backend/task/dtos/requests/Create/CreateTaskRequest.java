@@ -6,10 +6,8 @@ import com.movem.backend.commons.Util.TaskUtil.TaskCreateSource;
 import com.movem.backend.shared.reminder.dtos.requests.CreateReminderRequest;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,23 +17,22 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateTaskRequest implements TaskCreateSource {
-
     @NotBlank
-    private String activityName;
-    private String description;
-    private LocalDateTime startActivity;
-    private LocalDateTime deadline;
-    private String parentActivityId;
+    String activityName;
+    String description;
+    LocalDateTime startActivity;
+    LocalDateTime deadline;
+    String parentActivityId;
 
     @NotNull
-    private Priority priority;
-    private Boolean isRecurring = false;
-    private RecurringType recurringType;
-    private Integer recurringInterval = 1;
-    private LocalDate recurringEndDate;
-    private List<Integer> labelIds;
-    private List<CreateChecklistItemRequest> checklists;
-    private List<CreateReminderRequest> reminders;
-
+    Priority priority;
+    Boolean isRecurring = false;
+    RecurringType recurringType;
+    Integer recurringInterval = 1;
+    LocalDate recurringEndDate;
+    List<Integer> labelIds;
+    List<CreateChecklistItemRequest> checklists;
+    List<CreateReminderRequest> reminders;
 }

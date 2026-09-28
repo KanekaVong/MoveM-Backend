@@ -15,11 +15,7 @@ import java.util.Set;
 
 @Component
 public class FriendEventFactory {
-
-    public FeatureEvent friendRequestSent(
-            User sender,
-            User receiver
-    ) {
+    public FeatureEvent friendRequestSent(User sender, User receiver) {
         return FeatureEvent.builder()
                 .actor(sender)
                 .feedEvent(ActivityFeedEvent.FRIEND_REQUEST_SENT)
@@ -33,96 +29,53 @@ public class FriendEventFactory {
                 .referenceType(ReferenceType.USER)
                 .referenceId(sender.getId().toString())
                 .notificationTitle("New Friend Request")
-                .notificationMessage(
-                        sender.getUsername()
-                                + " sent you a friend request."
-                )
-                .actions(Set.of(
-                        FeatureEventAction.AUDIT_LOG,
-                        FeatureEventAction.NOTIFICATION
-                ))
+                .notificationMessage(sender.getUsername() + " sent you a friend request.")
+                .actions(Set.of(FeatureEventAction.AUDIT_LOG, FeatureEventAction.NOTIFICATION))
                 .build();
     }
 
-    public FeatureEvent friendRequestAccepted(
-            FriendRequest request,
-            User actor
-    ) {
+    public FeatureEvent friendRequestAccepted(FriendRequest request, User actor) {
         return FeatureEvent.builder()
                 .actor(actor)
-                .feedEvent(
-                        ActivityFeedEvent.FRIEND_REQUEST_ACCEPTED
-                )
+                .feedEvent(ActivityFeedEvent.FRIEND_REQUEST_ACCEPTED)
                 .auditCategory(AuditCategory.FRIEND)
                 .auditSeverity(AuditSeverity.INFO)
                 .auditEntity("status")
                 .auditMessage("Accepted friend request.")
-                .newValue(
-                        request.getSender().getUsername()
-                )
-                .notificationReceiver(
-                        request.getSender()
-                )
-                .notificationType(
-                        NotificationType.FRIEND_ACCEPTED
-                )
+                .newValue(request.getSender().getUsername())
+                .notificationReceiver(request.getSender())
+                .notificationType(NotificationType.FRIEND_ACCEPTED)
                 .referenceType(ReferenceType.USER)
-                .referenceId(
-                        actor.getId().toString()
-                )
-                .notificationTitle(
-                        "Friend Request Accepted"
-                )
-                .notificationMessage(
-                        actor.getUsername()
-                                + " accepted your friend request."
-                )
-                .actions(Set.of(
-                        FeatureEventAction.AUDIT_LOG,
-                        FeatureEventAction.NOTIFICATION
-                ))
+                .referenceId(actor.getId().toString())
+                .notificationTitle("Friend Request Accepted")
+                .notificationMessage(actor.getUsername() + " accepted your friend request.")
+                .actions(Set.of(FeatureEventAction.AUDIT_LOG, FeatureEventAction.NOTIFICATION))
                 .build();
     }
 
-    public FeatureEvent friendRequestRejected(
-            FriendRequest request,
-            User actor
-    ) {
+    public FeatureEvent friendRequestRejected(FriendRequest request, User actor) {
         return FeatureEvent.builder()
                 .actor(actor)
-                .feedEvent(
-                        ActivityFeedEvent.FRIEND_REQUEST_REJECTED
-                )
+                .feedEvent(ActivityFeedEvent.FRIEND_REQUEST_REJECTED)
                 .auditCategory(AuditCategory.FRIEND)
                 .auditSeverity(AuditSeverity.INFO)
                 .auditEntity("status")
                 .auditMessage("Rejected friend request.")
-                .newValue(
-                        request.getSender().getUsername()
-                )
-                .actions(Set.of(
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .newValue(request.getSender().getUsername())
+                .actions(Set.of(FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 
-    public FeatureEvent friendRemoved(
-            User actor,
-            User friend
-    ) {
+    public FeatureEvent friendRemoved(User actor, User friend) {
         return FeatureEvent.builder()
                 .actor(actor)
-                .feedEvent(
-                        ActivityFeedEvent.FRIEND_REMOVED
-                )
+                .feedEvent(ActivityFeedEvent.FRIEND_REMOVED)
                 .auditCategory(AuditCategory.FRIEND)
                 .auditSeverity(AuditSeverity.WARNING)
                 .auditEntity("friend")
                 .auditMessage("Removed friend.")
                 .oldValue(friend.getUsername())
-                .actions(Set.of(
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .actions(Set.of(FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 }

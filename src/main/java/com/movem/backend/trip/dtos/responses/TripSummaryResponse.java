@@ -1,7 +1,9 @@
 package com.movem.backend.trip.dtos.responses;
 
 import com.movem.backend.commons.enums.shared.ActivityStatus;
+import com.movem.backend.shared.attachment.dtos.responses.AttachmentResponse;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,26 +13,17 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TripSummaryResponse {
-
-    private String activityId;
-
-    private String activityName;
-
-    private String destination;
-
-    private String locationName;
-
-    private LocalDateTime startActivity;
-
-    private LocalDateTime deadline;
-
-    private ActivityStatus status;
-
-    private Integer memberCount;
-
-    private BigDecimal totalAllocatedBudget;
-
-    private BigDecimal totalSpent;
-
+     String activityId;
+     String activityName;
+     String destination;
+     String locationName;
+     LocalDateTime startActivity;
+     LocalDateTime deadline;
+     ActivityStatus status;
+     Integer memberCount;
+     BigDecimal totalAllocatedBudget;
+     BigDecimal totalSpent;
+     AttachmentResponse coverPhoto;
 }

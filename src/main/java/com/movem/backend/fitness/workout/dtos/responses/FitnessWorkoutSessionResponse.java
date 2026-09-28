@@ -2,6 +2,7 @@ package com.movem.backend.fitness.workout.dtos.responses;
 
 import com.movem.backend.commons.enums.Fitness.FitnessWorkoutStatus;
 import com.movem.backend.commons.enums.Fitness.WorkoutType;
+import com.movem.backend.fitness.achievement.dtos.responses.UserAchievementResponse;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,6 +11,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -32,4 +34,5 @@ public class FitnessWorkoutSessionResponse {
      BigDecimal height;
      BigDecimal weight;
      BigDecimal bmi;
+     List<UserAchievementResponse> currentAchievements;
 }

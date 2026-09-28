@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TripBookmarkRepository extends JpaRepository<TripBookmark, Integer> {
-
     List<TripBookmark> findByUserOrderByCreatedAtDesc(User user);
 
     Optional<TripBookmark> findByIdAndUser(Integer id, User user);

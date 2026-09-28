@@ -1,6 +1,7 @@
 package com.movem.backend.trip.dtos.responses;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -10,19 +11,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TripBookmarkResponse {
-
-    private Integer id;
-
-    private String locationName;
-
-    private String locationAddress;
-
-    private BigDecimal lat;
-
-    private BigDecimal lng;
-
-    private String googlePlaceId;
-
-    private LocalDateTime createdAt;
+     Integer id;
+     String locationName;
+     String locationAddress;
+     BigDecimal lat;
+     BigDecimal lng;
+     String googlePlaceId;
+     LocalDateTime createdAt;
 }

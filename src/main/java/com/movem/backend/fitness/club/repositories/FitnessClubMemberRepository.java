@@ -12,10 +12,7 @@ import java.util.Optional;
 public interface FitnessClubMemberRepository extends JpaRepository<FitnessClubMember, FitnessClubMemberId> {
     List<FitnessClubMember> findByFitnessClub(FitnessClub fitnessClub);
     List<FitnessClubMember> findByUser(User user);
-
     Optional<FitnessClubMember> findByFitnessClubAndUser(FitnessClub fitnessClub, User user);
-
     boolean existsByFitnessClubAndUser(FitnessClub fitnessClub, User user);
-
     long countByFitnessClub(FitnessClub fitnessClub);
 }

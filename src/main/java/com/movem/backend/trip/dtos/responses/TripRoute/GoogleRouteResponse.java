@@ -1,10 +1,12 @@
-package com.movem.backend.trip.dtos.responses.TripRoute.NearByPlaces;
+package com.movem.backend.trip.dtos.responses.TripRoute;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
@@ -12,11 +14,10 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class GoogleRouteResponse {
-
     @JsonProperty("routes")
-    private List<GoogleRoute> routes;
-
+    List<GoogleRoute> routes;
 
     @Getter
     @Setter

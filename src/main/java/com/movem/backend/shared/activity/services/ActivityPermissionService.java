@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ActivityPermissionService {
-
     private final GroupRepository groupRepository;
     private final FriendRepository friendRepository;
     private final GroupMemberRepository groupMemberRepository;

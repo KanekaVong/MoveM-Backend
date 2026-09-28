@@ -4,8 +4,6 @@ import com.movem.backend.trip.dtos.requests.Create.CreateTripRequest;
 import com.movem.backend.trip.dtos.requests.Update.UpdateTripRequest;
 import com.movem.backend.trip.dtos.responses.TripProgress.TripProgressResponse;
 import com.movem.backend.trip.dtos.responses.TripResponse;
-import com.movem.backend.trip.dtos.responses.TripRoute.NearByPlaces.ExternalRouteResponse;
-import com.movem.backend.trip.dtos.responses.TripRoute.NearByPlaces.NearbyPlaceResponse;
 import com.movem.backend.trip.dtos.responses.TripRoute.TripDistanceResponse;
 import com.movem.backend.trip.dtos.responses.TripRoute.TripOptimizedRouteResponse;
 import com.movem.backend.trip.dtos.responses.TripRoute.TripRouteResponse;
@@ -24,11 +22,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/trips")
-@Tag( name = "Trip - Trip Creations, Optimized Routes",
-      description = "Create trip, add collaborators, plan trips seamlessly")
+@Tag( name = "Trip - Trip Creations, Optimized Routes", description = "Create trip, add collaborators, plan trips seamlessly")
 @RequiredArgsConstructor
 public class TripController {
-
     private final TripService tripService;
 
     @PostMapping
@@ -42,98 +38,29 @@ public class TripController {
     }
 
     @GetMapping("/{activityId}/distance")
-    public ResponseEntity<TripDistanceResponse> getTripDistance(
-            @PathVariable String activityId
-    ) {
-        return ResponseEntity.ok(
-                tripService.calculateTripDistance(activityId)
-        );
+    public ResponseEntity<TripDistanceResponse> getTripDistance(@PathVariable String activityId) {
+        return ResponseEntity.ok(tripService.calculateTripDistance(activityId));
     }
 
     @GetMapping("/{activityId}/travel-time")
-    public ResponseEntity<TripTravelTimeResponse> getTripTravelTime(
-            @PathVariable String activityId,
-            @RequestParam(defaultValue = "DRIVING")
-            String mode
-    ) {
+    public ResponseEntity<TripTravelTimeResponse> getTripTravelTime(@PathVariable String activityId, @RequestParam(defaultValue = "DRIVING") String mode) {
 
-        return ResponseEntity.ok(
-                tripService.calculateTripTravelTime(
-                        activityId,
-                        mode
-                )
-        );
+        return ResponseEntity.ok(tripService.calculateTripTravelTime(activityId, mode));
     }
 
     @GetMapping("/{activityId}/route")
-    public ResponseEntity<TripRouteResponse> getTripRoute(
-            @PathVariable String activityId,
-            @RequestParam(defaultValue = "DRIVING")
-            String travelMode
-    ) {
-
-        return ResponseEntity.ok(
-                tripService.getTripRoute(
-                        activityId,
-                        travelMode
-                )
-        );
+    public ResponseEntity<TripRouteResponse> getTripRoute(@PathVariable String activityId, @RequestParam String travelMode, @RequestParam Double currentLat, @RequestParam Double currentLng) {
+        return ResponseEntity.ok(tripService.getTripRoute(activityId, travelMode, currentLat, currentLng));
     }
 
     @GetMapping("/{activityId}/progress")
-    public ResponseEntity<TripProgressResponse> getTripProgress(
-            @PathVariable String activityId
-    ) {
-
-        return ResponseEntity.ok(
-                tripService.getTripProgress(activityId)
-        );
+    public ResponseEntity<TripProgressResponse> getTripProgress(@PathVariable String activityId) {
+        return ResponseEntity.ok(tripService.getTripProgress(activityId));
     }
 
     @GetMapping("/{activityId}/route/optimize")
-    public ResponseEntity<TripOptimizedRouteResponse> optimizeTripRoute(
-            @PathVariable String activityId,
-            @RequestParam(defaultValue = "DRIVING") String travelMode
-    ) {
-        return ResponseEntity.ok(
-                tripService.optimizeTripRoute(
-                        activityId,
-                        travelMode
-                )
-        );
-    }
-
-    @GetMapping("/{activityId}/external-route")
-    public ResponseEntity<ExternalRouteResponse> getExternalRoute(
-            @PathVariable String activityId,
-            @RequestParam(defaultValue = "DRIVE")
-            String travelMode
-    ) {
-
-        return ResponseEntity.ok(
-                tripService.getExternalRoute(
-                        activityId,
-                        travelMode
-                )
-        );
-    }
-
-    @GetMapping("/{activityId}/stops/{stopId}/nearby")
-    public ResponseEntity<List<NearbyPlaceResponse>> getNearbyPlaces(
-            @PathVariable String activityId,
-            @PathVariable Integer stopId,
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) Double radiusKm
-    ) {
-
-        return ResponseEntity.ok(
-                tripService.getNearbyPlaces(
-                        activityId,
-                        stopId,
-                        type,
-                        radiusKm
-                )
-        );
+    public ResponseEntity<TripOptimizedRouteResponse> optimizeTripRoute(@PathVariable String activityId, @RequestParam(defaultValue = "DRIVING") String travelMode) {
+        return ResponseEntity.ok(tripService.optimizeTripRoute(activityId, travelMode));
     }
 
     @GetMapping
@@ -143,16 +70,12 @@ public class TripController {
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false, defaultValue = "asc") String direction,
             @RequestParam(required = false) Boolean upcoming,
-            @RequestParam(required = false) Boolean active
-    ) {
+            @RequestParam(required = false) Boolean active) {
         return ResponseEntity.ok(tripService.searchTrips(search, status, sortBy, direction, upcoming, active));
     }
 
     @PutMapping("/{activityId}")
-    public ResponseEntity<TripResponse> updateTrip(
-            @PathVariable String activityId,
-            @Valid @RequestBody UpdateTripRequest request
-    ) {
+    public ResponseEntity<TripResponse> updateTrip(@PathVariable String activityId, @Valid @RequestBody UpdateTripRequest request) {
         return ResponseEntity.ok(tripService.updateTrip(activityId, request));
     }
 

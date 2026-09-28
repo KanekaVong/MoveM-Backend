@@ -1,6 +1,5 @@
 package com.movem.backend.commons.enums.Auth;
 
 public enum ThemePreference {
-    LIGHT,
-    DARK_MODE
+    LIGHT, DARK_MODE
 }

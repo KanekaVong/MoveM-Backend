@@ -8,43 +8,45 @@ import com.movem.backend.commons.enums.HistoryandLogs.AuditSeverity;
 import com.movem.backend.commons.enums.HistoryandLogs.FeatureEventAction;
 import com.movem.backend.commons.enums.Notification.NotificationType;
 import com.movem.backend.commons.enums.Notification.ReferenceType;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.experimental.FieldDefaults;
 
 import java.util.Set;
 
 @Getter
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class FeatureEvent {
+     Activity activity;
+     User actor;
 
-    private Activity activity;
-    private User actor;
-
-    private ActivityFeedEvent feedEvent;
-    private String feedMessage;
+     ActivityFeedEvent feedEvent;
+     String feedMessage;
 
 
-    private AuditCategory auditCategory;
-    private AuditSeverity auditSeverity;
+     AuditCategory auditCategory;
+     AuditSeverity auditSeverity;
 
-    private String auditEntity;
-    private String auditMessage;
+     String auditEntity;
+     String auditMessage;
 
-    private String oldValue;
-    private String newValue;
+     String oldValue;
+     String newValue;
 
-    private User notificationReceiver;
+     User notificationReceiver;
 
-    private boolean notifyActivityGroup;
+     boolean notifyActivityGroup;
 
-    private NotificationType notificationType;
-    private ReferenceType referenceType;
+     NotificationType notificationType;
+     ReferenceType referenceType;
 
-    private String referenceId;
-    private String feedReferenceId;
+     String referenceId;
+     String feedReferenceId;
 
-    private String notificationTitle;
-    private String notificationMessage;
+     String notificationTitle;
+     String notificationMessage;
 
-    private Set<FeatureEventAction> actions;
+     Set<FeatureEventAction> actions;
 }

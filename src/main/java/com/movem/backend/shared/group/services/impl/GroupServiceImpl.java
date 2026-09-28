@@ -40,7 +40,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional
 public class GroupServiceImpl implements GroupService {
-
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
     private final GroupInviteRepository groupInviteRepository;
@@ -54,8 +53,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public ActivityGroup getOrCreateGroup(Activity activity) {
-        return groupRepository
-                .findByActivity(activity)
+        return groupRepository.findByActivity(activity)
                 .orElseGet(() -> {
                     ActivityGroup activityGroup = new ActivityGroup();
                     activityGroup.setActivity(activity);
@@ -80,7 +78,6 @@ public class GroupServiceImpl implements GroupService {
 
                     return savedActivityGroup;
                 });
-
     }
 
     @Override
@@ -163,9 +160,9 @@ public class GroupServiceImpl implements GroupService {
         }
         GroupMember member = new GroupMember();
         GroupMemberId memberId = new GroupMemberId();
+
         memberId.setGroupId(group.getId());
-        memberId.setUserId(currentUser.getId()
-        );
+        memberId.setUserId(currentUser.getId());
 
         member.setId(memberId);
         member.setActivityGroup(group);
@@ -181,7 +178,6 @@ public class GroupServiceImpl implements GroupService {
         GroupInvite saved = groupInviteRepository.save(invite);
 
         featureEventTrackingService.handle(groupEventFactory.memberJoined(group.getActivity(), currentUser));
-
         featureEventTrackingService.handle(groupEventFactory.inviteAccepted(invite.getActivityGroup().getActivity(), currentUser, invite.getId(), invite.getInviter()));
 
         return groupMapper.toInviteResponse(saved);
@@ -189,13 +185,11 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public GroupInviteResponse rejectInvite(Long inviteId) {
-
         User currentUser = currentUserService.getCurrentUser();
 
         GroupInvite invite = groupInviteRepository.findById(inviteId).orElseThrow(() -> new ResourceNotFoundException("Invitation not found."));
 
         if (!invite.getInvitee().getId().equals(currentUser.getId())) {
-
             throw new UnauthorizedActionException("You cannot reject this invitation.");
         }
 
@@ -205,14 +199,7 @@ public class GroupServiceImpl implements GroupService {
         invite.setStatus(InviteStatus.REJECTED);
         invite.setRespondedAt(LocalDateTime.now());
         GroupInvite saved = groupInviteRepository.save(invite);
-        featureEventTrackingService.handle(
-                groupEventFactory.inviteRejected(
-                        invite.getActivityGroup().getActivity(),
-                        currentUser,
-                        invite.getId(),
-                        invite.getInviter()
-                )
-        );
+        featureEventTrackingService.handle(groupEventFactory.inviteRejected(invite.getActivityGroup().getActivity(), currentUser, invite.getId(), invite.getInviter()));
 
         return groupMapper.toInviteResponse(saved);
     }
@@ -225,12 +212,10 @@ public class GroupServiceImpl implements GroupService {
         ActivityGroup group = groupRepository.findByJoinToken(request.getJoinToken()).orElseThrow(() -> new ResourceNotFoundException("Invalid join link."));
         if (groupMemberRepository.existsByActivityGroupAndUser(group, currentUser)) {
             throw new DuplicateResourceException("You are already a member of this group.");
-
         }
 
         if (joinRequestRepository.findByActivityGroupAndRequester(group, currentUser).isPresent()) {
             throw new DuplicateResourceException("You already have a pending request.");
-
         }
 
         JoinRequest joinRequest = new JoinRequest();
@@ -253,13 +238,10 @@ public class GroupServiceImpl implements GroupService {
         JoinRequest joinRequest = joinRequestRepository.findById(requestId).orElseThrow(() -> new ResourceNotFoundException("Join request not found."));
 
         ActivityGroup group = joinRequest.getActivityGroup();
-
         validateLeader(group, currentUser);
 
         if (joinRequest.getStatus() != JoinRequestStatus.PENDING) {
-
             throw new IllegalArgumentException("This request has already been processed.");
-
         }
 
         if (!groupMemberRepository.existsByActivityGroupAndUser(group, joinRequest.getRequester())) {
@@ -277,9 +259,7 @@ public class GroupServiceImpl implements GroupService {
             member.setJoinedAt(LocalDateTime.now());
 
             groupMemberRepository.save(member);
-
         }
-
         joinRequest.setStatus(JoinRequestStatus.APPROVED);
         joinRequest.setRespondedAt(LocalDateTime.now());
         JoinRequest saved = joinRequestRepository.save(joinRequest);
@@ -287,12 +267,10 @@ public class GroupServiceImpl implements GroupService {
         featureEventTrackingService.handle(groupEventFactory.joinRequestApproved(group.getActivity(), currentUser, joinRequest));
 
         return groupMapper.toJoinRequestResponse(saved);
-
     }
 
     @Override
     public JoinRequestResponse rejectJoinRequest(Long requestId) {
-
         User currentUser = currentUserService.getCurrentUser();
 
         JoinRequest joinRequest = joinRequestRepository.findById(requestId).orElseThrow(() -> new ResourceNotFoundException("Join request not found."));
@@ -338,7 +316,6 @@ public class GroupServiceImpl implements GroupService {
     @Override
     @Transactional
     public void removeMember(String activityId, Integer memberId) {
-
         User currentUser = currentUserService.getCurrentUser();
 
         Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ResourceNotFoundException("Activity not found."));
@@ -349,8 +326,7 @@ public class GroupServiceImpl implements GroupService {
 
         ActivityGroup activityGroup = groupRepository.findByActivity(activity).orElseThrow(() -> new ResourceNotFoundException("Group not found."));
 
-        User member = userRepository.findById(memberId)
-                        .orElseThrow(() -> new ResourceNotFoundException("User not found."));
+        User member = userRepository.findById(memberId).orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
         GroupMember groupMember = groupMemberRepository.findByActivityGroupAndUser(activityGroup, member).orElseThrow(() -> new ResourceNotFoundException("Member not found."));
 
@@ -384,9 +360,7 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public List<GroupMemberResponse> getMembers(String activityId) {
-
         Activity activity = getActivity(activityId);
-
         ActivityGroup group = groupRepository.findByActivity(activity).orElseThrow(() -> new ResourceNotFoundException("Group not found."));
 
         return groupMemberRepository
@@ -399,7 +373,6 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public List<GroupInviteResponse> getMyInvitations() {
-
         User currentUser = currentUserService.getCurrentUser();
 
         return groupInviteRepository
@@ -427,7 +400,6 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public JoinLinkResponse generateJoinLink(String activityId) {
-
         User currentUser = currentUserService.getCurrentUser();
 
         Activity activity = getActivity(activityId);
@@ -436,23 +408,19 @@ public class GroupServiceImpl implements GroupService {
             throw new UnauthorizedActionException("Only the owner can generate a join link.");
 
         }
-
         ActivityGroup group = getOrCreateGroup(activity);
 
         if (group.getJoinToken() == null || group.getJoinToken().isBlank()) {
             group.setJoinToken(UUID.randomUUID().toString());
 
             groupRepository.save(group);
-
         }
-
         return groupMapper.toJoinLinkResponse(group);
 
     }
 
     @Override
     public JoinLinkResponse getJoinLink(String activityId) {
-
         User currentUser = currentUserService.getCurrentUser();
 
         Activity activity = getActivity(activityId);
@@ -511,7 +479,6 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public List<MyGroupResponse> getMyGroups() {
-
         User currentUser = currentUserService.getCurrentUser();
 
         List<GroupMember> memberships = groupMemberRepository.findByUser(currentUser);
@@ -530,11 +497,9 @@ public class GroupServiceImpl implements GroupService {
                     response.setMemberCount((int) groupMemberRepository.countByActivityGroup(activityGroup));
 
                     return response;}).toList();
-
     }
 
     private Activity getActivity(String activityId) {
         return activityRepository.findById(activityId).orElseThrow(() -> new ResourceNotFoundException("Activity not found."));
     }
-
 }

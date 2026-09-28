@@ -41,8 +41,7 @@ public class TripMapperImpl extends AbstractBaseMapper<Trip, TripResponse> imple
                 .googlePlaceId(activity.getGooglePlaceId())
                 .destination(trip.getDestination())
                 .stops(tripStopMapper.toResponseList(trip.getStops()))
-                .coverPhoto(
-                        trip.getCoverPhoto() != null
+                .coverPhoto(trip.getCoverPhoto() != null
                                 ? AttachmentResponse.builder()
                                 .id(trip.getCoverPhoto().getId())
                                 .originalFileName(trip.getCoverPhoto().getOriginalFileName())
@@ -52,16 +51,11 @@ public class TripMapperImpl extends AbstractBaseMapper<Trip, TripResponse> imple
                                 .uploadedBy(trip.getCoverPhoto().getUploadedBy().getId())
                                 .createdAt(trip.getCoverPhoto().getCreatedAt())
                                 .build()
-                                : null
-                )
-                .attachments(
-                        attachmentRepository
+                                : null)
+                .attachments(attachmentRepository
                                 .findByTripActivityIdAndDeletedAtIsNull(activity.getId())
                                 .stream()
-                                .filter(attachment ->
-                                        trip.getCoverPhoto() == null ||
-                                                !attachment.getId().equals(trip.getCoverPhoto().getId())
-                                )
+                                .filter(attachment -> trip.getCoverPhoto() == null || !attachment.getId().equals(trip.getCoverPhoto().getId()))
                                 .map(attachment -> AttachmentResponse.builder()
                                         .id(attachment.getId())
                                         .originalFileName(attachment.getOriginalFileName())
@@ -70,9 +64,7 @@ public class TripMapperImpl extends AbstractBaseMapper<Trip, TripResponse> imple
                                         .filePath(attachment.getFilePath())
                                         .uploadedBy(attachment.getUploadedBy().getId())
                                         .createdAt(attachment.getCreatedAt())
-                                        .build())
-                                .toList()
-                ).build();
+                                        .build()).toList()).build();
     }
 
     @Override
@@ -87,6 +79,19 @@ public class TripMapperImpl extends AbstractBaseMapper<Trip, TripResponse> imple
             return null;
         }
 
+        AttachmentResponse coverPhoto = null;
+
+        if (trip.getCoverPhoto() != null) {
+            coverPhoto = AttachmentResponse.builder()
+                    .id(trip.getCoverPhoto().getId())
+                    .originalFileName(trip.getCoverPhoto().getOriginalFileName())
+                    .fileType(trip.getCoverPhoto().getFileType())
+                    .fileSize(trip.getCoverPhoto().getFileSize())
+                    .filePath(trip.getCoverPhoto().getFilePath())
+                    .uploadedBy(trip.getCoverPhoto().getUploadedBy() != null ? trip.getCoverPhoto().getUploadedBy().getId() : null)
+                    .createdAt(trip.getCoverPhoto().getCreatedAt())
+                    .build();
+        }
         return TripSummaryResponse.builder()
                 .activityId(activity.getId())
                 .activityName(activity.getActivityName())
@@ -95,6 +100,7 @@ public class TripMapperImpl extends AbstractBaseMapper<Trip, TripResponse> imple
                 .startActivity(activity.getStartActivity())
                 .deadline(activity.getDeadline())
                 .status(activity.getStatus())
+                .coverPhoto(coverPhoto)
                 .build();
     }
 }

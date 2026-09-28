@@ -79,8 +79,7 @@ public class AuthController {
         userService.updateUser(user);
 
         String accessToken = jwtService.generateToken(user.getUsername(), user.getPasswordChangedAt());
-        JwtService.TrustTokenResult trustResult =
-                jwtService.generateTrustToken(user.getUsername(), user.getPasswordChangedAt(), request.getDeviceId());
+        JwtService.TrustTokenResult trustResult = jwtService.generateTrustToken(user.getUsername(), user.getPasswordChangedAt(), request.getDeviceId());
 
         String trustToken = trustResult.token();
         String jti = trustResult.jti();
@@ -108,27 +107,15 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         Authentication auth;
         try {
-            auth = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-            );
+            auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
         } catch (DisabledException e) {
             User unverifiedUser = userService.findByUsernameOrEmail(request.getUsername());
-
-            if (!passwordEncoder.matches(
-                    request.getPassword(),
-                    unverifiedUser.getPasswordHash()
-            )) {
-                throw new BadCredentialsException(
-                        "Invalid username or password."
-                );
+            if (!passwordEncoder.matches(request.getPassword(), unverifiedUser.getPasswordHash())) {
+                throw new BadCredentialsException("Invalid username or password.");
             }
-            // Send a fresh EMAIL VERIFICATION code
             userService.sendVerificationCode(unverifiedUser);
 
-            // Tell Flutter to open the email verification screen
-            throw new EmailNotVerifiedException(
-                    unverifiedUser.getEmail()
-            );
+            throw new EmailNotVerifiedException(unverifiedUser.getEmail());
         }
 
         String username = auth.getName();
@@ -143,8 +130,7 @@ public class AuthController {
                 String tokenDeviceId = jwtService.extractDeviceId(request.getTrustToken());
                 String tokenJti = jwtService.extractJti(request.getTrustToken());
 
-                Optional<TrustedDevice> trustedDevice =
-                        trustedDeviceRepository.findByJti(tokenJti);
+                Optional<TrustedDevice> trustedDevice = trustedDeviceRepository.findByJti(tokenJti);
 
                 if (jwtService.isTrustToken(request.getTrustToken())
                         && tokenUsername.equals(username)
@@ -157,12 +143,7 @@ public class AuthController {
                         && trustedDevice.get().getUser().getId().equals(user.getId())) {
 
                     String accessToken = jwtService.generateToken(username, user.getPasswordChangedAt());
-                    JwtService.TrustTokenResult trustResult =
-                            jwtService.generateTrustToken(
-                                    username,
-                                    user.getPasswordChangedAt(),
-                                    request.getDeviceId()
-                            );
+                    JwtService.TrustTokenResult trustResult = jwtService.generateTrustToken(username, user.getPasswordChangedAt(), request.getDeviceId());
 
                     String newTrustToken = trustResult.token();
                     String jti = trustResult.jti();
@@ -189,7 +170,6 @@ public class AuthController {
                     return ResponseEntity.ok(response);
                 }
             } catch (Exception e) {
-                // fall through to OTP
             }
         }
 
@@ -254,7 +234,6 @@ public class AuthController {
 
     @PostMapping("/resend-verification")
     public ResponseEntity<Map<String, String>> resendVerification(@RequestBody Map<String, String> request) {
-
         userService.resendVerificationCode(request.get("email"));
 
         return ResponseEntity.ok(Map.of("message", "A new verification code has been sent to your email."));
@@ -281,7 +260,6 @@ public class AuthController {
             return ResponseEntity.status(400).body(errorResponse);
         }
 
-        // Only now verify (and consume) the OTP
         boolean isValid = otpService.verifyOtp(user.getUsername(), request.getOtp());
         if (!isValid) {
             Map<String, String> errorResponse = new HashMap<>();

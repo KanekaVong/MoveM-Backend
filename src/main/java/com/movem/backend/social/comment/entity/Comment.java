@@ -3,9 +3,11 @@ package com.movem.backend.social.comment.entity;
 import com.movem.backend.shared.activity.entities.Activity;
 import com.movem.backend.authentication.entities.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
@@ -14,26 +16,26 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Comment {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_id")
-    private Activity activity;
+    Activity activity;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user;
+    User user;
 
     @Column(name = "content")
-    private String content;
+    String content;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    LocalDateTime updatedAt;
 }

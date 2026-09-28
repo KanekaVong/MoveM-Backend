@@ -5,8 +5,6 @@ import com.movem.backend.trip.dtos.responses.TripSummaryResponse;
 import com.movem.backend.trip.entities.Trip;
 import com.movem.backend.commons.BaseMapper.BaseMapper;
 
-public interface TripMapper
-        extends BaseMapper<Trip, TripResponse> {
-
+public interface TripMapper extends BaseMapper<Trip, TripResponse> {
     TripSummaryResponse toSummaryResponse(Trip trip);
 }

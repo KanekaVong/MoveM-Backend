@@ -1,35 +1,27 @@
 package com.movem.backend.shared.historyandlogs.activityfeed.dtos.responses;
 
 import com.movem.backend.commons.enums.shared.ActivityFeedEvent;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ActivityFeedResponse {
-
-    private Long id;
-
-    private String activityId;
-
-    private Integer userId;
-
-    private String username;
-
-    private String firstname;
-
-    private String lastname;
-
-    private String profilePic;
-
-    private ActivityFeedEvent eventType;
-
-    private String message;
-
-    private String referenceId;
-
-    private LocalDateTime createdAt;
+     Long id;
+     String activityId;
+     Integer userId;
+     String username;
+     String firstname;
+     String lastname;
+     String profilePic;
+     ActivityFeedEvent eventType;
+     String message;
+     String referenceId;
+     LocalDateTime createdAt;
 
 }

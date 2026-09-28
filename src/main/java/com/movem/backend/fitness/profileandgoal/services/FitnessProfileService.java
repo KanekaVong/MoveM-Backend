@@ -5,16 +5,8 @@ import com.movem.backend.fitness.profileandgoal.dtos.requests.UpdateFitnessProfi
 import com.movem.backend.fitness.profileandgoal.dtos.responses.FitnessProfileResponse;
 
 public interface FitnessProfileService {
-
-    FitnessProfileResponse createProfile(
-            CreateFitnessProfileRequest request
-    );
-
+    FitnessProfileResponse createProfile(CreateFitnessProfileRequest request);
     FitnessProfileResponse getMyProfile();
-
-    FitnessProfileResponse updateProfile(
-            UpdateFitnessProfileRequest request
-    );
-
+    FitnessProfileResponse updateProfile(UpdateFitnessProfileRequest request);
     void deleteProfile();
 }

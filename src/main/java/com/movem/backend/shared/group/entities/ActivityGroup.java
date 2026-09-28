@@ -3,8 +3,10 @@ package com.movem.backend.shared.group.entities;
 import com.movem.backend.shared.activity.entities.Activity;
 import com.movem.backend.authentication.entities.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,23 +18,24 @@ import java.util.List;
                 @Index(name = "idx_activity_group_token", columnList = "join_token")})
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class ActivityGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    Integer id;
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_id", nullable = false, unique = true)
-    private Activity activity;
+    Activity activity;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
-    private User createdBy;
-    private LocalDateTime createdAt;
+    User createdBy;
+    LocalDateTime createdAt;
     @OneToMany(mappedBy = "activityGroup", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<GroupMember> members;
+    List<GroupMember> members;
     @OneToMany(mappedBy = "activityGroup", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<GroupInvite> invites;
+    List<GroupInvite> invites;
     @OneToMany(mappedBy = "activityGroup", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<JoinRequest> joinRequests;
+    List<JoinRequest> joinRequests;
     @Column(name = "join_token", unique = true)
-    private String joinToken;
+    String joinToken;
 }

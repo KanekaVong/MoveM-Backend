@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class TripBudgetServiceImpl implements TripBudgetService {
-
     private final TripRepository tripRepository;
     private final TripBudgetRepository tripBudgetRepository;
     private final TripExpenseRepository tripExpenseRepository;
@@ -52,6 +51,24 @@ public class TripBudgetServiceImpl implements TripBudgetService {
     private final CurrentUserService currentUserService;
     private final FeatureEventTrackingService featureEventTrackingService;
     private final TripEventFactory tripEventFactory;
+
+    public void createDefaultBudgetCategories(Trip trip) {
+        createBudget(trip, "FOOD_DRINKS");
+        createBudget(trip, "ACCOMMODATIONS");
+        createBudget(trip, "TRANSPORTATION");
+        createBudget(trip, "OTHERS");
+    }
+
+    private void createBudget(Trip trip, String category) {
+        TripBudget budget = new TripBudget();
+
+        budget.setTrip(trip);
+        budget.setCategory(category);
+        budget.setAllocatedAmount(BigDecimal.ZERO);
+        budget.setSpentAmount(BigDecimal.ZERO);
+
+        tripBudgetRepository.save(budget);
+    }
 
     @Override
     public TripBudgetResponse addBudgetCategory(String tripActivityId, CreateTripBudgetRequest request) {
@@ -73,7 +90,6 @@ public class TripBudgetServiceImpl implements TripBudgetService {
 
     @Override
     public List<TripBudgetResponse> getBudgets(String tripActivityId) {
-
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
@@ -85,7 +101,6 @@ public class TripBudgetServiceImpl implements TripBudgetService {
 
     @Override
     public TripBudgetResponse updateBudgetCategory(String tripActivityId, Integer budgetId, UpdateTripBudgetRequest request) {
-
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
@@ -102,7 +117,6 @@ public class TripBudgetServiceImpl implements TripBudgetService {
 
     @Override
     public void deleteBudgetCategory(String tripActivityId, Integer budgetId) {
-
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
@@ -115,7 +129,6 @@ public class TripBudgetServiceImpl implements TripBudgetService {
 
     @Override
     public TripExpenseResponse logExpense(String tripActivityId, CreateTripExpenseRequest request) {
-
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
@@ -152,7 +165,6 @@ public class TripBudgetServiceImpl implements TripBudgetService {
 
     @Override
     public List<TripExpenseResponse> getExpenses(String tripActivityId, Integer budgetId) {
-
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
@@ -182,7 +194,6 @@ public class TripBudgetServiceImpl implements TripBudgetService {
 
     @Override
     public void deleteExpense(String tripActivityId, Integer expenseId) {
-
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
@@ -201,7 +212,6 @@ public class TripBudgetServiceImpl implements TripBudgetService {
 
     @Override
     public TripExpenseResponse settleSplit(String tripActivityId, Integer expenseId, Integer splitId) {
-
         User user = currentUserService.getCurrentUser();
 
         Trip trip = findTripOrThrow(tripActivityId);
@@ -232,7 +242,6 @@ public class TripBudgetServiceImpl implements TripBudgetService {
     }
 
     private List<TripExpenseSplit> buildSplits(Trip trip, TripExpense expense, CreateTripExpenseRequest request) {
-
         if (request.getSplitMode() == TripSplitMode.NONE) {
             return new ArrayList<>();
         }
@@ -301,7 +310,6 @@ public class TripBudgetServiceImpl implements TripBudgetService {
     }
 
     private User resolveMember(Trip trip, Integer userId) {
-
         return tripMembers(trip)
                 .stream()
                 .filter(user -> user.getId().equals(userId))
@@ -310,7 +318,6 @@ public class TripBudgetServiceImpl implements TripBudgetService {
     }
 
     private TripBudgetResponse toResponse(TripBudget budget, Trip trip) {
-
         BigDecimal spent = budget.getSpentAmount() == null ? BigDecimal.ZERO : budget.getSpentAmount();
         BigDecimal remaining = budget.getAllocatedAmount().subtract(spent);
 
@@ -329,7 +336,6 @@ public class TripBudgetServiceImpl implements TripBudgetService {
     }
 
     private TripExpenseResponse toResponse(TripExpense expense, TripBudget budget) {
-
         return TripExpenseResponse.builder()
                 .id(expense.getId())
                 .budgetId(budget.getId())
@@ -355,14 +361,11 @@ public class TripBudgetServiceImpl implements TripBudgetService {
     }
 
     private Trip findTripOrThrow(String tripActivityId) {
-        return tripRepository
-                .findByActivityId(tripActivityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Trip not found: " + tripActivityId));
+        return tripRepository.findByActivityId(tripActivityId).orElseThrow(() -> new ResourceNotFoundException("Trip not found: " + tripActivityId));
     }
 
     private TripBudget findBudgetOrThrow(Trip trip, Integer budgetId) {
-        return tripBudgetRepository.findByIdAndTrip(budgetId, trip)
-                .orElseThrow(() -> new ResourceNotFoundException("Budget category not found: " + budgetId));
+        return tripBudgetRepository.findByIdAndTrip(budgetId, trip).orElseThrow(() -> new ResourceNotFoundException("Budget category not found: " + budgetId));
     }
 
     private TripExpense findExpenseOrThrow(Trip trip, Integer expenseId) {
@@ -370,8 +373,7 @@ public class TripBudgetServiceImpl implements TripBudgetService {
                         expense.getBudget()
                                 .getTrip()
                                 .getActivityId()
-                                .equals(trip.getActivityId()))
-                .orElseThrow(() -> new ResourceNotFoundException("Expense not found: " + expenseId));
+                                .equals(trip.getActivityId())).orElseThrow(() -> new ResourceNotFoundException("Expense not found: " + expenseId));
     }
 
     @Override
@@ -382,9 +384,7 @@ public class TripBudgetServiceImpl implements TripBudgetService {
 
         activityPermissionService.validateCanEditActivity(trip.getActivity(), user);
 
-        TripBudget totalBudgetRecord = tripBudgetRepository
-                .findByTripAndCategory(trip, "TOTAL")
-                .orElseThrow(() -> new ResourceNotFoundException("Total budget not found."));
+        TripBudget totalBudgetRecord = tripBudgetRepository.findByTripAndCategory(trip, "TOTAL").orElseThrow(() -> new ResourceNotFoundException("Total budget not found."));
 
         totalBudgetRecord.setAllocatedAmount(totalBudget);
         tripBudgetRepository.save(totalBudgetRecord);

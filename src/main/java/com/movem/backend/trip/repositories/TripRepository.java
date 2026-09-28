@@ -10,18 +10,9 @@ import org.springframework.data.jpa.repository.Modifying;
 
 import java.util.Optional;
 
-public interface TripRepository
-        extends JpaRepository<Trip, String>,
-        JpaSpecificationExecutor<Trip> {
-
-    @EntityGraph(attributePaths = {
-            "activity",
-            "stops"
-    })
-
-    Optional<Trip> findByActivityId(
-            String activityId
-    );
+public interface TripRepository extends JpaRepository<Trip, String>, JpaSpecificationExecutor<Trip> {
+    @EntityGraph(attributePaths = {"activity", "stops"})
+    Optional<Trip> findByActivityId(String activityId);
 
     @Transactional
     @Modifying

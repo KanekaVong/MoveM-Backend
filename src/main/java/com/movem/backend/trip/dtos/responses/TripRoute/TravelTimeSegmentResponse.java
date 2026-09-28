@@ -1,23 +1,17 @@
 package com.movem.backend.trip.dtos.responses.TripRoute;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TravelTimeSegmentResponse {
-
-    private String from;
-
-    private String to;
-
-    private Double distanceKm;
-
-    private Integer estimatedMinutes;
-
-    private String estimatedTime;
+     String from;
+     String to;
+     Double distanceKm;
+     Integer estimatedMinutes;
+     String estimatedTime;
 }

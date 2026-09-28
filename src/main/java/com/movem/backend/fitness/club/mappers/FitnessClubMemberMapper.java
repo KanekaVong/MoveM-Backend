@@ -6,22 +6,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class FitnessClubMemberMapper {
-
-    public FitnessClubMemberResponse toResponse(
-            FitnessClubMember member
-    ) {
-
+    public FitnessClubMemberResponse toResponse(FitnessClubMember member) {
         return FitnessClubMemberResponse.builder()
-                .clubId(
-                        member.getFitnessClub() != null
-                                ? member.getFitnessClub().getId()
-                                : null
-                )
-                .userId(
-                        member.getUser() != null
-                                ? member.getUser().getId()
-                                : null
-                )
+                .clubId(member.getFitnessClub() != null ? member.getFitnessClub().getId() : null)
+                .userId(member.getUser() != null ? member.getUser().getId() : null)
                 .role(member.getRole())
                 .joinedAt(member.getJoinedAt())
                 .build();

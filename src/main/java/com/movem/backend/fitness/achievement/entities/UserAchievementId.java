@@ -1,11 +1,8 @@
 package com.movem.backend.fitness.achievement.entities;
 
 import jakarta.persistence.Embeddable;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.io.Serializable;
 
@@ -15,8 +12,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserAchievementId implements Serializable {
-
-    private Integer userId;
-    private Integer achievementId;
+     Integer userId;
+     Integer achievementId;
 }

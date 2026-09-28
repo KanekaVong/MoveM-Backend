@@ -4,10 +4,8 @@ import com.movem.backend.commons.enums.Trip.TripSplitMode;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,35 +15,32 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class CreateTripExpenseRequest {
-
     @NotNull
-    private Integer budgetId;
+    Integer budgetId;
 
     @NotNull
     @DecimalMin(value = "0.0", inclusive = false)
-    private BigDecimal amount;
+    BigDecimal amount;
 
-    private String description;
+    String description;
 
-    private LocalDateTime expenseDate;
+    LocalDateTime expenseDate;
 
-    // Who paid — defaults to the caller if omitted. Must be a member of the trip.
-    private Integer payerId;
+    Integer payerId;
 
     @NotNull
-    private TripSplitMode splitMode = TripSplitMode.EQUAL;
+    TripSplitMode splitMode = TripSplitMode.EQUAL;
 
-    // Required only when splitMode = CUSTOM; amounts must sum to `amount`.
     @Valid
-    private List<ExpenseSplitEntry> customSplits;
+    List<ExpenseSplitEntry> customSplits;
 
     @Getter
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ExpenseSplitEntry {
-
         @NotNull
         private Integer userId;
 

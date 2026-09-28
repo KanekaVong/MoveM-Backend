@@ -17,17 +17,9 @@ import java.util.Set;
 @Component
 public class CommentEventFactory {
 
-    public FeatureEvent created(
-            Comment comment,
-            User actor
-    ) {
-
+    public FeatureEvent created(Comment comment, User actor) {
         Activity activity = comment.getActivity();
-
-        User receiver =
-                activity.getUser().getId().equals(actor.getId())
-                        ? null
-                        : activity.getUser();
+        User receiver = activity.getUser().getId().equals(actor.getId()) ? null : activity.getUser();
 
         return FeatureEvent.builder()
                 .activity(activity)
@@ -44,24 +36,12 @@ public class CommentEventFactory {
                 .referenceType(ReferenceType.COMMENT)
                 .referenceId(String.valueOf(comment.getId()))
                 .notificationTitle("New Comment")
-                .notificationMessage(
-                        actor.getUsername()
-                                + " commented on your activity."
-                )
-                .actions(Set.of(
-                        FeatureEventAction.ACTIVITY_FEED,
-                        FeatureEventAction.AUDIT_LOG,
-                        FeatureEventAction.NOTIFICATION
-                ))
+                .notificationMessage(actor.getUsername() + " commented on your activity.")
+                .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG, FeatureEventAction.NOTIFICATION))
                 .build();
     }
 
-    public FeatureEvent updated(
-            Comment comment,
-            User actor,
-            String oldContent
-    ) {
-
+    public FeatureEvent updated(Comment comment, User actor, String oldContent) {
         return FeatureEvent.builder()
                 .activity(comment.getActivity())
                 .actor(actor)
@@ -74,17 +54,11 @@ public class CommentEventFactory {
                 .oldValue(oldContent)
                 .newValue(comment.getContent())
                 .referenceId(String.valueOf(comment.getId()))
-                .actions(Set.of(
-                        FeatureEventAction.ACTIVITY_FEED,
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 
-    public FeatureEvent deleted(
-            Comment comment,
-            User actor
-    ) {
+    public FeatureEvent deleted(Comment comment, User actor) {
 
         return FeatureEvent.builder()
                 .activity(comment.getActivity())
@@ -97,10 +71,7 @@ public class CommentEventFactory {
                 .auditMessage("Deleted comment.")
                 .oldValue(comment.getContent())
                 .referenceId(String.valueOf(comment.getId()))
-                .actions(Set.of(
-                        FeatureEventAction.ACTIVITY_FEED,
-                        FeatureEventAction.AUDIT_LOG
-                ))
+                .actions(Set.of(FeatureEventAction.ACTIVITY_FEED, FeatureEventAction.AUDIT_LOG))
                 .build();
     }
 }

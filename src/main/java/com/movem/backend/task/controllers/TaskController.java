@@ -24,7 +24,6 @@ public class TaskController {
 
     @PostMapping
     public ResponseEntity<TaskResponse> createTask(@Valid @RequestBody CreateTaskRequest request) {
-
         TaskResponse response = taskService.createTask(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -44,9 +43,7 @@ public class TaskController {
             @RequestParam(required = false, defaultValue = "asc") String direction,
             @RequestParam(required = false) Boolean overdue,
             @RequestParam(required = false) Integer upcomingDays,
-            @RequestParam(required = false) Boolean active
-
-    ) {
+            @RequestParam(required = false) Boolean active) {
             return ResponseEntity.ok(taskService.searchTasks(search, status, priority, labelId, sortBy, direction, overdue, upcomingDays, active));
     }
 

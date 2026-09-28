@@ -9,40 +9,16 @@ import com.movem.backend.commons.enums.Notification.ReferenceType;
 import java.util.List;
 
 public interface NotificationService {
-
     List<NotificationResponse> getNotifications();
-
     List<NotificationResponse> getUnreadNotifications();
 
     Long getUnreadCount();
 
     void markAsRead(Long notificationId);
-
     void markAllAsRead();
-
     void deleteNotification(Long notificationId);
+    void createNotification(User receiver, User sender, NotificationType notificationType, ReferenceType referenceType, String referenceId, String title, String message);
+    void notifyActivityGroup(Activity activity, User sender, NotificationType notificationType, ReferenceType referenceType, String referenceId, String title, String message);
 
-    void createNotification(
-            User receiver,
-            User sender,
-            NotificationType notificationType,
-            ReferenceType referenceType,
-            String referenceId,
-            String title,
-            String message
-    );
-
-    void notifyActivityGroup(
-            Activity activity,
-            User sender,
-            NotificationType notificationType,
-            ReferenceType referenceType,
-            String referenceId,
-            String title,
-            String message
-    );
-
-    List<NotificationResponse> getNotificationsByActivity(
-            String activityId
-    );
+    List<NotificationResponse> getNotificationsByActivity(String activityId);
 }

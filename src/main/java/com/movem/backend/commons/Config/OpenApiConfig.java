@@ -10,22 +10,13 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class OpenApiConfig {
-
     @Bean
     public OpenAPI movemOpenAPI() {
         final String securitySchemeName = "bearerAuth";
         return new OpenAPI()
-                .info(new Info()
-                        .title("MoveM API")
-                        .description("Fitness, trip, and task tracking backend")
-                        .version("v1"))
+                .info(new Info().title("MoveM API").description("Fitness, trip, and task tracking backend").version("v1"))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
-                .components(new Components()
-                        .addSecuritySchemes(securitySchemeName,
-                                new SecurityScheme()
-                                        .name(securitySchemeName)
-                                        .type(SecurityScheme.Type.HTTP)
-                                        .scheme("bearer")
-                                        .bearerFormat("JWT")));
+                .components(new Components().addSecuritySchemes(securitySchemeName,
+                        new SecurityScheme().name(securitySchemeName).type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")));
     }
 }

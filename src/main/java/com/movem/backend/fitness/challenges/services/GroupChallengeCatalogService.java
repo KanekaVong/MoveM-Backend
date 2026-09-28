@@ -9,27 +9,13 @@ import com.movem.backend.commons.enums.Fitness.WorkoutType;
 import java.util.List;
 
 public interface GroupChallengeCatalogService {
-
-    GroupChallengeCatalogResponse createCatalogChallenge(
-            CreateGroupChallengeCatalogRequest request
-    );
-
-    GroupChallengeCatalogResponse getCatalogChallenge(
-            Integer catalogId
-    );
+    GroupChallengeCatalogResponse createCatalogChallenge(CreateGroupChallengeCatalogRequest request);
+    GroupChallengeCatalogResponse getCatalogChallenge(Integer catalogId);
 
     List<GroupChallengeCatalogResponse> getAllCatalogChallenges();
+    List<GroupChallengeCatalogResponse> getCatalogChallengesByWorkoutType(WorkoutType workoutType);
 
-    List<GroupChallengeCatalogResponse> getCatalogChallengesByWorkoutType(
-            WorkoutType workoutType
-    );
+    GroupChallengeCatalogResponse updateCatalogChallenge(Integer catalogId, UpdateGroupChallengeCatalogRequest request);
 
-    GroupChallengeCatalogResponse updateCatalogChallenge(
-            Integer catalogId,
-            UpdateGroupChallengeCatalogRequest request
-    );
-
-    void deleteCatalogChallenge(
-            Integer catalogId
-    );
+    void deleteCatalogChallenge(Integer catalogId);
 }

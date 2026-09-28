@@ -18,7 +18,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class PushNotificationServiceImpl implements PushNotificationService {
-
     private final UserDeviceRepository userDeviceRepository;
 
     @Override

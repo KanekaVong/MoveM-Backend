@@ -3,6 +3,7 @@ package com.movem.backend.shared.analysis.dashboards.dtos.responses;
 import com.movem.backend.commons.enums.shared.ActivityStatus;
 import com.movem.backend.commons.enums.Task.Priority;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
@@ -11,18 +12,13 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class DashboardTaskResponse {
-
-    private String activityId;
-
-    private String activityName;
-
-    private Priority priority;
-
-    private ActivityStatus status;
-
-    private LocalDateTime deadline;
-
-    private Boolean isCollaborative;
+     String activityId;
+     String activityName;
+     Priority priority;
+     ActivityStatus status;
+     LocalDateTime deadline;
+     Boolean isCollaborative;
 
 }

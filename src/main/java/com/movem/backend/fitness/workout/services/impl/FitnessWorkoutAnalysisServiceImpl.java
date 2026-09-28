@@ -24,45 +24,24 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class FitnessWorkoutAnalysisServiceImpl
-        implements FitnessWorkoutAnalysisService {
-
+public class FitnessWorkoutAnalysisServiceImpl implements FitnessWorkoutAnalysisService {
     private final FitnessWorkoutAnalysisRepository analysisRepository;
     private final FitnessWorkoutSessionRepository workoutSessionRepository;
     private final CurrentUserService currentUserService;
     private final ObjectMapper objectMapper;
 
     @Override
-    public FitnessWorkoutAnalysisResponse saveAnalysis(
-            Integer sessionId,
-            FitnessWorkoutAnalysisRequest request
-    ) {
+    public FitnessWorkoutAnalysisResponse saveAnalysis(Integer sessionId, FitnessWorkoutAnalysisRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findByIdAndUser(
-                                sessionId,
-                                currentUser
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
+        FitnessWorkoutSession session = workoutSessionRepository.findByIdAndUser(sessionId, currentUser)
+                        .orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
         if (session.getTrackingMode() != TrackingMode.POSE) {
-            throw new IllegalArgumentException(
-                    "Workout session does not use pose tracking."
-            );
+            throw new IllegalArgumentException("Workout session does not use pose tracking.");
         }
 
-        FitnessWorkoutAnalysis analysis =
-                analysisRepository
-                        .findByWorkoutSession(session)
-                        .orElseGet(FitnessWorkoutAnalysis::new);
+        FitnessWorkoutAnalysis analysis = analysisRepository.findByWorkoutSession(session).orElseGet(FitnessWorkoutAnalysis::new);
 
         analysis.setWorkoutSession(session);
         analysis.setExercise(request.getExercise());
@@ -72,88 +51,44 @@ public class FitnessWorkoutAnalysisServiceImpl
         analysis.setFormScore(request.getFormScore());
 
         try {
-            analysis.setFeedback(
-                    objectMapper.writeValueAsString(
-                            request.getFeedback()
-                    )
-            );
+            analysis.setFeedback(objectMapper.writeValueAsString(request.getFeedback()));
         } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException(
-                    "Unable to process workout feedback."
-            );
+            throw new IllegalArgumentException("Unable to process workout feedback.");
         }
 
         if (analysis.getCreatedAt() == null) {
             analysis.setCreatedAt(LocalDateTime.now());
         }
-
         analysis.setUpdatedAt(LocalDateTime.now());
-
-        FitnessWorkoutAnalysis saved =
-                analysisRepository.save(analysis);
+        FitnessWorkoutAnalysis saved = analysisRepository.save(analysis);
 
         return toResponse(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public FitnessWorkoutAnalysisResponse getAnalysis(
-            Integer sessionId
-    ) {
+    public FitnessWorkoutAnalysisResponse getAnalysis(Integer sessionId) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findByIdAndUser(
-                                sessionId,
-                                currentUser
-                        )
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
-
-        FitnessWorkoutAnalysis analysis =
-                analysisRepository
-                        .findByWorkoutSession(session)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout analysis not found."
-                                )
-                        );
+        FitnessWorkoutSession session = workoutSessionRepository.findByIdAndUser(sessionId, currentUser).orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
+        FitnessWorkoutAnalysis analysis = analysisRepository.findByWorkoutSession(session).orElseThrow(() -> new ResourceNotFoundException("Workout analysis not found."));
 
         return toResponse(analysis);
     }
 
-    private FitnessWorkoutAnalysisResponse toResponse(
-            FitnessWorkoutAnalysis analysis
-    ) {
-
+    private FitnessWorkoutAnalysisResponse toResponse(FitnessWorkoutAnalysis analysis) {
         List<String> feedback = List.of();
 
-        if (analysis.getFeedback() != null
-                && !analysis.getFeedback().isBlank()) {
-
+        if (analysis.getFeedback() != null && !analysis.getFeedback().isBlank()) {
             try {
-                feedback = objectMapper.readValue(
-                        analysis.getFeedback(),
-                        new TypeReference<List<String>>() {}
-                );
+                feedback = objectMapper.readValue(analysis.getFeedback(), new TypeReference<List<String>>() {});
             } catch (JsonProcessingException e) {
-                throw new IllegalStateException(
-                        "Unable to read workout feedback."
-                );
+                throw new IllegalStateException("Unable to read workout feedback.");
             }
         }
-
         return FitnessWorkoutAnalysisResponse.builder()
                 .id(analysis.getId())
-                .sessionId(
-                        analysis.getWorkoutSession().getId()
-                )
+                .sessionId(analysis.getWorkoutSession().getId())
                 .exercise(analysis.getExercise())
                 .reps(analysis.getReps())
                 .validReps(analysis.getValidReps())

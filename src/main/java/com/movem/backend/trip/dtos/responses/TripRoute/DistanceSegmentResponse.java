@@ -10,10 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DistanceSegmentResponse {
-
     private String from;
-
     private String to;
-
     private Double distanceKm;
 }

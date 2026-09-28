@@ -6,11 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class GroupChallengeCatalogMapper {
-
-    public GroupChallengeCatalogResponse toResponse(
-            GroupChallengeCatalog catalog
-    ) {
-
+    public GroupChallengeCatalogResponse toResponse(GroupChallengeCatalog catalog) {
         return GroupChallengeCatalogResponse.builder()
                 .id(catalog.getId())
                 .name(catalog.getName())

@@ -1,15 +1,18 @@
 package com.movem.backend.shared.checklist.dtos.requests;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UpdateChecklistItemRequest {
-    private Integer id;
+    Integer id;
     @NotBlank
-    private String itemName;
-    private Boolean isCompleted;
+    String itemName;
+    Boolean isCompleted;
 
 }

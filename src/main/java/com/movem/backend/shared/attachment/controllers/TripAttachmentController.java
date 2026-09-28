@@ -13,57 +13,29 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/trips")
-@Tag(name = "Trip - Attachments", description = "Add Attachment to trips")
+@Tag(name = "Trip Attachments", description = "Upload, Fetch Picture URLs, Download, etc.")
 @RequiredArgsConstructor
 public class TripAttachmentController {
 
     private final TripAttachmentService tripAttachmentService;
 
-    @PostMapping(
-            value = "/{activityId}/attachments",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public ResponseEntity<AttachmentResponse> uploadAttachment(
-            @PathVariable String activityId,
-            @RequestParam("file") MultipartFile file
-    ) {
-        return ResponseEntity.ok(
-                tripAttachmentService.upload(activityId, file)
-        );
+    @PostMapping(value = "/{activityId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AttachmentResponse> uploadTripAttachment(@PathVariable String activityId, @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(tripAttachmentService.upload(activityId, file));
     }
 
     @GetMapping("/{activityId}/attachments")
-    public ResponseEntity<List<AttachmentResponse>> getAttachments(@PathVariable String activityId) {
+    public ResponseEntity<List<AttachmentResponse>> getTripAttachments(@PathVariable String activityId) {
         return ResponseEntity.ok(tripAttachmentService.getAttachments(activityId));
     }
 
-    @PostMapping(
-            value = "/{activityId}/cover-photo",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public ResponseEntity<AttachmentResponse> uploadCoverPhoto(
-            @PathVariable String activityId,
-            @RequestParam("file") MultipartFile file
-    ) {
-        return ResponseEntity.ok(
-                tripAttachmentService.uploadCoverPhoto(activityId, file)
-        );
+    @PostMapping(value = "/{activityId}/cover-photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AttachmentResponse> uploadTripCoverPhoto(@PathVariable String activityId, @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(tripAttachmentService.uploadCoverPhoto(activityId, file));
     }
 
     @GetMapping("/{activityId}/cover-photo")
-    public ResponseEntity<AttachmentResponse> getCoverPhoto(
-            @PathVariable String activityId
-    ) {
-        return ResponseEntity.ok(
-                tripAttachmentService.getCoverPhoto(activityId)
-        );
-    }
-
-    @DeleteMapping("/{activityId}/cover-photo")
-    public ResponseEntity<Void> deleteCoverPhoto(
-            @PathVariable String activityId
-    ) {
-        tripAttachmentService.deleteCoverPhoto(activityId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<AttachmentResponse> getCoverPhoto(@PathVariable String activityId) {
+        return ResponseEntity.ok(tripAttachmentService.getCoverPhoto(activityId));
     }
 }

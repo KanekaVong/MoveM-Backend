@@ -10,22 +10,12 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface KudosRepository
-        extends JpaRepository<Kudos, Long> {
+public interface KudosRepository extends JpaRepository<Kudos, Long> {
+    boolean existsByWorkoutSessionAndUser(FitnessWorkoutSession workoutSession, User user);
 
-    boolean existsByWorkoutSessionAndUser(
-            FitnessWorkoutSession workoutSession,
-            User user
-    );
+    Optional<Kudos> findByWorkoutSessionAndUser(FitnessWorkoutSession workoutSession, User user);
 
-    Optional<Kudos> findByWorkoutSessionAndUser(
-            FitnessWorkoutSession workoutSession,
-            User user
-    );
-
-    long countByWorkoutSession(
-            FitnessWorkoutSession workoutSession
-    );
+    long countByWorkoutSession(FitnessWorkoutSession workoutSession);
 
     @Query("""
     SELECT k.workoutSession.id, COUNT(k)
@@ -33,9 +23,7 @@ public interface KudosRepository
     WHERE k.workoutSession.id IN :sessionIds
     GROUP BY k.workoutSession.id
 """)
-    List<Object[]> countKudosBySessionIds(
-            @Param("sessionIds") List<Integer> sessionIds
-    );
+    List<Object[]> countKudosBySessionIds(@Param("sessionIds") List<Integer> sessionIds);
 
     @Query("""
     SELECT k.workoutSession.id
@@ -43,8 +31,5 @@ public interface KudosRepository
     WHERE k.workoutSession.id IN :sessionIds
       AND k.user.id = :userId
 """)
-    List<Integer> findSessionsWithMyKudos(
-            @Param("sessionIds") List<Integer> sessionIds,
-            @Param("userId") Integer userId
-    );
+    List<Integer> findSessionsWithMyKudos(@Param("sessionIds") List<Integer> sessionIds, @Param("userId") Integer userId);
 }

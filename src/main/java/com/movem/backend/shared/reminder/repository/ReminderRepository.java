@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ReminderRepository extends JpaRepository<Reminder, Integer> {
-
     List<Reminder> findAllByTaskActivityUser(User user);
     List<Reminder> findByTaskActivityUserAndRemindAtAfterOrderByRemindAtAsc(User user, LocalDateTime now);
     @Query("""

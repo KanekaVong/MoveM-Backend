@@ -35,25 +35,17 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Transactional
 public class ActivityServiceImpl implements ActivityService {
-
     private final ActivityRepository activityRepository;
     private final ActivityIdGenerator activityIdGenerator;
     private final TaskLabelRepository taskLabelRepository;
-    private final TaskRepository taskRepository;
-    private final TaskMapper taskMapper;
     private final AuditLogRepository auditLogRepository;
     private final CurrentUserService currentUserService;
-    private final ActivityPermissionService activityPermissionService;
     private final FeatureEventTrackingService featureEventTrackingService;
     private final ActivityDeletionService activityDeletionService;
 
     @Override
     @Transactional
-    public Activity createActivity(
-            BaseActivityCreateSource source,
-            User user,
-            ActivityType activityType
-    ) {
+    public Activity createActivity(BaseActivityCreateSource source, User user, ActivityType activityType) {
         Activity activity = new Activity();
         activity.setId(activityIdGenerator.generate());
 
@@ -93,25 +85,14 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
-    public Activity attachLabels(
-            Activity activity,
-            List<Integer> labelIds
-    ) {
+    public Activity attachLabels(Activity activity, List<Integer> labelIds) {
         if (labelIds == null || labelIds.isEmpty()) {
             return activity;
         }
-
-        Set<TaskLabel> labels = new HashSet<>(
-                taskLabelRepository.findByIdInAndUser(
-                        labelIds,
-                        activity.getUser()
-                )
-        );
+        Set<TaskLabel> labels = new HashSet<>(taskLabelRepository.findByIdInAndUser(labelIds, activity.getUser()));
 
         if (labels.size() != labelIds.size()) {
-            throw new ResourceNotFoundException(
-                    "One or more task labels were not found or do not belong to the current user."
-            );
+            throw new ResourceNotFoundException("One or more task labels were not found or do not belong to the current user.");
         }
 
         activity.getLabels().clear();
@@ -125,41 +106,28 @@ public class ActivityServiceImpl implements ActivityService {
     public void permanentlyDeleteActivity(String activityId) {
         User currentUser = currentUserService.getCurrentUser();
 
-        Activity activity = activityRepository.findById(activityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Activity not found: " + activityId));
+        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ResourceNotFoundException("Activity not found: " + activityId));
 
         if (!activity.getUser().getId().equals(currentUser.getId())) {
-            throw new UnauthorizedActionException(
-                    "You can only permanently delete your own activity."
-            );
+            throw new UnauthorizedActionException("You can only permanently delete your own activity.");
         }
 
         auditLogRepository.detachActivity(activity.getId());
         activityDeletionService.permanentlyDelete(activity);
 
-        featureEventTrackingService.handleDeletedActivity(
-                activity.getId(),
-                activity.getActivityName(),
-                currentUser
-        );
+        featureEventTrackingService.handleDeletedActivity(activity.getId(), activity.getActivityName(), currentUser);
     }
 
     // Helper Methods
 
-    private void applyCommonFields(
-            Activity activity,
-            BaseActivityCreateSource source
-    ) {
+    private void applyCommonFields(Activity activity, BaseActivityCreateSource source) {
         activity.setActivityName(source.getActivityName());
         activity.setDescription(source.getDescription());
         activity.setStartActivity(source.getStartActivity());
         activity.setDeadline(source.getDeadline());
     }
 
-    private void applyTripFields(
-            Activity activity,
-            TripCreateSource source
-    ) {
+    private void applyTripFields(Activity activity, TripCreateSource source) {
         activity.setLocationName(source.getLocationName());
         activity.setLocationAddress(source.getLocationAddress());
         activity.setLat(source.getLat());
@@ -168,19 +136,13 @@ public class ActivityServiceImpl implements ActivityService {
         activity.setCoordinates(source.getCoordinates());
     }
 
-    private void applyCommonUpdateFields(
-            Activity activity,
-            BaseActivityUpdateSource source
-    ) {
+    private void applyCommonUpdateFields(Activity activity, BaseActivityUpdateSource source) {
         activity.setActivityName(source.getActivityName());
         activity.setDescription(source.getDescription());
         activity.setDeadline(source.getDeadline());
     }
 
-    private void applyTripUpdateFields(
-            Activity activity,
-            TripUpdateSource source
-    ) {
+    private void applyTripUpdateFields(Activity activity, TripUpdateSource source) {
         activity.setLocationName(source.getLocationName());
         activity.setLocationAddress(source.getLocationAddress());
         activity.setLat(source.getLat());

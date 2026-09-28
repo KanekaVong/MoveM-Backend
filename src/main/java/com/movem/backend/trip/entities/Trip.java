@@ -3,10 +3,8 @@ package com.movem.backend.trip.entities;
 import com.movem.backend.shared.activity.entities.Activity;
 import com.movem.backend.shared.attachment.entities.Attachment;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,31 +15,31 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Trip {
     @Id
-    private String activityId;
+    String activityId;
 
     @OneToOne
     @MapsId
     @JoinColumn(name = "activity_id")
-    private Activity activity;
-
-    private String destination;
+    Activity activity;
+    String destination;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cover_photo_id")
-    private Attachment coverPhoto;
+    Attachment coverPhoto;
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sequenceOrder ASC")
-    private List<TripStop> stops = new ArrayList<>();
+    List<TripStop> stops = new ArrayList<>();
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TripBudget> budgets = new ArrayList<>();
+    List<TripBudget> budgets = new ArrayList<>();
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TripPackingItem> packingItems = new ArrayList<>();
+    List<TripPackingItem> packingItems = new ArrayList<>();
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Attachment> attachments = new ArrayList<>();
+    List<Attachment> attachments = new ArrayList<>();
 }

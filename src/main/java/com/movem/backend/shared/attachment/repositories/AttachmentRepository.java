@@ -25,6 +25,5 @@ public interface AttachmentRepository extends JpaRepository<Attachment, Long> {
     List<Attachment> findByGroupFitnessChallengeAndDeletedAtIsNull(GroupFitnessChallenge groupFitnessChallenge);
     List<Attachment> findByFitnessClubAndAttachmentTypeAndDeletedAtIsNull(FitnessClub fitnessClub, FitnessAttachmentType attachmentType);
     List<Attachment> findByGroupFitnessChallengeAndAttachmentTypeAndDeletedAtIsNull(GroupFitnessChallenge groupFitnessChallenge, FitnessAttachmentType attachmentType);
-
     List<Attachment> findByTripAndDeletedAtIsNullAndIdNot(Trip trip, Long id);
 }

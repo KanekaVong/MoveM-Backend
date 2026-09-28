@@ -14,23 +14,17 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/attachments")
-@Tag(name = "Attachments", description = "Upload, Fetch Picture URLs, Dopwnload, etc.")
+@Tag(name = "Attachments", description = "Upload, Fetch Picture URLs, Download, etc.")
 @RequiredArgsConstructor
 public class AttachmentController {
-
     private final AttachmentService attachmentService;
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<AttachmentResponse> upload(@RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(attachmentService.upload(file));
-    }
-
-    @GetMapping("/{attachmentId}/view")
+    @GetMapping("/{attachmentId}/viewAttachments")
     public ResponseEntity<Resource> view(@PathVariable Long attachmentId) {
         return attachmentService.view(attachmentId);
     }
 
-    @GetMapping("/{attachmentId}/download")
+    @GetMapping("/{attachmentId}/downloadAttachments")
     public ResponseEntity<Resource> download(@PathVariable Long attachmentId) {
         return attachmentService.download(attachmentId);
     }
@@ -40,8 +34,8 @@ public class AttachmentController {
         return ResponseEntity.ok(attachmentService.getMyAttachments());
     }
 
-    @DeleteMapping("/{attachmentId}")
-    public ResponseEntity<Void> delete(@PathVariable Long attachmentId) {
+    @DeleteMapping("/{attachmentId}/deleteAnyAttachment")
+    public ResponseEntity<Void> deleteAnyAttachment(@PathVariable Long attachmentId) {
         attachmentService.delete(attachmentId);
         return ResponseEntity.noContent().build();
     }

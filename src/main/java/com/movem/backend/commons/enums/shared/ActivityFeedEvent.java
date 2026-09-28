@@ -1,7 +1,6 @@
 package com.movem.backend.commons.enums.shared;
 
 public enum ActivityFeedEvent {
-
     TASK_CREATED,
     TASK_UPDATED,
     TASK_COMPLETED,
@@ -68,6 +67,5 @@ public enum ActivityFeedEvent {
     TRIP_RESTORED,
     STOP_ADDED,
     STOP_COMPLETED,
-    EXPENSE_LOGGED,
-
+    EXPENSE_LOGGED
 }

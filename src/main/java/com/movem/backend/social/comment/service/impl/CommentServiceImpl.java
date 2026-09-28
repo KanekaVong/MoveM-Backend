@@ -31,9 +31,7 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class CommentServiceImpl
-        implements CommentService {
-
+public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final ActivityRepository activityRepository;
     private final CurrentUserService currentUserService;
@@ -45,25 +43,12 @@ public class CommentServiceImpl
     private final CommentMapper commentMapper;
 
     @Override
-    public CommentResponse createComment(
-            String activityId,
-            CreateCommentRequest request
-    ) {
+    public CommentResponse createComment(String activityId, CreateCommentRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ResourceNotFoundException("Activity not found."));
 
-        Activity activity =
-                activityRepository.findById(activityId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Activity not found."
-                                ));
-
-        activityPermissionService.validateActivityAccess(
-                activity,
-                currentUser
-        );
+        activityPermissionService.validateActivityAccess(activity, currentUser);
 
         Comment comment = new Comment();
         comment.setActivity(activity);
@@ -72,10 +57,7 @@ public class CommentServiceImpl
         comment.setCreatedAt( LocalDateTime.now());
         Comment saved = commentRepository.save(comment);
 
-        featureEventTrackingService.handle(
-                commentEventFactory.created(saved, currentUser)
-        );
-
+        featureEventTrackingService.handle(commentEventFactory.created(saved, currentUser));
 
         return commentMapper.toResponse(saved);
 
@@ -83,58 +65,24 @@ public class CommentServiceImpl
 
     @Override
     @Transactional(readOnly = true)
-    public Page<CommentResponse> getComments(
-            String activityId,
-            Pageable pageable
-    ) {
+    public Page<CommentResponse> getComments(String activityId, Pageable pageable) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        Activity activity = activityRepository.findById(activityId).orElseThrow(() -> new ResourceNotFoundException("Activity not found."));
 
-        Activity activity =
-                activityRepository.findById(activityId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Activity not found."
-                                ));
+        activityPermissionService.validateActivityAccess(activity, currentUser);
 
-        activityPermissionService.validateActivityAccess(
-                activity,
-                currentUser
-        );
-
-        return commentRepository
-                .findByActivityOrderByCreatedAtAsc(
-                        activity,
-                        pageable
-                )
-                .map(commentMapper::toResponse);
-
+        return commentRepository.findByActivityOrderByCreatedAtAsc(activity, pageable).map(commentMapper::toResponse);
     }
 
     @Override
-    public CommentResponse updateComment(
-            Long commentId,
-            UpdateCommentRequest request
-    ) {
+    public CommentResponse updateComment(Long commentId, UpdateCommentRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
-
-        Comment comment =
-                commentRepository
-                        .findWithUserAndActivityById(commentId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Comment not found."
-                                ));
+        Comment comment = commentRepository.findWithUserAndActivityById(commentId).orElseThrow(() -> new ResourceNotFoundException("Comment not found."));
 
         if (!comment.getUser().getId().equals(currentUser.getId())) {
-
-            throw new UnauthorizedActionException(
-                    "You can only edit your own comments."
-            );
-
+            throw new UnauthorizedActionException("You can only edit your own comments.");
         }
 
         String oldContent = comment.getContent();
@@ -144,224 +92,105 @@ public class CommentServiceImpl
 
         Comment saved = commentRepository.save(comment);
 
-        featureEventTrackingService.handle(
-                commentEventFactory.updated(
-                        saved,
-                        currentUser,
-                        oldContent
-                )
-        );
+        featureEventTrackingService.handle(commentEventFactory.updated(saved, currentUser, oldContent));
 
         Activity activity = comment.getActivity();
 
-
         return commentMapper.toResponse(saved);
-
     }
 
     @Override
-    public void deleteComment(
-            Long commentId
-    ) {
+    public void deleteComment(Long commentId) {
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
-        Comment comment =
-                commentRepository.findById(commentId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Comment not found."
-                                ));
+        Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new ResourceNotFoundException("Comment not found."));
 
         Activity activity = comment.getActivity();
 
         boolean isCommentOwner = comment.getUser().getId().equals(currentUser.getId());
-
         boolean isActivityOwner = activity.getUser().getId().equals(currentUser.getId());
 
         if (!isCommentOwner && !isActivityOwner) {
-
-            throw new UnauthorizedActionException(
-                    "You are not allowed to delete this comment."
-            );
-
+            throw new UnauthorizedActionException("You are not allowed to delete this comment.");
         }
         String oldContent = comment.getContent();
 
         commentRepository.delete(comment);
 
-        featureEventTrackingService.handle(
-                commentEventFactory.deleted(
-                        comment,
-                        currentUser
-                )
-        );
-
-
+        featureEventTrackingService.handle(commentEventFactory.deleted(comment, currentUser));
     }
 
 
     @Override
-    public CommentResponse createWorkoutComment(
-            Integer sessionId,
-            CreateCommentRequest request
-    ) {
+    public CommentResponse createWorkoutComment(Integer sessionId, CreateCommentRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        FitnessWorkoutSession session = workoutSessionRepository.findById(sessionId).orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findById(sessionId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
-
-        if (session.getStatus()
-                != FitnessWorkoutStatus.COMPLETED) {
-
-            throw new IllegalArgumentException(
-                    "Only completed workouts can receive comments."
-            );
+        if (session.getStatus() != FitnessWorkoutStatus.COMPLETED) {
+            throw new IllegalArgumentException("Only completed workouts can receive comments.");
         }
 
-        if (!Boolean.TRUE.equals(
-                session.getIsShared()
-        )) {
-
-            throw new UnauthorizedActionException(
-                    "This workout has not been shared."
-            );
+        if (!Boolean.TRUE.equals(session.getIsShared())) {
+            throw new UnauthorizedActionException("This workout has not been shared.");
         }
 
         User owner = session.getUser();
 
-        boolean isOwner =
-                owner.getId()
-                        .equals(currentUser.getId());
+        boolean isOwner = owner.getId().equals(currentUser.getId());
 
         if (!isOwner) {
+            User first = owner.getId() < currentUser.getId() ? owner : currentUser;
+            User second = owner.getId() < currentUser.getId() ? currentUser : owner;
 
-            User first =
-                    owner.getId() < currentUser.getId()
-                            ? owner
-                            : currentUser;
-
-            User second =
-                    owner.getId() < currentUser.getId()
-                            ? currentUser
-                            : owner;
-
-            if (!friendRepository
-                    .existsByUserOneAndUserTwo(
-                            first,
-                            second
-                    )) {
-
-                throw new UnauthorizedActionException(
-                        "You can only comment on a friend's shared workout."
-                );
+            if (!friendRepository.existsByUserOneAndUserTwo(first, second)) {
+                throw new UnauthorizedActionException("You can only comment on a friend's shared workout.");
             }
         }
 
-        Activity activity =
-                session.getActivity();
+        Activity activity = session.getActivity();
 
         if (activity == null) {
-            throw new ResourceNotFoundException(
-                    "Workout activity not found."
-            );
+            throw new ResourceNotFoundException("Workout activity not found.");
         }
 
-        return createComment(
-                activity.getId(),
-                request
-        );
+        return createComment(activity.getId(), request);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<CommentResponse> getWorkoutComments(
-            Integer sessionId,
-            Pageable pageable
-    ) {
+    public Page<CommentResponse> getWorkoutComments(Integer sessionId, Pageable pageable) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser =
-                currentUserService.getCurrentUser();
+        FitnessWorkoutSession session = workoutSessionRepository.findById(sessionId).orElseThrow(() -> new ResourceNotFoundException("Workout session not found."));
 
-        FitnessWorkoutSession session =
-                workoutSessionRepository
-                        .findById(sessionId)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Workout session not found."
-                                )
-                        );
-
-        if (session.getStatus()
-                != FitnessWorkoutStatus.COMPLETED) {
-
-            throw new IllegalArgumentException(
-                    "Only completed workouts can have comments."
-            );
+        if (session.getStatus() != FitnessWorkoutStatus.COMPLETED) {
+            throw new IllegalArgumentException("Only completed workouts can have comments.");
         }
 
-        if (!Boolean.TRUE.equals(
-                session.getIsShared()
-        )) {
-
-            throw new UnauthorizedActionException(
-                    "This workout has not been shared."
-            );
+        if (!Boolean.TRUE.equals(session.getIsShared())) {
+            throw new UnauthorizedActionException("This workout has not been shared.");
         }
 
         User owner = session.getUser();
 
-        boolean isOwner =
-                owner.getId()
-                        .equals(currentUser.getId());
+        boolean isOwner = owner.getId().equals(currentUser.getId());
 
         if (!isOwner) {
+            User first = owner.getId() < currentUser.getId() ? owner : currentUser;
+            User second = owner.getId() < currentUser.getId() ? currentUser : owner;
 
-            User first =
-                    owner.getId() < currentUser.getId()
-                            ? owner
-                            : currentUser;
-
-            User second =
-                    owner.getId() < currentUser.getId()
-                            ? currentUser
-                            : owner;
-
-            if (!friendRepository
-                    .existsByUserOneAndUserTwo(
-                            first,
-                            second
-                    )) {
-
-                throw new UnauthorizedActionException(
-                        "You can only view comments on a friend's shared workout."
-                );
+            if (!friendRepository.existsByUserOneAndUserTwo(first, second)) {
+                throw new UnauthorizedActionException("You can only view comments on a friend's shared workout.");
             }
         }
-
-        Activity activity =
-                session.getActivity();
+        Activity activity = session.getActivity();
 
         if (activity == null) {
-            throw new ResourceNotFoundException(
-                    "Workout activity not found."
-            );
+            throw new ResourceNotFoundException("Workout activity not found.");
         }
 
-        return commentRepository
-                .findByActivityOrderByCreatedAtAsc(
-                        activity,
-                        pageable
-                )
-                .map(commentMapper::toResponse);
+        return commentRepository.findByActivityOrderByCreatedAtAsc(activity, pageable).map(commentMapper::toResponse);
     }
 }

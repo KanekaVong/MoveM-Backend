@@ -64,8 +64,7 @@ public class JwtService {
 
     // ===== TRUST TOKEN CLAIMS =====
     public String extractDeviceId(String token) {
-        return extractClaim(token,
-                claims -> claims.get("deviceId", String.class));
+        return extractClaim(token, claims -> claims.get("deviceId", String.class));
     }
 
     public String extractJti(String token) {

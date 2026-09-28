@@ -16,10 +16,7 @@ public class TaskSpecification {
         return (root, query, cb) -> {
             Join<?, ?> activity = JpaJoinHelper.joinActivity(root);
 
-            // Owner
             var ownerCondition = cb.equal(activity.get("user"), user);
-
-            // Collaborator/member
             var memberSubQuery = query.subquery(Integer.class);
             var activityGroup = memberSubQuery.from(ActivityGroup.class);
 
@@ -53,7 +50,6 @@ public class TaskSpecification {
     public static Specification<Task> notDeleted() {
         return (root, query, criteriaBuilder) -> {
             Join<?,?> activity = JpaJoinHelper.joinActivity(root);
-
             return criteriaBuilder.notEqual(activity.get("status"), ActivityStatus.DELETED);
         };
     }
@@ -77,13 +73,11 @@ public class TaskSpecification {
     public static Specification<Task> statusEquals(ActivityStatus status) {
         return (root, query, criteriaBuilder) -> {
             Join<?,?> activity = JpaJoinHelper.joinActivity(root);
-
             return criteriaBuilder.equal(activity.get("status"), status);
         };
     }
 
     public static Specification<Task> priorityEquals(Priority priority) {
-
         return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("priority"), priority);
     }
 

@@ -20,9 +20,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class DashboardServiceImpl
-        implements DashboardService {
-
+public class DashboardServiceImpl implements DashboardService {
     private final TaskStatisticsService taskStatisticsService;
     private final FitnessStatisticsService fitnessStatisticsService;
     private final CurrentUserService currentUserService;
@@ -30,82 +28,27 @@ public class DashboardServiceImpl
 
     @Override
     public DashboardResponse getMyDashboard() {
-
         User currentUser = currentUserService.getCurrentUser();
 
         LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startToday = now.toLocalDate().atStartOfDay();
+        LocalDateTime endToday = startToday.plusDays(1);
 
-        LocalDateTime startToday =
-                now.toLocalDate().atStartOfDay();
-
-        LocalDateTime endToday =
-                startToday.plusDays(1);
-
-
-        List<Task> dueTodayEntities =
-                taskRepository.findAll(
-                        TaskSpecification
+        List<Task> dueTodayEntities = taskRepository.findAll(TaskSpecification
                                 .belongsToUser(currentUser)
-                                .and(TaskSpecification.dueToday(
-                                        startToday,
-                                        endToday
-                                )),
-                        PageRequest.of(
-                                0,
-                                5,
-                                Sort.by(
-                                        Sort.Direction.ASC,
-                                        "activity.deadline"
-                                )
-                        )
-                ).getContent();
+                                .and(TaskSpecification.dueToday(startToday, endToday)),
+                        PageRequest.of(0, 5, Sort.by(Sort.Direction.ASC, "activity.deadline"))).getContent();
 
 
-        List<DashboardTaskResponse> dueToday =
-                dueTodayEntities.stream()
-                        .map(this::mapToDashboardTask)
-                        .toList();
-
-        List<Task> overdueTaskEntities =
-                taskRepository.findAll(
-                        TaskSpecification
-                                .belongsToUser(currentUser)
-                                .and(TaskSpecification.isOverdue()),
-                        PageRequest.of(
-                                0,
-                                5,
-                                Sort.by(
-                                        Sort.Direction.ASC,
-                                        "activity.deadline"
-                                )
-                        )
-                ).getContent();
+        List<DashboardTaskResponse> dueToday = dueTodayEntities.stream().map(this::mapToDashboardTask).toList();
+        List<Task> overdueTaskEntities = taskRepository.findAll(TaskSpecification.belongsToUser(currentUser).and(TaskSpecification.isOverdue()),
+                        PageRequest.of(0, 5, Sort.by(Sort.Direction.ASC, "activity.deadline"))).getContent();
 
 
-        List<DashboardTaskResponse> overdueTasks =
-                overdueTaskEntities.stream()
-                        .map(this::mapToDashboardTask)
-                        .toList();
-
-        List<Task> upcomingTaskEntities =
-                taskRepository.findAll(
-                        TaskSpecification
-                                .belongsToUser(currentUser)
-                                .and(TaskSpecification.upcoming(7)),
-                        PageRequest.of(
-                                0,
-                                5,
-                                Sort.by(
-                                        Sort.Direction.ASC,
-                                        "activity.deadline"
-                                )
-                        )
-                ).getContent();
-
-        List<DashboardTaskResponse> upcomingTasks =
-                upcomingTaskEntities.stream()
-                        .map(this::mapToDashboardTask)
-                        .toList();
+        List<DashboardTaskResponse> overdueTasks = overdueTaskEntities.stream().map(this::mapToDashboardTask).toList();
+        List<Task> upcomingTaskEntities = taskRepository.findAll(TaskSpecification.belongsToUser(currentUser).and(TaskSpecification.upcoming(7)),
+                        PageRequest.of(0, 5, Sort.by(Sort.Direction.ASC, "activity.deadline"))).getContent();
+        List<DashboardTaskResponse> upcomingTasks = upcomingTaskEntities.stream().map(this::mapToDashboardTask).toList();
 
         return DashboardResponse.builder()
                 .statistics(taskStatisticsService.getMyTaskStatistics())
@@ -116,9 +59,7 @@ public class DashboardServiceImpl
                 .build();
     }
 
-
     private DashboardTaskResponse mapToDashboardTask(Task task) {
-
         return DashboardTaskResponse.builder()
                 .activityId(task.getActivity().getId())
                 .activityName(task.getActivity().getActivityName())
@@ -127,7 +68,5 @@ public class DashboardServiceImpl
                 .deadline(task.getActivity().getDeadline())
                 .isCollaborative(task.getActivity().getIsCollaborative())
                 .build();
-
     }
-
 }

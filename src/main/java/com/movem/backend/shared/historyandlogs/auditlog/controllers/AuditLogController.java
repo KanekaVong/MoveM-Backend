@@ -11,13 +11,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/audit-logs")
-@Tag(
-        name = "Social - Audit-Logs",
-        description = "Past Actions made by all users"
-)
+@Tag(name = "Social - Audit-Logs", description = "Past Actions made by all users")
 @RequiredArgsConstructor
 public class AuditLogController {
-
     private final AuditLogService auditLogService;
 
     @GetMapping("/me")
@@ -31,17 +27,12 @@ public class AuditLogController {
     }
 
     @GetMapping("/groups/{activityId}")
-    public List<AuditLogResponse> getGroupAuditLogs(
-            @PathVariable String activityId
-    ) {
+    public List<AuditLogResponse> getGroupAuditLogs(@PathVariable String activityId) {
         return auditLogService.getGroupAuditLogs(activityId);
     }
 
     @GetMapping("/{activityId}")
-    public List<AuditLogResponse> getAuditLogs(
-            @PathVariable String activityId
-    ) {
+    public List<AuditLogResponse> getAuditLogs(@PathVariable String activityId) {
         return auditLogService.getAuditLogs(activityId);
     }
-
 }

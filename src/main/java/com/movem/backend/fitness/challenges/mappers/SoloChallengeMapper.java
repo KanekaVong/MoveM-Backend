@@ -7,10 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class SoloChallengeMapper {
 
-    public SoloChallengeResponse toResponse(
-            SoloChallenge challenge
-    ) {
-
+    public SoloChallengeResponse toResponse(SoloChallenge challenge) {
         return SoloChallengeResponse.builder()
                 .id(challenge.getId())
                 .name(challenge.getName())

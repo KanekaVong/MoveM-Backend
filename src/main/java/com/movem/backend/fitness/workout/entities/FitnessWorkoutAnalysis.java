@@ -1,8 +1,10 @@
 package com.movem.backend.fitness.workout.entities;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
@@ -10,41 +12,37 @@ import java.time.LocalDateTime;
 @Table(name = "fitness_workout_analysis")
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class FitnessWorkoutAnalysis {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    Integer id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-            name = "workout_session_id",
-            nullable = false,
-            unique = true
-    )
-    private FitnessWorkoutSession workoutSession;
+    @JoinColumn(name = "workout_session_id", nullable = false, unique = true)
+    FitnessWorkoutSession workoutSession;
 
     @Column(nullable = false, length = 50)
-    private String exercise;
+    String exercise;
 
     @Column(nullable = false)
-    private Integer reps = 0;
+    Integer reps = 0;
 
     @Column(name = "valid_reps", nullable = false)
-    private Integer validReps = 0;
+    Integer validReps = 0;
 
     @Column(name = "invalid_reps", nullable = false)
-    private Integer invalidReps = 0;
+    Integer invalidReps = 0;
 
     @Column(name = "form_score")
-    private Integer formScore;
+    Integer formScore;
 
     @Column(columnDefinition = "TEXT")
-    private String feedback;
+    String feedback;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    LocalDateTime updatedAt;
 }

@@ -10,7 +10,6 @@ import com.movem.backend.trip.dtos.responses.TripStopResponse;
 import java.util.List;
 
 public interface TripStopService {
-
     TripStopResponse addStop(String tripActivityId, CreateTripStopRequest request);
 
     List<TripStopResponse> getStops(String tripActivityId);

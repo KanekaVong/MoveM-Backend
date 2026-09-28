@@ -1,29 +1,32 @@
 package com.movem.backend.fitness.workout.dtos.responses;
 
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class SharedWorkoutFeedResponse {
 
-    private Integer sessionId;
-    private Integer userId;
-    private String username;
-    private String profilePicture;
+     Integer sessionId;
+     Integer userId;
+     String username;
+     String profilePicture;
 
-    private String workoutType;
-    private String trackingMode;
+     String workoutType;
+     String trackingMode;
 
-    private String shareDescription;
+     String shareDescription;
 
-    private BigDecimal distance;
-    private Integer steps;
-    private Integer durationSeconds;
-    private BigDecimal caloriesBurned;
+     BigDecimal distance;
+     Integer steps;
+     Integer durationSeconds;
+     BigDecimal caloriesBurned;
 
-    private LocalDateTime finishedAt;
+     LocalDateTime finishedAt;
 }

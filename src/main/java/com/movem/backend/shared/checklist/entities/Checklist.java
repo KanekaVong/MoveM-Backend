@@ -4,6 +4,7 @@ import com.movem.backend.task.entities.Task;
 import com.movem.backend.trip.entities.Trip;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
@@ -16,20 +17,21 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Checklist {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    Integer id;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_activity_id")
-    private Task task;
+    Task task;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trip_activity_id")
-    private Trip trip;
+    Trip trip;
     @Column(name = "item_name", nullable = false)
-    private String itemName;
+    String itemName;
     @Column(name = "is_completed")
-    private Boolean isCompleted = false;
+    Boolean isCompleted = false;
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    LocalDateTime createdAt;
 }

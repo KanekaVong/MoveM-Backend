@@ -1,6 +1,7 @@
 package com.movem.backend.social.friend.dtos.response;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
@@ -9,13 +10,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class InviteResponse {
-
-    private Long id;
-
-    private String inviteUrl;
-
-    private LocalDateTime createdAt;
-
-    private LocalDateTime expiresAt;
+     Long id;
+     String inviteUrl;
+     LocalDateTime createdAt;
+     LocalDateTime expiresAt;
 }

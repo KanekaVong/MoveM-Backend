@@ -12,7 +12,6 @@ import java.util.List;
 @Getter
 @Setter
 public class WorkoutRoutePointsRequest {
-
     @NotEmpty(message = "At least one route point is required.")
     @Valid
     private List<RoutePointRequest> points;
@@ -20,17 +19,11 @@ public class WorkoutRoutePointsRequest {
     @Getter
     @Setter
     public static class RoutePointRequest {
-
         private Integer pointSequence;
-
         private BigDecimal latitude;
-
         private BigDecimal longitude;
-
         private BigDecimal accuracy;
-
         private BigDecimal altitude;
-
         private LocalDateTime recordedAt;
     }
 }

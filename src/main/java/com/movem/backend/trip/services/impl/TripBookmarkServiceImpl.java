@@ -20,13 +20,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class TripBookmarkServiceImpl implements TripBookmarkService {
-
     private final TripBookmarkRepository tripBookmarkRepository;
     private final CurrentUserService currentUserService;
 
     @Override
     public TripBookmarkResponse addBookmark(CreateTripBookmarkRequest request) {
-
         User user = currentUserService.getCurrentUser();
 
         TripBookmark bookmark = new TripBookmark();
@@ -45,7 +43,6 @@ public class TripBookmarkServiceImpl implements TripBookmarkService {
 
     @Override
     public List<TripBookmarkResponse> getMyBookmarks() {
-
         User user = currentUserService.getCurrentUser();
 
         return tripBookmarkRepository.findByUserOrderByCreatedAtDesc(user).stream()
@@ -55,11 +52,9 @@ public class TripBookmarkServiceImpl implements TripBookmarkService {
 
     @Override
     public void removeBookmark(Integer bookmarkId) {
-
         User user = currentUserService.getCurrentUser();
 
-        TripBookmark bookmark = tripBookmarkRepository.findByIdAndUser(bookmarkId, user)
-                .orElseThrow(() -> new ResourceNotFoundException("Bookmark not found: " + bookmarkId));
+        TripBookmark bookmark = tripBookmarkRepository.findByIdAndUser(bookmarkId, user).orElseThrow(() -> new ResourceNotFoundException("Bookmark not found: " + bookmarkId));
 
         tripBookmarkRepository.delete(bookmark);
     }

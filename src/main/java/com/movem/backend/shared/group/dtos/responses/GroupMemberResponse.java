@@ -1,19 +1,22 @@
 package com.movem.backend.shared.group.dtos.responses;
 
 import com.movem.backend.commons.enums.shared.GroupRole;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class GroupMemberResponse {
-    private Integer userId;
-    private String username;
-    private String firstname;
-    private String lastname;
-    private String profilePic;
-    private GroupRole role;
-    private LocalDateTime joinedAt;
+     Integer userId;
+     String username;
+     String firstname;
+     String lastname;
+     String profilePic;
+     GroupRole role;
+     LocalDateTime joinedAt;
 }

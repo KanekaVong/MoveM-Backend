@@ -8,52 +8,30 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/fitness/workouts")
-@Tag(
-        name = "Fitness - Kudos",
-        description = "Kudos/Like Your Friend's Post"
-)
+@Tag(name = "Fitness - Kudos", description = "Kudos/Like Your Friend's Post")
 @RequiredArgsConstructor
-public class KudosController {
-
+public class LikeController {
     private final KudosService workoutKudosService;
 
     @PostMapping("/{sessionId}/kudos")
-    public ResponseEntity<Void> giveKudos(
-            @PathVariable Integer sessionId
-    ) {
-
+    public ResponseEntity<Void> giveKudos(@PathVariable Integer sessionId) {
         workoutKudosService.giveKudos(sessionId);
-
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{sessionId}/kudos")
-    public ResponseEntity<Void> removeKudos(
-            @PathVariable Integer sessionId
-    ) {
-
+    public ResponseEntity<Void> removeKudos(@PathVariable Integer sessionId) {
         workoutKudosService.removeKudos(sessionId);
-
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{sessionId}/kudos/count")
-    public ResponseEntity<Long> getKudosCount(
-            @PathVariable Integer sessionId
-    ) {
-
-        return ResponseEntity.ok(
-                workoutKudosService.getKudosCount(sessionId)
-        );
+    public ResponseEntity<Long> getKudosCount(@PathVariable Integer sessionId) {
+        return ResponseEntity.ok(workoutKudosService.getKudosCount(sessionId));
     }
 
     @GetMapping("/{sessionId}/kudos/me")
-    public ResponseEntity<Boolean> hasGivenKudos(
-            @PathVariable Integer sessionId
-    ) {
-
-        return ResponseEntity.ok(
-                workoutKudosService.hasGivenKudos(sessionId)
-        );
+    public ResponseEntity<Boolean> hasGivenKudos(@PathVariable Integer sessionId) {
+        return ResponseEntity.ok(workoutKudosService.hasGivenKudos(sessionId));
     }
 }

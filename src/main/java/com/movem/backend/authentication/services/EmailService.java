@@ -16,8 +16,7 @@ public class EmailService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(toEmail);
         message.setSubject("Your Movem Login Code");
-        message.setText("Your one-time login code is: " + otpCode +
-                "\n\nThis code expires in 5 minutes. If you didn't request this, please ignore this email.");
+        message.setText("Your one-time login code is: " + otpCode + "\n\nThis code expires in 5 minutes. If you didn't request this, please ignore this email.");
         sendEmail(message);
     }
 
@@ -25,8 +24,7 @@ public class EmailService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(toEmail);
         message.setSubject("Your Movem Password Reset Code");
-        message.setText("Your password reset code is: " + otpCode +
-                "\n\nThis code expires in 5 minutes. If you didn't request a password reset, please ignore this email — your password won't be changed unless this code is used.");
+        message.setText("Your password reset code is: " + otpCode + "\n\nThis code expires in 5 minutes. If you didn't request a password reset, please ignore this email — your password won't be changed unless this code is used.");
         sendEmail(message);
     }
 
@@ -34,8 +32,7 @@ public class EmailService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(toEmail);
         message.setSubject("Verify Your Movem Email");
-        message.setText("Your verification code is: " + code +
-                "\n\nEnter this code in the app to activate your account. This code expires in 15 minutes.");
+        message.setText("Your verification code is: " + code + "\n\nEnter this code in the app to activate your account. This code expires in 15 minutes.");
         sendEmail(message);
     }
 

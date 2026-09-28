@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TrustedDevice {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;

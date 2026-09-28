@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class FriendMapper {
-
     public FriendRequestResponse toFriendRequestResponse(FriendRequest request) {
 
         FriendRequestResponse response = new FriendRequestResponse();
@@ -24,11 +23,8 @@ public class FriendMapper {
         response.setSenderUsername(request.getSender().getUsername());
 
         if (request.getSender().getProfilePic() != null) {
-            response.setSenderProfilePic(
-                    request.getSender().getProfilePic()
-            );
+            response.setSenderProfilePic(request.getSender().getProfilePic());
         }
-
         response.setReceiverId(request.getReceiver().getId());
         response.setReceiverUsername(request.getReceiver().getUsername());
 
@@ -39,7 +35,6 @@ public class FriendMapper {
     }
 
     public FriendResponse toFriendResponse(User user) {
-
         FriendResponse response = new FriendResponse();
 
         response.setUserId(user.getId());
@@ -55,7 +50,6 @@ public class FriendMapper {
     }
 
     public FriendResponse toFriendResponse(Friend friend, Integer currentUserId) {
-
         User friendUser;
 
         if(friend.getUserOne().getId().equals(currentUserId)){
@@ -63,15 +57,10 @@ public class FriendMapper {
         }else{
             friendUser = friend.getUserOne();
         }
-
         return toFriendResponse(friendUser);
     }
 
-    public SearchUserResponse toSearchUserResponse(
-            User user,
-            FriendStatus friendStatus
-    ) {
-
+    public SearchUserResponse toSearchUserResponse(User user, FriendStatus friendStatus) {
         SearchUserResponse response = new SearchUserResponse();
 
         response.setUserId(user.getId());
@@ -87,5 +76,4 @@ public class FriendMapper {
 
         return response;
     }
-
 }

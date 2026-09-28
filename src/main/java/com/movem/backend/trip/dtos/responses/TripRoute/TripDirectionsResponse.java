@@ -1,6 +1,7 @@
 package com.movem.backend.trip.dtos.responses.TripRoute;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 
@@ -9,14 +10,10 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TripDirectionsResponse {
-
-    // Ready-to-open deep link — works with the Google Maps app or the web, no API key needed
-    private String mapsUrl;
-
-    private BigDecimal destinationLat;
-
-    private BigDecimal destinationLng;
-
-    private String googlePlaceId;
+     String mapsUrl;
+     BigDecimal destinationLat;
+     BigDecimal destinationLng;
+     String googlePlaceId;
 }

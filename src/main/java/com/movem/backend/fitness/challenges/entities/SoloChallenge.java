@@ -18,40 +18,35 @@ public class SoloChallenge {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    Integer id;
 
     @Column(nullable = false, length = 150)
-    private String name;
+    String name;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "workout_type", nullable = false)
-    private WorkoutType workoutType;
+    WorkoutType workoutType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "workout_level", nullable = false)
-    private WorkoutLevel workoutLevel;
+    WorkoutLevel workoutLevel;
 
-    @Column(
-            name = "target_value",
-            nullable = false,
-            precision = 10,
-            scale = 2
-    )
-    private BigDecimal targetValue;
+    @Column(name = "target_value", nullable = false, precision = 10, scale = 2)
+    BigDecimal targetValue;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "target_unit", nullable = false)
-    private ChallengeTargetUnit targetUnit;
+    ChallengeTargetUnit targetUnit;
 
     @Column(name = "calories")
-    private BigDecimal calories;
+    BigDecimal calories;
 
     @Column(columnDefinition = "TEXT")
-    private String description;
+    String description;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    LocalDateTime updatedAt;
 }

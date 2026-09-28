@@ -10,18 +10,9 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 
-public interface ActivityFeedRepository
-        extends JpaRepository<ActivityFeed, Long> {
-
-    @EntityGraph(attributePaths = {
-            "user",
-            "activity"
-    })
-
-    Page<ActivityFeed> findByActivityOrderByCreatedAtDesc(
-            Activity activity,
-            Pageable pageable
-    );
+public interface ActivityFeedRepository extends JpaRepository<ActivityFeed, Long> {
+    @EntityGraph(attributePaths = {"user", "activity"})
+    Page<ActivityFeed> findByActivityOrderByCreatedAtDesc(Activity activity, Pageable pageable);
 
     @Transactional
     @Modifying

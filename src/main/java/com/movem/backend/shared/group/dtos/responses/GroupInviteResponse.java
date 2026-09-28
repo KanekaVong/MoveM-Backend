@@ -1,35 +1,26 @@
 package com.movem.backend.shared.group.dtos.responses;
 
 import com.movem.backend.commons.enums.shared.InviteStatus;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class GroupInviteResponse {
-
-    private Long inviteId;
-
-    private Integer groupId;
-
-    private String activityId;
-
-    private String activityName;
-
-    private Integer inviterId;
-
-    private String inviterUsername;
-
-    private Integer inviteeId;
-
-    private String inviteeUsername;
-
-    private InviteStatus status;
-
-    private LocalDateTime invitedAt;
-
-    private LocalDateTime respondedAt;
-
+     Long inviteId;
+     Integer groupId;
+     String activityId;
+     String activityName;
+     Integer inviterId;
+     String inviterUsername;
+     Integer inviteeId;
+     String inviteeUsername;
+     InviteStatus status;
+     LocalDateTime invitedAt;
+     LocalDateTime respondedAt;
 }

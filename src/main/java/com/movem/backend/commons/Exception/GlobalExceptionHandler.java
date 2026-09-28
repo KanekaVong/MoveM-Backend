@@ -21,7 +21,6 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
     // Malformed JSON
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleMalformedJson(HttpMessageNotReadableException e) {
@@ -111,8 +110,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleEmailDeliveryException(EmailDeliveryException e) {
         return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
     }
-
-
 
     // Helper Method
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {

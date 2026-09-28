@@ -7,12 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class FitnessProfileMapper {
-
-    public FitnessProfileResponse toResponse(
-            FitnessProfile fitnessProfile,
-            FitnessGoalResponse fitnessGoal
-    ) {
-
+    public FitnessProfileResponse toResponse(FitnessProfile fitnessProfile, FitnessGoalResponse fitnessGoal) {
         return FitnessProfileResponse.builder()
                 .userId(fitnessProfile.getUserId())
                 .height(fitnessProfile.getHeight())

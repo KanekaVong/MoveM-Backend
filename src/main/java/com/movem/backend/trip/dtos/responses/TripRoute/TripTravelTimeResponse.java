@@ -1,9 +1,7 @@
 package com.movem.backend.trip.dtos.responses.TripRoute;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
@@ -11,17 +9,12 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TripTravelTimeResponse {
-
-    private String tripActivityId;
-
-    private String travelMode;
-
-    private Double totalDistanceKm;
-
-    private Integer estimatedTotalMinutes;
-
-    private String estimatedTotalTime;
-
-    private List<TravelTimeSegmentResponse> segments;
+     String tripActivityId;
+     String travelMode;
+     Double totalDistanceKm;
+     Integer estimatedTotalMinutes;
+     String estimatedTotalTime;
+     List<TravelTimeSegmentResponse> segments;
 }

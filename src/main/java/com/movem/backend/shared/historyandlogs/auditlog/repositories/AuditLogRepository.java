@@ -14,25 +14,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface AuditLogRepository
-        extends JpaRepository<AuditLog, Long> {
-
-    List<AuditLog> findByActivityOrderByCreatedAtDesc(
-            Activity activity
-    );
-
-    List<AuditLog> findByUserAndCategoryOrderByCreatedAtDesc(
-            User currentUser,
-            AuditCategory category
-    );
-
-    List<AuditLog> findByActivityAndCategoryOrderByCreatedAtDesc(
-            Activity activity,
-            AuditCategory category
-    );
-
+public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
+    List<AuditLog> findByActivityOrderByCreatedAtDesc(Activity activity);
+    List<AuditLog> findByUserAndCategoryOrderByCreatedAtDesc(User currentUser, AuditCategory category);
+    List<AuditLog> findByActivityAndCategoryOrderByCreatedAtDesc(Activity activity, AuditCategory category);
     List<AuditLog> findByUserOrderByCreatedAtDesc(User user);
-
     @Transactional
     @Modifying
     @Query("""
