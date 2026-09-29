@@ -55,7 +55,6 @@ public class UpdateTripRequest implements TripUpdateSource {
     List<CreateTripPackingItemRequest> addPackingItems;
     List<Integer> removePackingItemIds;
 
-    List<CreateChecklistItemRequest> addChecklistItems;
-    List<UpdateChecklistItemRequest> updateChecklistItems;
+    List<UpdateChecklistItemRequest> checklists;
 }
 

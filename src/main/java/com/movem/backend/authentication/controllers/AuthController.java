@@ -6,6 +6,8 @@ import com.movem.backend.authentication.dtos.responses.AuthResponse;
 import com.movem.backend.authentication.entities.EmailVerification;
 import com.movem.backend.authentication.entities.TrustedDevice;
 import com.movem.backend.authentication.entities.User;
+import com.movem.backend.authentication.entities.UserDevice;
+import com.movem.backend.authentication.repositories.UserDeviceRepository;
 import com.movem.backend.authentication.services.*;
 import com.movem.backend.commons.Exception.ResourceNotFoundException;
 import com.movem.backend.authentication.mappers.CurrentUserMapper;
@@ -41,6 +43,7 @@ public class AuthController {
     @Autowired private CurrentUserService currentUserService;
     @Autowired private TrustedDeviceRepository trustedDeviceRepository;
     @Autowired private CurrentUserMapper currentUserMapper;
+    @Autowired private UserDeviceRepository userDeviceRepository;
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody User user) {
@@ -48,12 +51,44 @@ public class AuthController {
         return ResponseEntity.ok("User registered successfully!");
     }
 
+    @PostMapping("/device")
+    public ResponseEntity<?> registerDevice(@RequestBody RegisterDeviceRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
+
+        if (request.getDeviceToken() == null || request.getDeviceToken().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Device token is required."));
+        }
+
+        UserDevice device = userDeviceRepository.findByDeviceToken(request.getDeviceToken()).orElse(null);
+
+        if (device == null) {
+            device = new UserDevice();
+
+            device.setUser(currentUser);
+            device.setDeviceToken(request.getDeviceToken());
+            device.setPlatform(request.getPlatform());
+            device.setIsActive(true);
+            device.setLastSeenAt(LocalDateTime.now());
+            device.setCreatedAt(LocalDateTime.now());
+            device.setUpdatedAt(LocalDateTime.now());
+        } else {
+            device.setUser(currentUser);
+            device.setPlatform(request.getPlatform());
+            device.setIsActive(true);
+            device.setLastSeenAt(LocalDateTime.now());
+            device.setUpdatedAt(LocalDateTime.now());
+        }
+
+        userDeviceRepository.save(device);
+
+        return ResponseEntity.ok(Map.of("message", "Device registered successfully."));
+    }
+
     @PostMapping("/verify-email")
     public ResponseEntity<?> verifyEmail(@RequestBody EmailVerifyRequest request) {
         User user = userService.getUserByEmail(request.getEmail());
 
-        EmailVerification verification = emailVerificationRepository
-                .findTopByUserIdOrderByCreatedAtDesc(user.getId())
+        EmailVerification verification = emailVerificationRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("No verification code found. Please register again."));
 
         if (verification.getUsedAt() != null) {

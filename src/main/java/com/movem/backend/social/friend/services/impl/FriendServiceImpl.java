@@ -1,5 +1,6 @@
 package com.movem.backend.social.friend.services.impl;
 
+import com.movem.backend.shared.notification.services.PushNotificationService;
 import com.movem.backend.social.friend.dtos.request.SendFriendRequestRequest;
 import com.movem.backend.social.friend.dtos.response.FriendRequestResponse;
 import com.movem.backend.social.friend.dtos.response.FriendResponse;
@@ -38,6 +39,7 @@ public class FriendServiceImpl implements FriendService {
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
     private final FeatureEventTrackingService featureEventTrackingService;
+    private final PushNotificationService pushNotificationService;
     private final FriendEventFactory friendEventFactory;
     private final FriendMapper friendMapper;
     private final FriendRequestMapper friendRequestMapper;
@@ -47,18 +49,24 @@ public class FriendServiceImpl implements FriendService {
         User sender = currentUserService.getCurrentUser();
         User receiver = userRepository.findByUsername(request.getUsername()).orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
-        if(sender.getId().equals(receiver.getId())){
+        if (sender.getId().equals(receiver.getId())) {
             throw new IllegalArgumentException("You cannot send a friend request to yourself.");
         }
-        if(areFriends(sender, receiver)){
+
+        if (areFriends(sender, receiver)) {
             throw new DuplicateResourceException("You are already friends.");
         }
+
         if (friendRequestRepository.findBySenderAndReceiverAndStatus(sender, receiver, FriendRequestStatus.PENDING).isPresent()) {
+
             throw new DuplicateResourceException("Friend request already sent.");
         }
+
         if (friendRequestRepository.findBySenderAndReceiverAndStatus(receiver, sender, FriendRequestStatus.PENDING).isPresent()) {
+
             throw new DuplicateResourceException("This user has already sent you a friend request.");
         }
+
         FriendRequest friendRequest = friendRequestRepository.findBySenderAndReceiver(sender, receiver).orElseGet(FriendRequest::new);
 
         friendRequest.setSender(sender);
@@ -67,10 +75,12 @@ public class FriendServiceImpl implements FriendService {
         friendRequest.setRespondedAt(null);
 
         FriendRequest saved = friendRequestRepository.save(friendRequest);
+
         featureEventTrackingService.handle(friendEventFactory.friendRequestSent(sender, receiver));
 
-        return friendMapper.toFriendRequestResponse(saved);
+        pushNotificationService.sendPushNotification(receiver, "New Friend Request", sender.getUsername() + " sent you a friend request.");
 
+        return friendMapper.toFriendRequestResponse(saved);
     }
 
     @Override
@@ -96,6 +106,8 @@ public class FriendServiceImpl implements FriendService {
 
         featureEventTrackingService.handle(friendEventFactory.friendRequestAccepted(saved, currentUser));
 
+        pushNotificationService.sendPushNotification(request.getSender(), "Friend Request Accepted", currentUser.getUsername() + " accepted your friend request.");
+
         return friendMapper.toFriendRequestResponse(saved);
     }
 
@@ -103,8 +115,7 @@ public class FriendServiceImpl implements FriendService {
     public FriendRequestResponse rejectFriendRequest(Long requestId) {
         User currentUser = currentUserService.getCurrentUser();
 
-        FriendRequest request = friendRequestRepository.findById(requestId)
-                .orElseThrow(() -> new ResourceNotFoundException("Friend request not found."));
+        FriendRequest request = friendRequestRepository.findById(requestId).orElseThrow(() -> new ResourceNotFoundException("Friend request not found."));
 
         if (!request.getReceiver().getId().equals(currentUser.getId())) {
             throw new UnauthorizedActionException("You are not allowed to reject this request.");

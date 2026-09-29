@@ -14,5 +14,4 @@ public class UpdateChecklistItemRequest {
     @NotBlank
     String itemName;
     Boolean isCompleted;
-
 }

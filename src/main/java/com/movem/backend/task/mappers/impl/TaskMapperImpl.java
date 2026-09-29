@@ -1,7 +1,10 @@
 package com.movem.backend.task.mappers.impl;
 
 import com.movem.backend.shared.attachment.dtos.responses.AttachmentResponse;
+import com.movem.backend.shared.checklist.dtos.responses.ChecklistResponse;
+import com.movem.backend.shared.checklist.entities.Checklist;
 import com.movem.backend.shared.checklist.mapper.ChecklistMapper;
+import com.movem.backend.shared.checklist.repository.ChecklistRepository;
 import com.movem.backend.shared.group.dtos.responses.GroupMemberResponse;
 import com.movem.backend.shared.reminder.mapper.ReminderMapper;
 import com.movem.backend.task.dtos.responses.TaskResponse;
@@ -25,9 +28,13 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class TaskMapperImpl extends AbstractBaseMapper<Task, TaskResponse> implements TaskMapper {
+
     private final ChecklistMapper checklistMapper;
+    private final ChecklistRepository checklistRepository;
+
     private final ReminderMapper reminderMapper;
     private final TaskLabelMapper labelMapper;
+
     private final AttachmentRepository attachmentRepository;
     private final AttachmentService attachmentService;
 
@@ -39,35 +46,27 @@ public class TaskMapperImpl extends AbstractBaseMapper<Task, TaskResponse> imple
         if (task == null) {
             return null;
         }
+
         Activity activity = task.getActivity();
+
         if (activity == null) {
             return null;
         }
+        List<Checklist> checklists = checklistRepository.findByTaskOrderByIdAsc(task);
 
-        int totalChecklistItems = task.getChecklists() != null ? task.getChecklists().size() : 0;
-        int completedChecklistItems = task.getChecklists() != null ? (int) task.getChecklists().stream().filter(c -> Boolean.TRUE.equals(c.getIsCompleted())).count() : 0;
+        int totalChecklistItems = checklists.size();
+        int completedChecklistItems = (int) checklists.stream().filter(c -> Boolean.TRUE.equals(c.getIsCompleted())).count();
         int checklistProgress = totalChecklistItems == 0 ? 0 : (completedChecklistItems * 100) / totalChecklistItems;
 
         List<AttachmentResponse> attachmentResponses =
-                attachmentRepository != null
-                        ? attachmentRepository
-                        .findByTaskAndDeletedAtIsNull(task)
-                        .stream()
-                        .map(attachmentService::toResponse)
-                        .toList()
-                        : Collections.emptyList();
+                attachmentRepository != null ? attachmentRepository.findByTaskAndDeletedAtIsNull(task).stream().map(attachmentService::toResponse).toList() : Collections.emptyList();
 
         List<GroupMemberResponse> members = Collections.emptyList();
 
         ActivityGroup group = groupRepository.findByActivity(activity).orElse(null);
 
         if (group != null) {
-            members = groupMemberRepository
-                    .findByActivityGroup(group)
-                    .stream()
-                    .map(member -> {
-                        GroupMemberResponse response = new GroupMemberResponse();
-
+            members = groupMemberRepository.findByActivityGroup(group).stream().map(member -> {GroupMemberResponse response = new GroupMemberResponse();
                         response.setUserId(member.getUser().getId());
                         response.setUsername(member.getUser().getUsername());
                         response.setFirstname(member.getUser().getFirstname());
@@ -76,8 +75,8 @@ public class TaskMapperImpl extends AbstractBaseMapper<Task, TaskResponse> imple
                         response.setRole(member.getRole());
                         response.setJoinedAt(member.getJoinedAt());
 
-                        return response;
-                    }).toList();
+                        return response;})
+                    .toList();
         }
 
         return TaskResponse.builder()
@@ -90,9 +89,11 @@ public class TaskMapperImpl extends AbstractBaseMapper<Task, TaskResponse> imple
                 .recurringType(task.getRecurringType())
                 .startActivity(activity.getStartActivity())
                 .deadline(activity.getDeadline())
+
                 .labels(activity.getLabels() != null ? labelMapper.toResponseList(new ArrayList<>(activity.getLabels())) : Collections.emptyList())
-                .checklists(task.getChecklists() != null ? checklistMapper.toResponseList(task.getChecklists()) : Collections.emptyList())
+                .checklists(checklistMapper.toResponseList(checklists))
                 .reminders(task.getReminders() != null ? reminderMapper.toResponseList(task.getReminders()) : Collections.emptyList())
+
                 .totalChecklistItems(totalChecklistItems)
                 .completedChecklistItems(completedChecklistItems)
                 .checklistProgress(checklistProgress)
@@ -109,9 +110,7 @@ public class TaskMapperImpl extends AbstractBaseMapper<Task, TaskResponse> imple
         if (entities == null || entities.isEmpty()) {
             return Collections.emptyList();
         }
-        return entities
-                .stream()
-                .map(this::toResponse)
-                .toList();
+
+        return entities.stream().map(this::toResponse).toList();
     }
 }

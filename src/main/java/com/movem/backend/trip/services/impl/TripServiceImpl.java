@@ -104,7 +104,11 @@ public class TripServiceImpl implements TripService {
 
         createTripReminders(saved);
 
-        checklistService.createTripChecklistItems(saved, request.getChecklistItems());
+        if (request.getChecklistItems() != null) {
+            for (CreateChecklistItemRequest checklistItem : request.getChecklistItems()) {
+                checklistService.addChecklistItem(saved.getActivityId(), checklistItem);
+            }
+        }
 
         if (request.getStops() != null) {
             for (CreateTripStopRequest stopRequest : request.getStops()) {
@@ -337,60 +341,67 @@ public class TripServiceImpl implements TripService {
         trip.setDestination(request.getDestination());
         Trip saved = tripRepository.save(trip);
 
+        if (request.getChecklists() != null) {
+            for (UpdateChecklistItemRequest checklistItem : request.getChecklists()) {
+                checklistService.updateChecklistItem(saved.getActivityId(), checklistItem.getId(), checklistItem);
+            }
+        }
+
         if (request.getTotalBudget() != null) {
             tripBudgetService.updateTotalBudget(saved.getActivityId(), request.getTotalBudget());
         }
 
-        if (request.getAddChecklistItems() != null && !request.getAddChecklistItems().isEmpty()) {
-            checklistService.createTripChecklistItems(saved, request.getAddChecklistItems());
-        }
-        if (request.getUpdateChecklistItems() != null && !request.getUpdateChecklistItems().isEmpty()) {
-            for (UpdateChecklistItemRequest item : request.getUpdateChecklistItems()) {
-                checklistService.updateTripChecklistItem(saved.getActivityId(), item.getId(), item);
-            }
-        }
         if (request.getAddStops() != null) {
             for (CreateTripStopRequest stop : request.getAddStops()) {
                 tripStopService.addStop(saved.getActivityId(), stop);
             }
         }
+
         if (request.getUpdateStops() != null) {
             for (UpdateTripStopRequest stop : request.getUpdateStops()) {
                 tripStopService.updateStop(saved.getActivityId(), stop.getId(), stop);
             }
         }
+
         if (request.getRemoveStopIds() != null) {
             for (Integer stopId : request.getRemoveStopIds()) {
                 tripStopService.removeStop(saved.getActivityId(), stopId);
             }
         }
+
         if (request.getAddBudgets() != null) {
             for (CreateTripBudgetRequest budget : request.getAddBudgets()) {
                 tripBudgetService.addBudgetCategory(saved.getActivityId(), budget);
             }
         }
+
         if (request.getUpdateBudgets() != null) {
             for (UpdateTripBudgetRequest budget : request.getUpdateBudgets()) {
                 tripBudgetService.updateBudgetCategory(saved.getActivityId(), budget.getId(), budget);
             }
         }
+
         if (request.getRemoveBudgetIds() != null) {
             for (Integer budgetId : request.getRemoveBudgetIds()) {
                 tripBudgetService.deleteBudgetCategory(saved.getActivityId(), budgetId);
             }
         }
+
         if (request.getAddPackingItems() != null) {
             for (CreateTripPackingItemRequest item : request.getAddPackingItems()) {
                 tripPackingService.addItem(saved.getActivityId(), item);
             }
         }
+
         if (request.getRemovePackingItemIds() != null) {
             for (Integer itemId : request.getRemovePackingItemIds()) {
                 tripPackingService.removeItem(saved.getActivityId(), itemId);
             }
         }
         syncTripReminders(saved);
+
         featureEventTrackingService.handle(tripEventFactory.updated(saved, user));
+
         return enrich(tripMapper.toResponse(saved), saved);
     }
 

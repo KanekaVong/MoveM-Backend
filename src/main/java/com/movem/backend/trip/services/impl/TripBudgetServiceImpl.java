@@ -2,6 +2,7 @@ package com.movem.backend.trip.services.impl;
 
 import com.movem.backend.trip.dtos.requests.Create.CreateTripBudgetRequest;
 import com.movem.backend.trip.dtos.requests.Create.CreateTripExpenseRequest;
+import com.movem.backend.trip.dtos.requests.Create.CreateTripExpenseSplitRequest;
 import com.movem.backend.trip.dtos.requests.Update.UpdateTripBudgetRequest;
 import com.movem.backend.trip.dtos.responses.TripBudgetResponse;
 import com.movem.backend.trip.dtos.responses.TripExpenseResponse;
@@ -388,5 +389,79 @@ public class TripBudgetServiceImpl implements TripBudgetService {
 
         totalBudgetRecord.setAllocatedAmount(totalBudget);
         tripBudgetRepository.save(totalBudgetRecord);
+    }
+    @Override
+    public TripExpenseResponse addExpenseSplit(String tripActivityId, Integer expenseId, CreateTripExpenseSplitRequest request) {
+        User user = currentUserService.getCurrentUser();
+
+        Trip trip = findTripOrThrow(tripActivityId);
+
+        activityPermissionService.validateCanContributeToTrip(trip.getActivity(), user);
+
+        TripExpense expense = findExpenseOrThrow(trip, expenseId);
+
+        expense.getSplits().clear();
+
+        if (request.getSplitMode() == TripSplitMode.EQUAL) {
+
+            List<User> members = tripMembers(trip);
+
+            if (members.isEmpty()) {
+                throw new BadRequestException("Trip has no members to split the expense with");
+            }
+
+            BigDecimal share = expense.getAmount().divide(BigDecimal.valueOf(members.size()), 2, RoundingMode.HALF_UP);
+
+            BigDecimal roundingRemainder = expense.getAmount().subtract(share.multiply(BigDecimal.valueOf(members.size())));
+
+            for (int i = 0; i < members.size(); i++) {
+
+                TripExpenseSplit split = new TripExpenseSplit();
+
+                split.setExpense(expense);
+                split.setUser(members.get(i));
+                split.setAmountOwed(i == 0 ? share.add(roundingRemainder) : share);
+                split.setIsSettled(false);
+
+                expense.getSplits().add(split);
+            }
+        }
+
+        else if (request.getSplitMode() == TripSplitMode.CUSTOM) {
+            if (request.getCustomSplits() == null || request.getCustomSplits().isEmpty()) {
+                throw new BadRequestException("customSplits is required when splitMode is CUSTOM");
+            }
+
+            BigDecimal total = request.getCustomSplits()
+                    .stream()
+                    .map(CreateTripExpenseSplitRequest.ExpenseSplitEntry::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            if (total.compareTo(expense.getAmount()) != 0) {
+                throw new BadRequestException("customSplits must add up to the expense amount");
+            }
+
+            for (CreateTripExpenseSplitRequest.ExpenseSplitEntry entry : request.getCustomSplits()) {
+
+                User splitUser = resolveMember(trip, entry.getUserId());
+
+                TripExpenseSplit split = new TripExpenseSplit();
+
+                split.setExpense(expense);
+                split.setUser(splitUser);
+                split.setAmountOwed(entry.getAmount());
+                split.setIsSettled(false);
+
+                expense.getSplits().add(split);
+            }
+        }
+
+        else {
+            throw new BadRequestException("splitMode must be EQUAL or CUSTOM");
+        }
+
+        tripExpenseRepository.saveAndFlush(expense);
+
+        return toResponse(expense, expense.getBudget());
     }
 }

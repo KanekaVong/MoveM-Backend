@@ -1,5 +1,7 @@
 package com.movem.backend.task.services.impl;
 
+import com.movem.backend.shared.checklist.dtos.requests.UpdateChecklistItemRequest;
+import com.movem.backend.task.dtos.requests.Create.CreateChecklistItemRequest;
 import com.movem.backend.task.dtos.requests.Create.CreateTaskRequest;
 import com.movem.backend.task.dtos.requests.TaskSearchCriteria;
 import com.movem.backend.task.dtos.requests.Update.UpdateTaskRequest;
@@ -70,11 +72,17 @@ public class TaskServiceImpl implements TaskService {
 
         featureEventTrackingService.handle(taskEventFactory.taskCreated(activity, currentUser));
         activityService.attachLabels(activity, request.getLabelIds());
-        System.out.println("CHECKLIST REQUEST = " + request.getChecklists());
-        checklistService.createChecklistItems(savedTask, request.getChecklists());
-        reminderService.createReminders(savedTask, request.getReminders());
 
-        return taskMapper.toResponse(savedTask);
+        if (request.getChecklists() != null) {
+            for (CreateChecklistItemRequest checklistItem : request.getChecklists()) {
+                checklistService.addChecklistItem(savedTask.getActivityId(), checklistItem);
+            }
+        }
+
+        reminderService.createReminders(savedTask, request.getReminders());
+        Task taskWithChecklists = taskRepository.findByActivityId(savedTask.getActivityId()).orElseThrow(() -> new ResourceNotFoundException("Task not found."));
+
+        return taskMapper.toResponse(taskWithChecklists);
     }
 
     @Override
@@ -120,7 +128,12 @@ public class TaskServiceImpl implements TaskService {
         activity.getLabels().clear();
 
         activityService.attachLabels(activity, request.getLabelIds());
-        checklistService.updateChecklistItems(task, request.getChecklists());
+
+        if (request.getChecklists() != null) {
+            for (UpdateChecklistItemRequest checklistItem : request.getChecklists()) {
+                checklistService.updateChecklistItem(task.getActivityId(), checklistItem.getId(), checklistItem);
+            }
+        }
 
         reminderService.syncTaskReminders(task);
         reminderService.addCustomReminders(task, request.getReminders());

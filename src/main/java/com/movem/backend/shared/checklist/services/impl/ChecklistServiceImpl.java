@@ -1,5 +1,6 @@
 package com.movem.backend.shared.checklist.services.impl;
 
+import com.movem.backend.shared.activity.entities.Activity;
 import com.movem.backend.task.dtos.requests.Create.CreateChecklistItemRequest;
 import com.movem.backend.shared.checklist.dtos.requests.UpdateChecklistItemRequest;
 import com.movem.backend.shared.checklist.dtos.responses.ChecklistResponse;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -34,123 +36,49 @@ public class ChecklistServiceImpl implements ChecklistService {
     private final ChecklistEventFactory checklistEventFactory;
 
     @Override
-    public void createChecklistItems(Task task, List<CreateChecklistItemRequest> items) {
-        if (items == null || items.isEmpty()) {
-            return;
-        }
-
-        List<Checklist> checklists = new ArrayList<>();
-
-        for (CreateChecklistItemRequest item : items) {
-
-            Checklist checklist = new Checklist();
-
-            checklist.setTask(task);
-            checklist.setItemName(item.getItemName());
-            checklist.setIsCompleted(false);
-            checklist.setCreatedAt(LocalDateTime.now());
-
-            checklists.add(checklist);
-
-            task.getChecklists().add(checklist);
-        }
-
-        checklistRepository.saveAll(checklists);
-
-        User currentUser = currentUserService.getCurrentUser();
-
-        featureEventTrackingService.handle(checklistEventFactory.added(task.getActivity(), currentUser, checklists.size()));
-    }
-
-    @Override
     public List<ChecklistResponse> getChecklistItems(String activityId) {
-        Task task = taskRepository.findByActivityId(activityId).orElseThrow(() -> new ResourceNotFoundException("Task not found."));
+        Optional<Task> task = taskRepository.findByActivityId(activityId);
+
+        if (task.isPresent()) {
+            return checklistRepository.findByTaskOrderByIdAsc(task.get()).stream().map(checklistMapper::toResponse).toList();
+        }
+
+        Trip trip = tripRepository.findByActivityId(activityId).orElseThrow(() -> new ResourceNotFoundException("Activity not found."));
 
         return checklistRepository
-                .findByTaskOrderByIdAsc(task)
+                .findByTripOrderByIdAsc(trip)
                 .stream()
                 .map(checklistMapper::toResponse)
                 .toList();
     }
 
     @Override
-    public void createTripChecklistItems(Trip trip, List<CreateChecklistItemRequest> items) {
-        if (items == null || items.isEmpty()) {
-            return;
-        }
-        List<Checklist> checklists = new ArrayList<>();
+    public void addChecklistItem(String activityId, CreateChecklistItemRequest request) {
+        Optional<Task> task = taskRepository.findByActivityId(activityId);
 
-        for (CreateChecklistItemRequest item : items) {
+        if (task.isPresent()) {
+
             Checklist checklist = new Checklist();
 
-            checklist.setTrip(trip);
-            checklist.setItemName(item.getItemName());
+            checklist.setTask(task.get());
+            checklist.setItemName(request.getItemName());
             checklist.setIsCompleted(false);
             checklist.setCreatedAt(LocalDateTime.now());
 
-            checklists.add(checklist);
-        }
+            Checklist saved = checklistRepository.save(checklist);
 
-        checklistRepository.saveAll(checklists);
+            User currentUser = currentUserService.getCurrentUser();
 
-        User currentUser = currentUserService.getCurrentUser();
+            featureEventTrackingService.handle(checklistEventFactory.added(task.get().getActivity(), currentUser, 1));
 
-        featureEventTrackingService.handle(checklistEventFactory.added(trip.getActivity(), currentUser, checklists.size()));
-    }
-
-    @Override
-    public void updateTripChecklistItem(String activityId, Integer checklistId, UpdateChecklistItemRequest request) {
-
-        Trip trip = tripRepository.findByActivityId(activityId).orElseThrow(() -> new ResourceNotFoundException("Trip not found."));
-
-        Checklist checklist = checklistRepository.findById(checklistId).orElseThrow(() -> new ResourceNotFoundException("Checklist item not found."));
-
-
-        if (checklist.getTrip() != null) {
-            System.out.println("Checklist trip activityId: " + checklist.getTrip().getActivityId());
-        }
-        if (checklist.getTrip() == null || !checklist.getTrip().getActivityId().equals(trip.getActivityId())) {
-            throw new IllegalArgumentException("Checklist item does not belong to this trip.");
-        }
-
-        String oldItemName = checklist.getItemName();
-        checklist.setItemName(request.getItemName());
-        checklist.setIsCompleted(Boolean.TRUE.equals(request.getIsCompleted()));
-
-        Checklist saved = checklistRepository.save(checklist);
-        User currentUser = currentUserService.getCurrentUser();
-
-        featureEventTrackingService.handle(checklistEventFactory.updated(saved, currentUser, oldItemName));
-    }
-    @Override
-    public List<ChecklistResponse> getTripChecklistItems(String activityId) {
-        Trip trip = tripRepository.findByActivityId(activityId).orElseThrow(() -> new ResourceNotFoundException("Trip not found."));
-        return checklistRepository.findByTripOrderByIdAsc(trip).stream().map(checklistMapper::toResponse).toList();
-    }
-
-    @Override
-    public void markChecklistCompleted(Integer checklistId) {
-        Checklist checklist = checklistRepository.findById(checklistId).orElseThrow(() -> new ResourceNotFoundException("Checklist item not found."));
-
-        boolean oldCompleted = Boolean.TRUE.equals(checklist.getIsCompleted());
-        if (oldCompleted) {
             return;
         }
-        checklist.setIsCompleted(true);
-        Checklist saved = checklistRepository.save(checklist);
 
-        User currentUser = currentUserService.getCurrentUser();
-
-        featureEventTrackingService.handle(checklistEventFactory.completed(saved, currentUser));
-    }
-
-    @Override
-    public void addChecklistItem(String activityId, CreateChecklistItemRequest request) {
-        Task task = taskRepository.findByActivityId(activityId).orElseThrow(() -> new ResourceNotFoundException("Task not found."));
+        Trip trip = tripRepository.findByActivityId(activityId).orElseThrow(() -> new ResourceNotFoundException("Activity not found."));
 
         Checklist checklist = new Checklist();
 
-        checklist.setTask(task);
+        checklist.setTrip(trip);
         checklist.setItemName(request.getItemName());
         checklist.setIsCompleted(false);
         checklist.setCreatedAt(LocalDateTime.now());
@@ -159,83 +87,70 @@ public class ChecklistServiceImpl implements ChecklistService {
 
         User currentUser = currentUserService.getCurrentUser();
 
-        featureEventTrackingService.handle( checklistEventFactory.added(task.getActivity(), currentUser, 1));
+        featureEventTrackingService.handle(checklistEventFactory.added(trip.getActivity(), currentUser, 1));
     }
 
     @Override
-    public void updateChecklistItems(Task task, List<UpdateChecklistItemRequest> requests) {
-        if (requests == null) {
-            return;
-        }
-
-        List<Checklist> existingChecklists = checklistRepository.findByTaskOrderByIdAsc(task);
-
-        for (Checklist existing : existingChecklists) {
-            boolean stillExists = requests.stream().anyMatch(request -> request.getId() != null && request.getId().equals(existing.getId()));
-
-            if (!stillExists) {
-                checklistRepository.delete(existing);
-            }
-        }
-
-        for (UpdateChecklistItemRequest request : requests) {
-
-            if (request.getId() == null) {
-
-                Checklist checklist = new Checklist();
-
-                checklist.setTask(task);
-                checklist.setItemName(request.getItemName());
-                checklist.setIsCompleted(Boolean.TRUE.equals(request.getIsCompleted()));
-                checklist.setCreatedAt(LocalDateTime.now());
-
-                checklistRepository.save(checklist);
-
-            } else {
-                Checklist checklist = checklistRepository
-                        .findById(request.getId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Checklist item not found."));
-
-                if (checklist.getTask() == null ||
-                        !checklist.getTask()
-                                .getActivityId()
-                                .equals(task.getActivityId())) {
-
-                    throw new IllegalArgumentException("Checklist item does not belong to this task.");
-                }
-
-                checklist.setItemName(request.getItemName());
-                checklist.setIsCompleted(Boolean.TRUE.equals(request.getIsCompleted()));
-
-                checklistRepository.save(checklist);
-            }
-        }
-    }
-
-    @Override
-    public void toggleChecklistCompletion(Integer checklistId) {
-
+    public void updateChecklistItem(String activityId, Integer checklistId, UpdateChecklistItemRequest request) {
         Checklist checklist = checklistRepository.findById(checklistId).orElseThrow(() -> new ResourceNotFoundException("Checklist item not found."));
 
-        boolean oldCompleted = Boolean.TRUE.equals(checklist.getIsCompleted());
-        boolean newCompleted = !oldCompleted;
+        Activity activity = null;
 
-        checklist.setIsCompleted(newCompleted);
+        if (checklist.getTask() != null) {
+            if (!checklist.getTask()
+                    .getActivityId()
+                    .equals(activityId)) {
+
+                throw new IllegalArgumentException("Checklist item does not belong to this activity.");
+            }
+
+            activity = checklist.getTask().getActivity();
+
+        } else if (checklist.getTrip() != null) {
+            if (!checklist.getTrip()
+                    .getActivityId()
+                    .equals(activityId)) {
+
+                throw new IllegalArgumentException("Checklist item does not belong to this activity.");
+            }
+            activity = checklist.getTrip().getActivity();
+
+        } else {
+            throw new ResourceNotFoundException("Checklist activity not found.");
+        }
+
+        String oldItemName = checklist.getItemName();
+
+        checklist.setItemName(request.getItemName());
+
+        if (request.getIsCompleted() != null) {
+            checklist.setIsCompleted(request.getIsCompleted());
+        }
+
         Checklist saved = checklistRepository.save(checklist);
 
         User currentUser = currentUserService.getCurrentUser();
 
-        featureEventTrackingService.handle(checklistEventFactory.toggled(saved, currentUser, oldCompleted, newCompleted));
+        featureEventTrackingService.handle(checklistEventFactory.updated(saved, currentUser, oldItemName));
     }
 
     @Override
-    public void toggleTripChecklistCompletion(String activityId, Integer checklistId) {
-        Trip trip = tripRepository.findByActivityId(activityId).orElseThrow(() -> new ResourceNotFoundException("Trip not found."));
-
+    public void toggleChecklistCompletion(String activityId, Integer checklistId) {
         Checklist checklist = checklistRepository.findById(checklistId).orElseThrow(() -> new ResourceNotFoundException("Checklist item not found."));
 
-        if (checklist.getTrip() == null || !checklist.getTrip().getActivityId().equals(trip.getActivityId())) {
-            throw new IllegalArgumentException("Checklist item does not belong to this trip.");
+        if (checklist.getTask() != null) {
+
+            if (!checklist.getTask().getActivityId().equals(activityId)) {
+                throw new IllegalArgumentException("Checklist item does not belong to this activity.");
+            }
+
+        } else if (checklist.getTrip() != null) {
+            if (!checklist.getTrip().getActivityId().equals(activityId)) {
+                throw new IllegalArgumentException("Checklist item does not belong to this activity.");
+            }
+
+        } else {
+            throw new ResourceNotFoundException("Checklist activity not found.");
         }
 
         boolean oldCompleted = Boolean.TRUE.equals(checklist.getIsCompleted());
@@ -250,10 +165,24 @@ public class ChecklistServiceImpl implements ChecklistService {
     }
 
     @Override
-    public void deleteChecklistItem(Integer checklistId) {
+    public void deleteChecklistItem(String activityId, Integer checklistId) {
         Checklist checklist = checklistRepository.findById(checklistId).orElseThrow(() -> new ResourceNotFoundException("Checklist item not found."));
+
+        if (checklist.getTask() != null) {
+
+            if (!checklist.getTask().getActivityId().equals(activityId)) {
+                throw new IllegalArgumentException("Checklist item does not belong to this activity.");
+            }
+
+        } else if (checklist.getTrip() != null) {
+            if (!checklist.getTrip().getActivityId().equals(activityId)) {
+                throw new IllegalArgumentException("Checklist item does not belong to this activity.");
+            }
+        } else {
+            throw new ResourceNotFoundException("Checklist activity not found.");
+        }
+
         checklistRepository.delete(checklist);
-
         User currentUser = currentUserService.getCurrentUser();
 
         featureEventTrackingService.handle(checklistEventFactory.removed(checklist, currentUser));

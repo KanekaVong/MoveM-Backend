@@ -9,18 +9,13 @@ import com.movem.backend.trip.entities.Trip;
 import java.util.List;
 
 public interface ChecklistService {
-    void createChecklistItems(Task task, List<CreateChecklistItemRequest> items);
-    void createTripChecklistItems(Trip trip, List<CreateChecklistItemRequest> items);
-
     List<ChecklistResponse> getChecklistItems(String activityId);
 
-    List<ChecklistResponse> getTripChecklistItems(String activityId);
-
-    void markChecklistCompleted(Integer id);
     void addChecklistItem(String activityId, CreateChecklistItemRequest request);
-    void updateChecklistItems(Task task, List<UpdateChecklistItemRequest> requests);
-    void updateTripChecklistItem(String activityId, Integer checklistId, UpdateChecklistItemRequest request);
-    void toggleChecklistCompletion(Integer checklistId);
-    void toggleTripChecklistCompletion(String activityId, Integer checklistId);
-    void deleteChecklistItem(Integer checklistId);
+
+    void updateChecklistItem(String activityId, Integer checklistId, UpdateChecklistItemRequest request);
+
+    void toggleChecklistCompletion(String activityId, Integer checklistId);
+
+    void deleteChecklistItem(String activityId, Integer checklistId);
 }

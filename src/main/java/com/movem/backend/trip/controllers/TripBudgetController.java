@@ -3,6 +3,7 @@ package com.movem.backend.trip.controllers;
 
 import com.movem.backend.trip.dtos.requests.Create.CreateTripBudgetRequest;
 import com.movem.backend.trip.dtos.requests.Create.CreateTripExpenseRequest;
+import com.movem.backend.trip.dtos.requests.Create.CreateTripExpenseSplitRequest;
 import com.movem.backend.trip.dtos.requests.Update.UpdateTripBudgetRequest;
 import com.movem.backend.trip.dtos.responses.TripBudgetResponse;
 import com.movem.backend.trip.dtos.responses.TripExpenseResponse;
@@ -58,6 +59,12 @@ public class TripBudgetController {
     public ResponseEntity<Void> deleteExpense(@PathVariable String activityId, @PathVariable Integer expenseId) {
         tripBudgetService.deleteExpense(activityId, expenseId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{tripActivityId}/expenses/{expenseId}/splits")
+    public ResponseEntity<TripExpenseResponse> addExpenseSplit(@PathVariable String tripActivityId, @PathVariable Integer expenseId, @RequestBody CreateTripExpenseSplitRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(tripBudgetService.addExpenseSplit(tripActivityId, expenseId, request));
     }
 
     @PatchMapping("/expenses/{expenseId}/splits/{splitId}/settle")

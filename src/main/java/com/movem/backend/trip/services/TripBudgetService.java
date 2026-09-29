@@ -2,6 +2,7 @@ package com.movem.backend.trip.services;
 
 import com.movem.backend.trip.dtos.requests.Create.CreateTripBudgetRequest;
 import com.movem.backend.trip.dtos.requests.Create.CreateTripExpenseRequest;
+import com.movem.backend.trip.dtos.requests.Create.CreateTripExpenseSplitRequest;
 import com.movem.backend.trip.dtos.requests.Update.UpdateTripBudgetRequest;
 import com.movem.backend.trip.dtos.responses.TripBudgetResponse;
 import com.movem.backend.trip.dtos.responses.TripExpenseResponse;
@@ -21,4 +22,5 @@ public interface TripBudgetService {
     void createDefaultBudgetCategories(Trip trip);
     TripExpenseResponse settleSplit(String tripActivityId, Integer expenseId, Integer splitId);
     void updateTotalBudget(String tripActivityId, BigDecimal totalBudget);
+    TripExpenseResponse addExpenseSplit(String tripActivityId, Integer expenseId, CreateTripExpenseSplitRequest request);
 }
