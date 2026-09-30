@@ -46,25 +46,51 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User registerUser(User user){
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            throw new DuplicateResourceException("Username already exists.");
-        }
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+        Optional<User> existingByEmail = userRepository.findByEmail(user.getEmail());
+        Optional<User> existingByUsername = userRepository.findByUsername(user.getUsername());
+
+    // Existing email
+    if (existingByEmail.isPresent()) {
+        User existingUser = existingByEmail.get();
+
+        // Existing account is already verified
+        if (Boolean.TRUE.equals(existingUser.getIsActive())) {
             throw new DuplicateResourceException("Email already exists.");
         }
 
-        String hashedPassword = passwordEncoder.encode(user.getPasswordHash());
-        user.setPasswordHash(hashedPassword);
-        user.setIsActive(false);
-        user.setPasswordChangedAt(LocalDateTime.now());
+        // Make sure username isn't used by a different account
+        if (existingByUsername.isPresent()
+                && !existingByUsername.get().getId().equals(existingUser.getId())) {
+            throw new DuplicateResourceException("Username already exists.");
+        }
 
-        User savedUser = userRepository.save(user);
+        // Reuse the existing inactive account
+        existingUser.setUsername(user.getUsername());
+        existingUser.setFirstname(user.getFirstname());
+        existingUser.setLastname(user.getLastname());
+        existingUser.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
+        existingUser.setIsActive(false);
+        existingUser.setPasswordChangedAt(LocalDateTime.now());
 
-        // Reuse the same email-verification logic
-        sendVerificationCode(savedUser);
-
-        return savedUser;
+        User updatedUser = userRepository.save(existingUser);
+        sendVerificationCode(updatedUser);
+        return updatedUser;
     }
+
+    // New email: username must be free
+    if (existingByUsername.isPresent()) {
+        throw new DuplicateResourceException("Username already exists.");
+    }
+
+    user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
+    user.setIsActive(false);
+    user.setPasswordChangedAt(LocalDateTime.now());
+
+    User savedUser = userRepository.save(user);
+    sendVerificationCode(savedUser);
+    return savedUser;
+
+}
 
     @Override
     public void resendVerificationCode(String email) {
