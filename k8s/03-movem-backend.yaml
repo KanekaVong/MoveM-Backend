@@ -1,25 +1,3 @@
-# ==========================================================
-# movem-backend (Spring Boot auth service) for movem-cloud
-#
-# IMPORTANT — read before applying:
-# The probes below hit /actuator/health. Right now SecurityConfig.java
-# only permitAll()'s /api/auth/**, /error and the swagger paths, so
-# /actuator/health returns 401 and these probes will fail. Add
-# "/actuator/health/**" to the permitAll list before deploying, e.g.:
-#
-#   .authorizeHttpRequests(auth -> auth
-#       .requestMatchers(
-#           "/api/auth/**",
-#           "/actuator/health/**",
-#           "/error",
-#           "/v3/api-docs/**",
-#           "/swagger-ui/**",
-#           "/swagger-ui.html"
-#       ).permitAll()
-#       .anyRequest().authenticated()
-#   )
-# ==========================================================
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,7 +6,7 @@ metadata:
   labels:
     app: movem-backend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: movem-backend
@@ -46,20 +24,21 @@ spec:
             - until nc -z movem-mysql-service 3306; do echo "waiting for mysql..."; sleep 3; done
           resources:
             requests:
-              cpu: 50m
-              memory: 32Mi
+              cpu: 10m
+              memory: 16Mi
             limits:
               cpu: 100m
               memory: 64Mi
       containers:
         - name: movem-backend
-          # TODO: replace with your real Artifact Registry path once
-          # you know the project/region/repo you're using (see the
-          # commands in chat).
-          image: us-central1-docker.pkg.dev/movem-cloud/movem-repo/movem-backend:latest
+          image: us-central1-docker.pkg.dev/movem-cloud-2/movem-repo/movem-backend:latest
           ports:
             - containerPort: 8080
           env:
+            - name: TZ
+              value: "Asia/Phnom_Penh"
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Duser.timezone=Asia/Phnom_Penh"
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -80,13 +59,24 @@ spec:
                 secretKeyRef:
                   name: movem-secrets
                   key: GMAIL_APP_PASSWORD
+            - name: GOOGLE_MAPS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: movem-secrets
+                  key: GOOGLE_MAPS_API_KEY
+            - name: FIREBASE_CREDENTIALS_PATH
+              value: /etc/secrets/firebase/firebase-service-account.json
+          volumeMounts:
+            - name: firebase-credentials
+              mountPath: /etc/secrets/firebase
+              readOnly: true
           startupProbe:
             httpGet:
               path: /actuator/health/liveness
               port: 8080
             periodSeconds: 5
             timeoutSeconds: 3
-            failureThreshold: 30 #
+            failureThreshold: 30
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
@@ -102,11 +92,18 @@ spec:
             failureThreshold: 3
           resources:
             requests:
-              cpu: 250m
-              memory: 512Mi
+              cpu: 500m
+              memory: 2Gi
             limits:
-              cpu: "1"
-              memory: 1Gi
+              cpu: "2"
+              memory: 4Gi
+      volumes:
+        - name: firebase-credentials
+          secret:
+            secretName: movem-secrets
+            items:
+              - key: firebase-service-account.json
+                path: firebase-service-account.json
 
 ---
 apiVersion: v1
