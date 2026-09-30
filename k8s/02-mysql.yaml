@@ -1,12 +1,3 @@
-# ==========================================================
-# MySQL for movem-cloud
-# A single-replica Deployment + PVC is used here for simplicity.
-# This is fine as long as you NEVER scale replicas above 1 — two
-# MySQL processes writing to the same volume will corrupt data.
-# If you later need real HA, look at a StatefulSet + MySQL
-# replication (or Cloud SQL, which handles this for you).
-# ==========================================================
-
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -50,6 +41,8 @@ spec:
           ports:
             - containerPort: 3306
           env:
+            - name: TZ
+              value: "Asia/Phnom_Penh"
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -79,11 +72,11 @@ spec:
             timeoutSeconds: 5
           resources:
             requests:
-              cpu: 250m
-              memory: 512Mi
+              cpu: 500m
+              memory: 1Gi
             limits:
               cpu: "1"
-              memory: 1Gi
+              memory: 2Gi
       volumes:
         - name: mysql-data
           persistentVolumeClaim:
